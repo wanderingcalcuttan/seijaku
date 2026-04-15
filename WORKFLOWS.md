@@ -185,7 +185,7 @@ This repo has already hit missing-dependency issues after branch switches.
 
 - The frontend now self-hosts its fonts from `frontend/src/app/fonts`.
 - Frontend production builds should no longer need Google Fonts network access.
-- The root `npm run build` command intentionally builds the frontend only so the current Vercel frontend project can keep passing while it still targets the repo root.
+- The root `npm run build` command intentionally builds the frontend only, kept as a convenience script for historical callers. Vercel's frontend project uses `frontend/` as its Root Directory and runs `next build` from there.
 - Use `npm run build:all` when you want local validation of both workspaces together.
 - The frontend build intentionally sets `NEXT_IGNORE_INCORRECT_LOCKFILE=1` to avoid Next's lockfile patcher breaking inside the npm workspace layout.
 

@@ -111,6 +111,38 @@ Structural changes must be reflected in repo docs, especially:
 - [DECISIONS.md](./DECISIONS.md)
 - [backend/README.md](./backend/README.md)
 
+### 10. Production Prisma Migrations Run In The Vercel Build Hook
+
+Status: Active
+
+`backend/scripts/vercel-build.sh` runs `prisma migrate deploy` when `VERCEL_ENV=production`, using the unpooled Neon URL (`DATABASE_URL_UNPOOLED` or `POSTGRES_URL_NON_POOLING`). Preview and local builds never touch a remote database.
+
+A failed migration fails the Vercel build. The previous function keeps serving until the build passes. Destructive or long-locking migrations should still be audited manually before merge.
+
+Rationale: remove the per-deploy human step that was previously required, which was a known source of 500s after a schema change merged without the operator remembering to run `prisma migrate deploy`.
+
+### 11. Production Backend CORS Is Locked To The Canonical Frontend Alias
+
+Status: Active
+
+`CORS_ORIGIN` on the `seijaku-backend` Production scope is pinned to `https://seijaku-kappa.vercel.app`. Preview and Development scopes remain open.
+
+The browser never calls the backend directly in normal flows — all traffic goes through the Next BFF on the frontend domain as server-to-server fetches, which are not subject to CORS. Locking prod CORS closes the direct-from-browser path while not affecting any real request path.
+
+When a custom frontend domain is added, extend `CORS_ORIGIN` to the comma-separated list containing both the custom domain and the `seijaku-kappa` alias until the alias is retired.
+
+### 12. Object Storage Decision Deferred; Vercel Blob Rejected
+
+Status: Active
+
+Vercel Blob was attempted as the production media store in PR #7 and PR #8. Both resulted in prod backend deployments that hung on cold start — build logs clean, runtime never responded, no error surfaced. Suspected root cause: conflict between the Vercel Blob integration auto-wiring and the `@vercel/node` serverless pipeline running our Express app. Not confirmed; not worth further investigation right now.
+
+Both PRs were rolled back via `vercel promote`. PR #9 removed the `@vercel/blob` dependency, the `"vercel-blob"` driver branch, and disconnected the Blob store.
+
+Current state: `STORAGE_DRIVER` unset in prod (defaults to `local`, which is ephemeral on serverless and therefore known-broken for real uploads). The S3 driver in `backend/src/lib/storage.ts` is intact and ready for any S3-compatible provider.
+
+Next action: provision Cloudflare R2 and wire up via the existing S3 driver. Revisit Vercel Blob only if we later consolidate the backend onto Vercel Functions in a way that avoids the current hang, or once Vercel's Blob integration supports the legacy `@vercel/node` Express pattern.
+
 ## How To Use This File
 
 - Add a new entry when a structural or cross-cutting product decision is made.
