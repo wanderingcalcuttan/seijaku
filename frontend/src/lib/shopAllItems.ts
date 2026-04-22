@@ -1137,6 +1137,26 @@ const shopProductReleaseDates: Partial<Record<string, string>> = {
   "autumn-quiet-retreat": "2026-02-16",
 };
 
+// Product statuses that should surface the "Notify Me" CTA in place of
+// Buy Now. Kept narrow on purpose — Sold Out / Upcoming stay as
+// information-only badges (no capture form) per DECISIONS #14.
+export const notifiableStatuses = ["Waitlist"] as const;
+
+export type NotifiableStatus = (typeof notifiableStatuses)[number];
+
+// Statuses that should completely suppress the primary CTA (no Buy Now,
+// no Notify Me). The action row shows View Details + Wishlist only,
+// with a short status label in the CTA slot.
+export const unbuyableStatuses = ["Sold Out", "Upcoming"] as const;
+
+export function isNotifyMeProduct(item: ShopProduct): boolean {
+  return Boolean(item.status && (notifiableStatuses as readonly string[]).includes(item.status));
+}
+
+export function isUnbuyableProduct(item: ShopProduct): boolean {
+  return Boolean(item.status && (unbuyableStatuses as readonly string[]).includes(item.status));
+}
+
 export function getShopProductUseCase(item: ShopProduct): ShopUseCase | undefined {
   if (item.useCase) {
     return item.useCase;

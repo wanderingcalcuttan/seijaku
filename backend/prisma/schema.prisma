@@ -142,6 +142,7 @@ model Customer {
   retreatInquiries    RetreatInquiry[]
   wishlistItems       WishlistItem[]
   ritualEntries       RitualEntry[]
+  productNotifications ProductNotification[]
 }
 
 model MediaAsset {
@@ -201,6 +202,7 @@ model Product {
   bridgePages      ShopBridgePageProduct[]
   orderItems       OrderRequestItem[]
   wishlistItems    WishlistItem[]
+  notifications    ProductNotification[]
 }
 
 model ProductMedia {
@@ -502,6 +504,26 @@ model WishlistItem {
   product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([customerId, productId])
+}
+
+model ProductNotification {
+  id         String     @id @default(cuid())
+  productId  String
+  customerId String?
+  email      String
+  source     String?
+  status     LeadStatus @default(NEW)
+  notes      String?
+  createdAt  DateTime   @default(now())
+  notifiedAt DateTime?
+  product    Product    @relation(fields: [productId], references: [id], onDelete: Restrict)
+  customer   Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  // Idempotency: repeated Notify Me clicks for the same product+email upsert,
+  // they don't create duplicate admin inbox rows.
+  @@unique([productId, email])
+  @@index([productId])
+  @@index([email])
 }
 
 model RitualEntry {

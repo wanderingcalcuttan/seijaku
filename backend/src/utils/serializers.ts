@@ -266,3 +266,23 @@ export function serializeSiteSettings(settings: any) {
     updatedAt: settings.updatedAt.toISOString(),
   };
 }
+
+export function serializeProductNotification(record: any) {
+  return {
+    id: record.id,
+    email: record.email,
+    source: record.source,
+    status: record.status,
+    notes: record.notes,
+    createdAt: record.createdAt.toISOString(),
+    notifiedAt: record.notifiedAt?.toISOString() ?? null,
+    product: record.product
+      ? {
+          id: record.product.id,
+          slug: record.product.slug,
+          title: record.product.title,
+          status: record.product.status,
+        }
+      : null,
+  };
+}

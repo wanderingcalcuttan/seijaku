@@ -2,11 +2,13 @@ import { Prisma, ProductStatus } from "@prisma/client";
 import { Router } from "express";
 import { z } from "zod";
 
+import { sendAdminNotification } from "../lib/notifier.js";
 import { prisma } from "../lib/prisma.js";
 import {
   serializeArticle,
   serializeBridgePage,
   serializeProduct,
+  serializeProductNotification,
   serializeProgram,
   serializeRetreat,
   serializeSiteSettings,
@@ -47,6 +49,12 @@ const orderRequestSchema = z.object({
 const newsletterSchema = z.object({
   email: z.string().email(),
   source: z.string().optional(),
+});
+
+const productNotificationSchema = z.object({
+  productSlug: z.string().min(1).max(200),
+  email: z.string().email().max(254),
+  source: z.string().max(60).optional(),
 });
 
 const reservationSchema = z.object({
@@ -397,6 +405,58 @@ publicRouter.post(
     });
 
     res.status(201).json({ item: reservation });
+  })
+);
+
+publicRouter.post(
+  "/lead/product-notifications",
+  asyncHandler(async (req, res) => {
+    const payload = parseBody(productNotificationSchema, req.body);
+
+    const product = await prisma.product.findUnique({
+      where: { slug: payload.productSlug },
+    });
+
+    if (!product || product.workflowStatus !== "PUBLISHED") {
+      res.status(400).json({ error: "Product not found" });
+      return;
+    }
+
+    const notification = await prisma.productNotification.upsert({
+      where: {
+        productId_email: {
+          productId: product.id,
+          email: payload.email,
+        },
+      },
+      update: {
+        status: "NEW",
+        source: payload.source ?? "product-card",
+        notifiedAt: null,
+      },
+      create: {
+        productId: product.id,
+        email: payload.email,
+        source: payload.source ?? "product-card",
+      },
+      include: {
+        product: { select: { id: true, slug: true, title: true, status: true } },
+      },
+    });
+
+    res.status(201).json({ item: serializeProductNotification(notification) });
+
+    // Fire-and-forget admin ping. Runs after the response is flushed so a slow
+    // or failing notifier never delays the user. Errors are swallowed — the
+    // row is already persisted and will surface in /admin/leads regardless.
+    void sendAdminNotification({
+      notificationId: notification.id,
+      productTitle: notification.product?.title ?? payload.productSlug,
+      productSlug: payload.productSlug,
+      customerEmail: payload.email,
+    }).catch((error) => {
+      console.warn("[notifier] admin ping failed", error);
+    });
   })
 );
 

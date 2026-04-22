@@ -22,6 +22,9 @@ const envSchema = z.object({
   S3_SECRET_ACCESS_KEY: z.string().optional(),
   S3_FORCE_PATH_STYLE: z.coerce.boolean().default(true),
   S3_PUBLIC_URL_BASE: z.string().url().optional(),
+  ADMIN_NOTIFICATION_EMAIL: z.string().optional(),
+  NOTIFIER_FROM_EMAIL: z.string().optional(),
+  RESEND_API_KEY: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

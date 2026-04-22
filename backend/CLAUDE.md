@@ -47,7 +47,7 @@ Public:
 - `GET  /health`
 - `GET  /catalog/products`, `/catalog/products/:slug`, `/catalog/bridge-pages/:slug`
 - `GET  /content/articles`, `/content/articles/:slug`, `/content/retreats`, `/content/retreats/:slug`, `/content/programs`, `/content/programs/:slug`, `/content/site-settings`
-- `POST /lead/order-requests`, `/lead/newsletter-subscriptions`, `/lead/program-reservations`, `/lead/retreat-inquiries`
+- `POST /lead/order-requests`, `/lead/newsletter-subscriptions`, `/lead/program-reservations`, `/lead/retreat-inquiries`, `/lead/product-notifications`
 
 Admin (all under `/admin`, all JWT-guarded):
 - `auth/login`, `auth/me`
@@ -55,7 +55,7 @@ Admin (all under `/admin`, all JWT-guarded):
 - `media/*`, `categories/*`, `products/*`, `product-options/*`
 - `bridge-pages/*`, `articles/*`, `retreats/*`, `programs/*`, `program-sessions/*`, `collections/*`
 - `site-settings`
-- `leads/*` (order requests, newsletter subs, program reservations, retreat inquiries)
+- `leads/*` (order requests, newsletter subs, program reservations, retreat inquiries, product notifications)
 
 ## Commands
 
@@ -97,6 +97,8 @@ Storage: `STORAGE_DRIVER` (`local` | `s3`), `LOCAL_UPLOAD_DIR`.
 Migrations: the Render build command uses `DATABASE_URL` for `prisma migrate deploy`. If pooled vs direct connection ever matters (e.g., a migration that needs a direct connection against PgBouncer-pooled Neon URLs), add `DATABASE_URL_UNPOOLED` and update the build command to use it explicitly.
 
 Current prod wiring: `STORAGE_DRIVER=s3` pointing at Supabase; `CORS_ORIGIN=https://seijaku-kappa.vercel.app`.
+
+Notify Me admin ping (all optional; feature opt-in): `ADMIN_NOTIFICATION_EMAIL`, `NOTIFIER_FROM_EMAIL`, `RESEND_API_KEY`. While unset, `src/lib/notifier.ts` silently skips dispatch and the `ProductNotification` row still surfaces in `/admin/leads`. See `DECISIONS.md#14` for the rationale on keeping the dispatcher stubbed.
 
 ## Patterns To Follow
 

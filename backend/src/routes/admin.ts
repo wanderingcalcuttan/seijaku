@@ -15,6 +15,7 @@ import {
   serializeCollection,
   serializeMediaAsset,
   serializeProduct,
+  serializeProductNotification,
   serializeProgram,
   serializeRetreat,
   serializeSiteSettings,
@@ -1599,6 +1600,30 @@ adminRouter.patch(
       data: { status: payload.status },
     });
     res.json({ item });
+  })
+);
+
+adminRouter.get(
+  "/lead/product-notifications",
+  asyncHandler(async (_req, res) => {
+    const items = await prisma.productNotification.findMany({
+      include: { product: { select: { id: true, slug: true, title: true, status: true } } },
+      orderBy: { createdAt: "desc" },
+    });
+    res.json({ items: items.map(serializeProductNotification) });
+  })
+);
+
+adminRouter.patch(
+  "/lead/product-notifications/:id",
+  asyncHandler(async (req, res) => {
+    const payload = parseBody(leadStatusSchema, req.body);
+    const item = await prisma.productNotification.update({
+      where: { id: routeParam(req, "id") },
+      data: { status: payload.status },
+      include: { product: { select: { id: true, slug: true, title: true, status: true } } },
+    });
+    res.json({ item: serializeProductNotification(item) });
   })
 );
 

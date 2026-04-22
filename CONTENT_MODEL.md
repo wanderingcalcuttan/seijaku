@@ -74,6 +74,7 @@ These records are backend-owned and already live in the database:
 - `NewsletterSubscription`
 - `ProgramReservation`
 - `RetreatInquiry`
+- `ProductNotification`
 - `WishlistItem`
 - `RitualEntry`
 
@@ -83,6 +84,7 @@ Current usage:
 - checkout creates order requests
 - program forms create reservations
 - retreat forms create inquiries
+- Notify Me signups on waitlisted products create product notifications (see `DECISIONS.md` #14)
 - wishlist and ritual entries are schema-ready for later use
 
 ### Session And Identity Content
