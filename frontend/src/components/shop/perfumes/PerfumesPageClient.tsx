@@ -1,0 +1,295 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+
+import ProductDetailDrawer from "@/src/components/shop/ProductDetailDrawer";
+import {
+  canonicalShopRoutes,
+  getShopProductBySlug,
+  type ShopBridgePageConfig,
+  type ShopProduct,
+} from "@/src/lib/shopAllItems";
+
+import PerfumeCategorySection, { type PerfumeSubGroup } from "./PerfumeCategorySection";
+import PerfumePageIntro from "./PerfumePageIntro";
+
+type PerfumesPageClientProps = {
+  page: ShopBridgePageConfig;
+  products: ShopProduct[];
+};
+
+type PerfumeSectionId = "skin" | "textiles" | "objects";
+
+const sectionLinks: { id: PerfumeSectionId; label: string }[] = [
+  { id: "skin", label: "Skin" },
+  { id: "textiles", label: "Textiles" },
+  { id: "objects", label: "Objects" },
+];
+
+const skinSlugs = [
+  "spirit-01-breath-of-pines",
+  "body-01-summer-held-close",
+  "mind-01-the-morning-desk",
+  "trilogy-discovery-kit",
+];
+
+const textileSlugs = [
+  "jasmine-neroli-textile-oil",
+  "lotus-jasmine-textile-oil",
+  "hinoki-cedar-textile-oil",
+  "rose-vetiver-textile-oil",
+  "tea-blossom-rice-textile-oil",
+];
+
+const spacesGroupDefinitions: { title: string; description: string; slugs: string[] }[] = [
+  {
+    title: "Floral & Fruity",
+    description: "Soft atmospheres for rest.",
+    slugs: ["neroli-bloom-diffusion-vessel", "plum-orchard-room-stone"],
+  },
+  {
+    title: "Tea & Steam",
+    description: "Quiet warmth and pause.",
+    slugs: ["tea-steam-stone-diffuser", "kyusu-warmth-reed-vessel"],
+  },
+  {
+    title: "Living & Sensory",
+    description: "Rice, citrus, spice, and comfort.",
+    slugs: ["rice-citrus-bowl-diffuser", "cardamom-hearth-vessel"],
+  },
+];
+
+export default function PerfumesPageClient({ page, products }: PerfumesPageClientProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedSlug = searchParams.get("item");
+  const selectedProduct = selectedSlug ? getShopProductBySlug(selectedSlug) ?? null : null;
+  const [activeSection, setActiveSection] = useState<PerfumeSectionId>("skin");
+
+  const productsBySlug = useMemo(
+    () => new Map(products.map((product) => [product.slug, product])),
+    [products],
+  );
+
+  const skinItems = useMemo(
+    () =>
+      skinSlugs
+        .map((slug) => productsBySlug.get(slug))
+        .filter((item): item is ShopProduct => Boolean(item)),
+    [productsBySlug],
+  );
+
+  const textileItems = useMemo(
+    () =>
+      textileSlugs
+        .map((slug) => productsBySlug.get(slug))
+        .filter((item): item is ShopProduct => Boolean(item)),
+    [productsBySlug],
+  );
+
+  const spacesSubGroups = useMemo<PerfumeSubGroup[]>(
+    () =>
+      spacesGroupDefinitions
+        .map((group) => ({
+          title: group.title,
+          description: group.description,
+          products: group.slugs
+            .map((slug) => productsBySlug.get(slug))
+            .filter((item): item is ShopProduct => Boolean(item)),
+        }))
+        .filter((group) => group.products.length > 0),
+    [productsBySlug],
+  );
+
+  const updateQuery = (slug?: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (slug) {
+      params.set("item", slug);
+    } else {
+      params.delete("item");
+    }
+
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const sectionIds: PerfumeSectionId[] = ["skin", "textiles", "objects"];
+    const elements = sectionIds
+      .map((id) => document.getElementById(id))
+      .filter((element): element is HTMLElement => Boolean(element));
+
+    if (!elements.length) {
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((first, second) => second.intersectionRatio - first.intersectionRatio)[0];
+
+        if (visible?.target?.id) {
+          setActiveSection(visible.target.id as PerfumeSectionId);
+        }
+      },
+      {
+        rootMargin: "-20% 0px -55% 0px",
+        threshold: [0.2, 0.35, 0.6],
+      },
+    );
+
+    elements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, []);
+
+  const scrollToSection = (sectionId: PerfumeSectionId) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const element = document.getElementById(sectionId);
+    if (!element) {
+      return;
+    }
+    element.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  return (
+    <>
+      <main className="min-h-screen bg-[#f3efe7] pt-[72px] text-[#3a3a3a] sm:pt-[76px]">
+        <PerfumePageIntro
+          eyebrow={page.heroEyebrow}
+          title={page.heroTitle}
+          description={page.heroDescription}
+          image={page.heroImage}
+          imageAlt={page.heroImageAlt}
+          imagePosition={page.heroImagePosition}
+          quote={page.heroQuote}
+        >
+          <Link
+            href="#skin"
+            className="inline-flex items-center justify-center rounded-full bg-[#294536] px-6 py-3 text-[11px] font-medium uppercase tracking-[0.18em] text-[#f4efe8] transition-colors duration-200 hover:bg-[#21382c]"
+          >
+            Explore the trilogy
+          </Link>
+          <Link
+            href={canonicalShopRoutes.shopAll}
+            className="text-[11px] uppercase tracking-[0.2em] text-[#5b5247] underline decoration-black/10 underline-offset-4 transition-opacity duration-200 hover:opacity-70"
+          >
+            Shop All
+          </Link>
+        </PerfumePageIntro>
+
+        <nav className="sticky top-[72px] z-20 border-y border-black/5 bg-[rgba(243,239,231,0.92)] backdrop-blur-md sm:top-[76px]">
+          <div className="page-container max-w-[1200px] flex items-center gap-7 overflow-x-auto py-4 text-[11px] uppercase tracking-[0.24em] text-[#6d6459] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {sectionLinks.map((section) => {
+              const active = activeSection === section.id;
+              return (
+                <button
+                  key={section.id}
+                  type="button"
+                  onClick={() => scrollToSection(section.id)}
+                  className={`relative whitespace-nowrap pb-1 transition-colors duration-300 ${
+                    active ? "text-[#2e4a36]" : "hover:text-[#302922]"
+                  }`}
+                >
+                  {section.label}
+                  <span
+                    className={`absolute inset-x-0 -bottom-px h-px origin-left bg-[#2e4a36] transition-transform duration-300 ${
+                      active ? "scale-x-100" : "scale-x-0"
+                    }`}
+                  />
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+
+        <section className="section-primary pt-4 sm:pt-6">
+          <div className="page-container max-w-[1200px]">
+            <div className="space-y-1 border-t border-[rgba(79,71,63,0.08)]" />
+          </div>
+
+          <PerfumeCategorySection
+            id="skin"
+            eyebrow="FOR SKIN"
+            title="A trilogy in three states"
+            description="Breath. Body. Mind. Compositions to be worn, not displayed."
+            categoryLabel="Skin"
+            closingQuote="This is an evolving series. Future compositions will extend each state — Spirit 02, Body 02, Mind 02."
+            products={skinItems}
+            onViewDetails={updateQuery}
+          />
+
+          <PerfumeCategorySection
+            id="textiles"
+            eyebrow="FOR TEXTILES"
+            title="Fragrance that stays with what you wear"
+            description="Oil-based blends that settle into fabric and move with you."
+            categoryLabel="Cloth"
+            closingQuote="Scent does not announce. It settles."
+            products={textileItems}
+            columnClassName="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            onViewDetails={updateQuery}
+          />
+
+          <PerfumeCategorySection
+            id="objects"
+            eyebrow="FOR SPACES"
+            title="Scent that inhabits space"
+            description="Placed, not sprayed. Experienced, not announced."
+            categoryLabel="Spaces"
+            closingQuote="Space keeps what scent leaves behind."
+            subGroups={spacesSubGroups}
+            columnClassName="grid gap-6 sm:grid-cols-2"
+            onViewDetails={updateQuery}
+          />
+        </section>
+
+        {page.postCtaTitle ? (
+          <section className="section-editorial pt-4 sm:pt-6">
+            <div className="page-container max-w-[980px] text-center">
+              <h2 className="text-[#1c1c1c]">{page.postCtaTitle}</h2>
+              {page.postCtaDescription ? (
+                <p className="mx-auto mt-4 max-w-[56ch] text-[16px] leading-[1.82] text-[#625b53]">
+                  {page.postCtaDescription}
+                </p>
+              ) : null}
+              <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row sm:flex-wrap">
+                {page.postCtaPrimaryLabel && page.postCtaPrimaryHref ? (
+                  <Link
+                    href={page.postCtaPrimaryHref}
+                    className="inline-flex items-center justify-center rounded-full bg-[#2e4a36] px-7 py-4 text-[12px] font-medium uppercase tracking-[0.18em] text-[#f4efe8] hover:bg-[#243c2c]"
+                  >
+                    {page.postCtaPrimaryLabel}
+                  </Link>
+                ) : null}
+                {page.postCtaSecondaryLabel && page.postCtaSecondaryHref ? (
+                  <Link
+                    href={page.postCtaSecondaryHref}
+                    className="text-[12px] font-medium uppercase tracking-[0.18em] text-[#5e5549] underline decoration-black/10 underline-offset-4 hover:text-[#2e4a36]"
+                  >
+                    {page.postCtaSecondaryLabel}
+                  </Link>
+                ) : null}
+              </div>
+              {page.seoFootnote ? (
+                <p className="mx-auto mt-12 max-w-[860px] text-xs leading-[1.9] text-[#847a6d]">{page.seoFootnote}</p>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+      </main>
+
+      <ProductDetailDrawer item={selectedProduct} isOpen={Boolean(selectedProduct)} onClose={() => updateQuery()} />
+    </>
+  );
+}

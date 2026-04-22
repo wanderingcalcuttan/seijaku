@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import DiffusersPageClient from "@/src/components/shop/diffusers/DiffusersPageClient";
 import LifestylePageClient from "@/src/components/shop/lifestyle/LifestylePageClient";
+import PerfumesPageClient from "@/src/components/shop/perfumes/PerfumesPageClient";
 import ShopBridgePageClient from "@/src/components/shop/ShopBridgePageClient";
 import TextilesPageClient from "@/src/components/shop/textiles/TextilesPageClient";
 import {
@@ -78,6 +79,14 @@ export default async function ShopSlugPage({ params }: ShopSlugPageProps) {
     return (
       <Suspense fallback={null}>
         <DiffusersPageClient products={products} />
+      </Suspense>
+    );
+  }
+
+  if (slug === "perfumes") {
+    return (
+      <Suspense fallback={null}>
+        <PerfumesPageClient page={page} products={products} />
       </Suspense>
     );
   }
