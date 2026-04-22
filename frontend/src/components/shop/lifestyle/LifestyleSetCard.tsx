@@ -1,11 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 
-import { canonicalShopRoutes, type ShopProduct } from "@/src/lib/shopAllItems";
+import type { ShopProduct } from "@/src/lib/shopAllItems";
 
-import { useShopState } from "../ShopStateProvider";
+import ShopProductActions from "../ShopProductActions";
 
 export type LifestyleSetField = {
   id: string;
@@ -40,8 +39,6 @@ export default function LifestyleSetCard({
   imageAlt,
   className = "",
 }: LifestyleSetCardProps) {
-  const router = useRouter();
-  const { beginCheckout } = useShopState();
   const hasFields = fields.length > 0;
   const allSelected = fields.every((field) => Boolean(selectedValues[field.id]));
   const checkoutLabel = hasFields
@@ -106,38 +103,16 @@ export default function LifestyleSetCard({
             </div>
           ) : null}
 
-          <div className="mt-9 flex flex-wrap items-center gap-x-4 gap-y-3">
-            <button
-              type="button"
-              disabled={hasFields && !allSelected}
-              onClick={() => {
-                beginCheckout(item.slug, {
-                  label: checkoutLabel,
-                  options: selectedValues,
-                });
-                router.push(canonicalShopRoutes.checkout);
-              }}
-              className="relative z-[1] inline-flex min-h-[42px] items-center justify-center rounded-full bg-[#294536] px-5 py-2.5 text-[10px] font-medium uppercase tracking-[0.22em] text-[#f4efe8] transition-colors duration-200 hover:bg-[#21382c] disabled:cursor-not-allowed disabled:bg-[#a8a095] disabled:text-[#f4efe8]/90"
-            >
-              Buy Set
-            </button>
-            <button
-              type="button"
-              onClick={onViewDetails}
-              className="text-[11px] uppercase tracking-[0.18em] text-[#4f473f] underline decoration-black/10 underline-offset-4 transition-opacity duration-200 hover:opacity-70"
-            >
-              View Details
-            </button>
-            {hasFields ? (
-              <button
-                type="button"
-                onClick={onViewDetails}
-                className="text-[11px] uppercase tracking-[0.16em] text-[#5d5449] transition-opacity duration-200 hover:opacity-70"
-              >
-                Customize
-              </button>
-            ) : null}
-          </div>
+          <ShopProductActions
+            className="mt-9"
+            item={item}
+            onViewDetails={onViewDetails}
+            isBuyDisabled={hasFields && !allSelected}
+            selection={{
+              label: checkoutLabel,
+              options: selectedValues,
+            }}
+          />
           <p className="mt-7 text-[14px] leading-relaxed text-[#6b6258]">{item.priceLabel}</p>
         </div>
       </div>

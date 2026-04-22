@@ -1,12 +1,11 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
-import { canonicalShopRoutes, type ShopProduct } from "@/src/lib/shopAllItems";
+import type { ShopProduct } from "@/src/lib/shopAllItems";
 
-import { useShopState } from "../ShopStateProvider";
+import ShopProductActions from "../ShopProductActions";
 
 type TextileProductCardProps = {
   item: ShopProduct;
@@ -33,19 +32,16 @@ export default function TextileProductCard({
   onSelectOption,
   onViewDetails,
 }: TextileProductCardProps) {
-  const router = useRouter();
-  const { beginCheckout, isCollected, toggleCollection } = useShopState();
-  const isWishlisted = isCollected(item.slug);
   const hasSelector = Boolean(selectorLabel && selectorOptions?.length && onSelectOption);
   const isActionReady = hasSelector ? Boolean(selectedOption) : true;
   const selectId = `${item.slug}-selector`;
 
   return (
-    <article className="group relative isolate mx-auto flex h-full w-full max-w-[360px] flex-col overflow-visible rounded-[14px] border border-[rgba(86,76,64,0.08)] bg-[linear-gradient(180deg,rgba(250,247,241,0.94)_0%,rgba(246,240,232,0.98)_100%)] shadow-[0_10px_24px_rgba(41,34,27,0.035)] transition-all duration-300 hover:-translate-y-[3px] hover:shadow-[0_18px_30px_rgba(41,34,27,0.06)]">
+    <article className="group mx-auto flex h-full w-full max-w-[360px] flex-col overflow-hidden rounded-[14px] border border-[rgba(86,76,64,0.08)] bg-[linear-gradient(180deg,rgba(250,247,241,0.94)_0%,rgba(246,240,232,0.98)_100%)] shadow-[0_10px_24px_rgba(41,34,27,0.035)] transition-all duration-300 hover:-translate-y-[3px] hover:shadow-[0_18px_30px_rgba(41,34,27,0.06)]">
       <button
         type="button"
         onClick={onViewDetails}
-        className="relative z-0 block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8c7b68] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f6f1e8]"
+        className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8c7b68] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f6f1e8]"
         aria-label={`View details for ${item.title}`}
       >
         <div className="mx-4 mt-4 rounded-[12px] border border-[rgba(86,76,64,0.06)] bg-[rgba(231,223,212,0.78)] p-3 sm:mx-5 sm:mt-5">
@@ -61,7 +57,7 @@ export default function TextileProductCard({
         </div>
       </button>
 
-      <div className="relative z-[2] flex flex-1 flex-col px-5 pb-6 pt-5 sm:px-6 sm:pb-7 sm:pt-6">
+      <div className="flex flex-1 flex-col px-5 pb-6 pt-5 sm:px-6 sm:pb-7 sm:pt-6">
         <p className="text-[10px] uppercase tracking-[0.3em] text-[#8b775f]">{categoryLabel}</p>
         <h3 className="mt-4 text-[24px] leading-[1.14] tracking-[-0.025em] text-[#1b1714]">{item.title}</h3>
         <p className="mt-4 max-w-[30ch] text-[14px] leading-[1.92] text-[#5f574d]">{description}</p>
@@ -106,48 +102,22 @@ export default function TextileProductCard({
           </div>
         ) : null}
 
-        <div className="relative z-[3] mt-7 flex flex-wrap items-center gap-x-3 gap-y-3 pointer-events-auto">
-          <button
-            type="button"
-            disabled={!isActionReady}
-            onClick={() => {
-              beginCheckout(
-                item.slug,
-                hasSelector
-                  ? {
-                      label: selectedOption,
-                      options: {
-                        [selectorLabel ?? "selection"]: selectedOption,
-                      },
-                    }
-                  : undefined
-              );
-              router.push(canonicalShopRoutes.checkout);
-            }}
-            className="relative z-[4] inline-flex min-h-[42px] cursor-pointer items-center justify-center rounded-full bg-[#294536] px-5 py-2.5 text-[10px] font-medium uppercase tracking-[0.22em] text-[#f4efe8] transition-all duration-200 hover:bg-[#21382c] disabled:cursor-not-allowed disabled:bg-[#a8a095] disabled:text-[#f4efe8]/90"
-            style={{ pointerEvents: "auto" }}
-          >
-            Buy Now
-          </button>
-          <button
-            type="button"
-            onClick={onViewDetails}
-            className="relative z-[4] text-[11px] uppercase tracking-[0.2em] text-[#4f473f] underline decoration-black/10 underline-offset-4 transition-opacity duration-200 hover:opacity-70"
-            style={{ pointerEvents: "auto" }}
-          >
-            View Details
-          </button>
-          <button
-            type="button"
-            onClick={() => toggleCollection(item.slug)}
-            className={`relative z-[4] text-[11px] uppercase tracking-[0.18em] transition-opacity duration-200 hover:opacity-70 ${
-              isWishlisted ? "text-[#2e4a36]" : "text-[#5d5449]"
-            }`}
-            style={{ pointerEvents: "auto" }}
-          >
-            {isWishlisted ? "Wishlisted" : "Add to Wishlist"}
-          </button>
-        </div>
+        <ShopProductActions
+          className="mt-7"
+          item={item}
+          onViewDetails={onViewDetails}
+          isBuyDisabled={!isActionReady}
+          selection={
+            hasSelector
+              ? {
+                  label: selectedOption,
+                  options: {
+                    [selectorLabel ?? "selection"]: selectedOption,
+                  },
+                }
+              : undefined
+          }
+        />
       </div>
     </article>
   );

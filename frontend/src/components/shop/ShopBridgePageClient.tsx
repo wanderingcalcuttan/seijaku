@@ -14,7 +14,7 @@ import {
 
 import EditorialProductRow from "./EditorialProductRow";
 import ProductDetailDrawer from "./ProductDetailDrawer";
-import { useShopState } from "./ShopStateProvider";
+import ShopProductActions from "./ShopProductActions";
 
 type ShopBridgePageClientProps = {
   page: ShopBridgePageConfig;
@@ -30,8 +30,6 @@ function DokraBroochRow({
   index: number;
   onViewDetails: (slug: string) => void;
 }) {
-  const { isCollected, toggleCollection } = useShopState();
-  const collected = isCollected(item.slug);
   const reverse = index % 2 === 1;
 
   return (
@@ -74,24 +72,7 @@ function DokraBroochRow({
             )
           ) : null}
           <p className="mt-5 text-[15px] text-[#5f584f]">{item.priceLabel}</p>
-          <div className="mt-7 flex items-center gap-5">
-            <button
-              type="button"
-              onClick={() => onViewDetails(item.slug)}
-              className="text-[11px] uppercase tracking-[0.2em] text-[#2e4a36] underline decoration-black/10 underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8c7b68] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f6f1e8]"
-            >
-              View Object
-            </button>
-            <button
-              type="button"
-              onClick={() => toggleCollection(item.slug)}
-              className={`text-[11px] uppercase tracking-[0.18em] transition-opacity duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8c7b68] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f6f1e8] ${
-                collected ? "text-[#2e4a36]" : "text-[#5d5449] hover:opacity-70"
-              }`}
-            >
-              {collected ? "Saved" : "Save"}
-            </button>
-          </div>
+          <ShopProductActions className="mt-7" item={item} onViewDetails={() => onViewDetails(item.slug)} />
         </div>
       </div>
     </article>

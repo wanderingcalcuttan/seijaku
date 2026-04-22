@@ -4,7 +4,7 @@ import Image from "next/image";
 
 import type { ShopProduct } from "@/src/lib/shopAllItems";
 
-import ShopActionRow from "./ShopActionRow";
+import ShopProductActions from "./ShopProductActions";
 
 type EditorialProductRowProps = {
   item: ShopProduct;
@@ -29,12 +29,9 @@ export default function EditorialProductRow({ item, onViewDetails, index = 0 }: 
           </h2>
           <p className="mt-5 max-w-[42ch] text-[16px] leading-[1.85] text-[#5f5850]">{item.shortDescription}</p>
           <p className="mt-6 text-[16px] text-[#2f2924]">{item.priceLabel}</p>
-          <div className="mt-8">
-            <ShopActionRow item={item} onViewDetails={() => onViewDetails(item.slug)} />
-          </div>
+          <ShopProductActions className="mt-8" item={item} onViewDetails={() => onViewDetails(item.slug)} />
         </div>
       </div>
     </article>
   );
 }
-

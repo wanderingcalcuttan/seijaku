@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 import { getShopProductUseCase, type ShopProduct } from "@/src/lib/shopAllItems";
 
-import ShopActionRow from "./ShopActionRow";
+import ShopProductActions from "./ShopProductActions";
 
 type ProductDetailDrawerProps = {
   item: ShopProduct | null;
@@ -109,7 +109,7 @@ export default function ProductDetailDrawer({ item, isOpen, onClose }: ProductDe
                 {item.longDescription ?? item.shortDescription ?? "Detailed product notes will appear here as the catalog evolves."}
               </p>
               <div className="mt-8">
-                <ShopActionRow item={item} onViewDetails={onClose} />
+                <ShopProductActions item={item} onViewDetails={onClose} />
               </div>
             </div>
           </div>

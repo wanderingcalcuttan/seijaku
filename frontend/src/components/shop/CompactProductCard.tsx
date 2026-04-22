@@ -4,7 +4,7 @@ import Image from "next/image";
 
 import type { ShopProduct } from "@/src/lib/shopAllItems";
 
-import ShopActionRow from "./ShopActionRow";
+import ShopProductActions from "./ShopProductActions";
 
 type CompactProductCardProps = {
   item: ShopProduct;
@@ -33,24 +33,14 @@ export default function CompactProductCard({ item, onViewDetails }: CompactProdu
         <p className="mt-2 line-clamp-2 min-h-[2.9rem] text-[13px] leading-[1.68] text-[#625a51]">
           {item.shortDescription ?? "Quietly composed Seijaku object."}
         </p>
-        <div className="mt-4 flex items-end justify-between gap-3">
-          <div>
-            <p className="text-[9px] uppercase tracking-[0.18em] text-[#8f7a65]">Price</p>
-            <p className="mt-1 text-[14px] text-[#2f2924]">{item.priceLabel}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => onViewDetails(item.slug)}
-            className="text-[10px] uppercase tracking-[0.2em] text-[#4f473f] underline decoration-black/15 underline-offset-4 transition-opacity duration-200 hover:opacity-70 focus-visible:outline-none"
-          >
-            View Details
-          </button>
+        <div className="mt-4">
+          <p className="text-[9px] uppercase tracking-[0.18em] text-[#8f7a65]">Price</p>
+          <p className="mt-1 text-[14px] text-[#2f2924]">{item.priceLabel}</p>
         </div>
         <div className="mt-4 border-t border-black/6 pt-4">
-          <ShopActionRow item={item} onViewDetails={() => onViewDetails(item.slug)} compact />
+          <ShopProductActions item={item} onViewDetails={() => onViewDetails(item.slug)} />
         </div>
       </div>
     </article>
   );
 }
-

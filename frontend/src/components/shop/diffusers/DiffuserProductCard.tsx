@@ -1,12 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 
 import type { ShopProduct } from "@/src/lib/shopAllItems";
-import { canonicalShopRoutes } from "@/src/lib/shopAllItems";
 
-import { useShopState } from "../ShopStateProvider";
+import ShopProductActions from "../ShopProductActions";
 
 type DiffuserProductCardProps = {
   item: ShopProduct;
@@ -29,9 +27,6 @@ export default function DiffuserProductCard({
   onSelectOption,
   onViewDetails,
 }: DiffuserProductCardProps) {
-  const router = useRouter();
-  const { beginCheckout, isCollected, toggleCollection } = useShopState();
-  const isWishlisted = isCollected(item.slug);
   const selectId = `${item.slug}-variant`;
 
   return (
@@ -78,40 +73,18 @@ export default function DiffuserProductCard({
           </select>
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-3">
-          <button
-            type="button"
-            disabled={!selectedOption}
-            onClick={() => {
-              beginCheckout(item.slug, {
-                label: selectedOption,
-                options: {
-                  [variantLabel]: selectedOption,
-                },
-              });
-              router.push(canonicalShopRoutes.checkout);
-            }}
-            className="inline-flex min-h-[42px] items-center justify-center rounded-full bg-[#294536] px-5 py-2.5 text-[10px] font-medium uppercase tracking-[0.22em] text-[#f4efe8] transition-all duration-200 hover:bg-[#21382c] disabled:cursor-not-allowed disabled:bg-[#a8a095] disabled:text-[#f4efe8]/90"
-          >
-            Buy Now
-          </button>
-          <button
-            type="button"
-            onClick={onViewDetails}
-            className="text-[11px] uppercase tracking-[0.2em] text-[#4f473f] underline decoration-black/10 underline-offset-4 transition-opacity duration-200 hover:opacity-70"
-          >
-            View Details
-          </button>
-          <button
-            type="button"
-            onClick={() => toggleCollection(item.slug)}
-            className={`text-[11px] uppercase tracking-[0.18em] transition-opacity duration-200 hover:opacity-70 ${
-              isWishlisted ? "text-[#2e4a36]" : "text-[#5d5449]"
-            }`}
-          >
-            {isWishlisted ? "Wishlisted" : "Add to Wishlist"}
-          </button>
-        </div>
+        <ShopProductActions
+          className="mt-6"
+          item={item}
+          onViewDetails={onViewDetails}
+          isBuyDisabled={!selectedOption}
+          selection={{
+            label: selectedOption,
+            options: {
+              [variantLabel]: selectedOption,
+            },
+          }}
+        />
       </div>
     </article>
   );

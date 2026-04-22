@@ -31,6 +31,7 @@ Next.js 16 App Router, React 19, TypeScript strict, Tailwind 4, Framer Motion. S
 - **Auth in server components:** call `requireCurrentAdmin()` at the top; it redirects to `/admin/login` on missing/invalid session.
 - **Path alias:** `@/*` resolves to the workspace root (`frontend/`). Import from `@/src/lib/...`, not relative.
 - **Route groups** (`(marketing)`, `(auth)`, `(protected)`) exist to swap layouts without leaking into the URL. Do not remove them without adjusting the shell.
+- **Shop product CTAs:** `components/shop/ShopProductActions.tsx` is the canonical Buy Now / View Details / Add to Wishlist row. Compose it from every product card instead of hand-rolling the three buttons. Cards with variant selectors pass `isBuyDisabled` + `selection`; cards without selectors pass neither.
 
 ## Dev Server
 
