@@ -17,6 +17,7 @@ Next.js 16 App Router, React 19, TypeScript strict, Tailwind 4, Framer Motion. S
 - `src/app/api/public/[...path]/route.ts` — passthrough to backend public endpoints (newsletter, orders, reservations, inquiries)
 - `src/components/AppShell.tsx` — splits marketing chrome from `/admin` chrome based on pathname
 - `src/components/shop/{diffusers,lifestyle,perfumes,textiles}/*` — per-bridge custom clients; `ShopBridgePageClient.tsx` is the generic fallback (currently only used for `dokra-ornaments`)
+- `src/components/shop/ShopFilterRail.tsx` + `ShopFilterDrawer.tsx` — Shop All filter UI (rail on desktop, drawer on mobile); `ShopFilterSection.tsx` is the shared chip-radio primitive. Rail collapse state persists in `localStorage` under `seijaku.shopFilterRail.collapsed`
 - `src/components/admin/*` — admin shell and editors; call `/api/admin/proxy/*` from the client
 - `src/lib/admin-session.ts` — signed httpOnly cookie helpers (server-only)
 - `src/lib/admin-backend.ts` — typed admin API fetcher for server components (redirects to `/admin/login` on 401)

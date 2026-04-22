@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { PanelLeftOpen, SlidersHorizontal } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import {
@@ -13,6 +14,7 @@ import {
   matchesShopMaterialFilter,
   matchesShopTypeFilter,
   shopProducts,
+  sortOptions,
   type ShopMaterialFilterOption,
   type ShopProduct,
   type ShopSortOption,
@@ -23,10 +25,12 @@ import {
 import ActiveFilterChips from "./ActiveFilterChips";
 import CompactProductCard from "./CompactProductCard";
 import ProductDetailDrawer from "./ProductDetailDrawer";
-import ShopToolbar from "./ShopToolbar";
+import ShopFilterDrawer from "./ShopFilterDrawer";
+import ShopFilterRail from "./ShopFilterRail";
 
 const INITIAL_BATCH_SIZE = 8;
 const LOAD_MORE_STEP = 8;
+const RAIL_COLLAPSE_STORAGE_KEY = "seijaku.shopFilterRail.collapsed";
 
 function sortProducts(items: ShopProduct[], sortBy: ShopSortOption) {
   const list = [...items];
@@ -75,8 +79,23 @@ export default function ShopAllPageClient() {
   const [selectedUseCase, setSelectedUseCase] = useState<ShopUseCase | "All">("All");
   const [sortBy, setSortBy] = useState<ShopSortOption>("Recommended");
   const [visibleCount, setVisibleCount] = useState(INITIAL_BATCH_SIZE);
+  const [isRailCollapsed, setIsRailCollapsed] = useState(false);
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const selectedSlug = searchParams.get("item");
   const selectedProduct: ShopProduct | null = selectedSlug ? getShopProductBySlug(selectedSlug) ?? null : null;
+
+  // Hydrate collapse preference from localStorage after mount to avoid SSR
+  // mismatch. Reads once, writes on each toggle below.
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(RAIL_COLLAPSE_STORAGE_KEY);
+      if (stored === "true") {
+        setIsRailCollapsed(true);
+      }
+    } catch {
+      // Private mode or storage disabled — ignore; feature just doesn't persist.
+    }
+  }, []);
 
   const updateQuery = (slug?: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -130,6 +149,8 @@ export default function ShopAllPageClient() {
     return chips;
   }, [searchValue, selectedMaterial, selectedType, selectedUseCase]);
 
+  const hasActiveFilters = activeChips.length > 0 || sortBy !== "Recommended";
+
   const resetFilters = () => {
     setSearchValue("");
     setSelectedType("All");
@@ -159,92 +180,146 @@ export default function ShopAllPageClient() {
     setVisibleCount(INITIAL_BATCH_SIZE);
   };
 
+  const toggleRailCollapsed = (next: boolean) => {
+    setIsRailCollapsed(next);
+    try {
+      window.localStorage.setItem(RAIL_COLLAPSE_STORAGE_KEY, String(next));
+    } catch {
+      // Ignore storage failures; collapse still works for this session.
+    }
+  };
+
+  const filterRailProps = {
+    searchValue,
+    onSearchChange: (value: string) => {
+      setSearchValue(value);
+      setVisibleCount(INITIAL_BATCH_SIZE);
+    },
+    selectedType,
+    onTypeChange: (value: ShopTypeFilterOption | "All") => {
+      setSelectedType(value);
+      setVisibleCount(INITIAL_BATCH_SIZE);
+    },
+    selectedMaterial,
+    onMaterialChange: (value: ShopMaterialFilterOption | "All") => {
+      setSelectedMaterial(value);
+      setVisibleCount(INITIAL_BATCH_SIZE);
+    },
+    selectedUseCase,
+    onUseCaseChange: (value: ShopUseCase | "All") => {
+      setSelectedUseCase(value);
+      setVisibleCount(INITIAL_BATCH_SIZE);
+    },
+    sortBy,
+    onSortChange: (value: ShopSortOption) => {
+      setSortBy(value);
+      setVisibleCount(INITIAL_BATCH_SIZE);
+    },
+    types: getShopTypes(),
+    materials: getShopMaterials(),
+    useCases: getShopUseCases(),
+    sortOptions,
+    onReset: resetFilters,
+    hasActiveFilters,
+  };
+
+  const gridColumnClasses = isRailCollapsed
+    ? "grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+    : "grid gap-5 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4";
+
   return (
     <>
       <main className="min-h-screen bg-[#f3efe7] pt-[72px] text-[#3a3a3a] sm:pt-[76px]">
         <section className="section-primary pb-6 pt-18 sm:pb-7 sm:pt-22">
-          <div className="page-container max-w-[1180px]">
-            <div className="max-w-[700px]">
+          <div className="page-container max-w-[1240px]">
+            <div className="max-w-[760px]">
               <p className="text-[9px] uppercase tracking-[0.32em] text-[#9a785d]">Collection</p>
-              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
-                <div>
-                  <h1 className="text-[clamp(34px,4.2vw,50px)] leading-[1.04] tracking-[-0.03em] text-[#1d1a17]">Shop All</h1>
-                  <p className="mt-3 max-w-[44ch] text-[15px] leading-[1.82] text-[#5f584f]">
-                    A searchable Seijaku catalog designed for quick scanning, quieter comparison, and detail on demand.
-                  </p>
-                </div>
-                <p className="shrink-0 text-[10px] uppercase tracking-[0.2em] text-[#7c7368]">{filteredProducts.length} results</p>
-              </div>
-              <ActiveFilterChips chips={activeChips} onRemove={removeChip} onClear={resetFilters} />
+              <h1 className="mt-4 text-[clamp(34px,4.2vw,50px)] leading-[1.04] tracking-[-0.03em] text-[#1d1a17]">Shop All</h1>
+              <p className="mt-3 max-w-[44ch] text-[15px] leading-[1.82] text-[#5f584f]">
+                A searchable Seijaku catalog designed for quick scanning, quieter comparison, and detail on demand.
+              </p>
             </div>
           </div>
         </section>
 
-        <ShopToolbar
-          searchValue={searchValue}
-          onSearchChange={(value) => {
-            setSearchValue(value);
-            setVisibleCount(INITIAL_BATCH_SIZE);
-          }}
-          selectedType={selectedType}
-          onTypeChange={(value) => {
-            setSelectedType(value);
-            setVisibleCount(INITIAL_BATCH_SIZE);
-          }}
-          selectedMaterial={selectedMaterial}
-          onMaterialChange={(value) => {
-            setSelectedMaterial(value);
-            setVisibleCount(INITIAL_BATCH_SIZE);
-          }}
-          selectedUseCase={selectedUseCase}
-          onUseCaseChange={(value) => {
-            setSelectedUseCase(value);
-            setVisibleCount(INITIAL_BATCH_SIZE);
-          }}
-          sortBy={sortBy}
-          onSortChange={(value) => {
-            setSortBy(value);
-            setVisibleCount(INITIAL_BATCH_SIZE);
-          }}
-          types={getShopTypes()}
-          materials={getShopMaterials()}
-          useCases={getShopUseCases()}
-          onReset={resetFilters}
-        />
+        <section className="pb-20 sm:pb-24">
+          <div className="page-container max-w-[1240px]">
+            <div
+              className={`grid gap-8 ${
+                isRailCollapsed ? "lg:grid-cols-1" : "lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-10 xl:gap-12"
+              }`}
+            >
+              {!isRailCollapsed ? (
+                <aside className="hidden lg:block">
+                  <ShopFilterRail {...filterRailProps} onCollapse={() => toggleRailCollapsed(true)} />
+                </aside>
+              ) : null}
 
-        <section className="section-primary pt-10 sm:pt-12">
-          <div className="page-container max-w-[1180px]">
-            {visibleProducts.length === 0 ? (
-              <div className="rounded-[28px] border border-[rgba(111,100,86,0.11)] bg-[linear-gradient(180deg,#fbf8f2_0%,#f7f1e8_100%)] px-7 py-10 text-center sm:px-10 sm:py-12">
-                <p className="font-serif text-[30px] leading-[1.14] tracking-[-0.02em] text-[#1f1a16]">No products match this quiet.</p>
-                <p className="mx-auto mt-4 max-w-[34ch] text-[15px] leading-[1.85] text-[#5f5850]">
-                  Try broadening the filters or clearing the search to return to the full catalog.
-                </p>
-              </div>
-            ) : (
-              <>
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {visibleProducts.map((item) => (
-                    <CompactProductCard key={item.slug} item={item} onViewDetails={updateQuery} />
-                  ))}
-                </div>
-
-                {hasMore ? (
-                  <div className="mt-12 flex justify-center">
+              <div>
+                <div className="flex flex-col gap-3 border-b border-[rgba(76,67,57,0.08)] pb-5 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
+                  <div className="flex items-center gap-3">
+                    {isRailCollapsed ? (
+                      <button
+                        type="button"
+                        onClick={() => toggleRailCollapsed(false)}
+                        className="hidden items-center gap-2 rounded-full border border-[rgba(111,100,86,0.14)] bg-white px-4 py-2 text-[10px] uppercase tracking-[0.22em] text-[#4f463d] transition-colors duration-200 hover:border-[rgba(96,86,74,0.22)] hover:bg-[#faf7f1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8c7b68] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f3efe7] lg:inline-flex"
+                      >
+                        <PanelLeftOpen aria-hidden size={14} strokeWidth={1.6} />
+                        <span>Show Filters</span>
+                      </button>
+                    ) : null}
                     <button
                       type="button"
-                      onClick={() => setVisibleCount((count) => count + LOAD_MORE_STEP)}
-                      className="inline-flex items-center justify-center rounded-full border border-[rgba(111,100,86,0.14)] bg-[linear-gradient(180deg,#fbf8f2_0%,#f3ede4_100%)] px-7 py-3.5 text-[11px] uppercase tracking-[0.2em] text-[#4c443c] transition-colors duration-200 hover:border-[rgba(96,86,74,0.22)] hover:bg-[#faf7f1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8c7b68] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f3efe7]"
+                      onClick={() => setIsFilterDrawerOpen(true)}
+                      className="inline-flex items-center gap-2 rounded-full border border-[rgba(111,100,86,0.14)] bg-white px-4 py-2 text-[10px] uppercase tracking-[0.22em] text-[#4f463d] transition-colors duration-200 hover:border-[rgba(96,86,74,0.22)] hover:bg-[#faf7f1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8c7b68] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f3efe7] lg:hidden"
                     >
-                      Load More
+                      <SlidersHorizontal aria-hidden size={14} strokeWidth={1.6} />
+                      <span>Filters{activeChips.length > 0 ? ` (${activeChips.length})` : ""}</span>
                     </button>
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-[#7c7368]">{filteredProducts.length} results</p>
                   </div>
-                ) : null}
-              </>
-            )}
+                  <ActiveFilterChips chips={activeChips} onRemove={removeChip} onClear={resetFilters} />
+                </div>
+
+                {visibleProducts.length === 0 ? (
+                  <div className="mt-8 rounded-[28px] border border-[rgba(111,100,86,0.11)] bg-[linear-gradient(180deg,#fbf8f2_0%,#f7f1e8_100%)] px-7 py-10 text-center sm:px-10 sm:py-12">
+                    <p className="font-serif text-[30px] leading-[1.14] tracking-[-0.02em] text-[#1f1a16]">No products match this quiet.</p>
+                    <p className="mx-auto mt-4 max-w-[34ch] text-[15px] leading-[1.85] text-[#5f5850]">
+                      Try broadening the filters or clearing the search to return to the full catalog.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className={`mt-8 ${gridColumnClasses}`}>
+                      {visibleProducts.map((item) => (
+                        <CompactProductCard key={item.slug} item={item} onViewDetails={updateQuery} />
+                      ))}
+                    </div>
+
+                    {hasMore ? (
+                      <div className="mt-12 flex justify-center">
+                        <button
+                          type="button"
+                          onClick={() => setVisibleCount((count) => count + LOAD_MORE_STEP)}
+                          className="inline-flex items-center justify-center rounded-full border border-[rgba(111,100,86,0.14)] bg-[linear-gradient(180deg,#fbf8f2_0%,#f3ede4_100%)] px-7 py-3.5 text-[11px] uppercase tracking-[0.2em] text-[#4c443c] transition-colors duration-200 hover:border-[rgba(96,86,74,0.22)] hover:bg-[#faf7f1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8c7b68] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f3efe7]"
+                        >
+                          Load More
+                        </button>
+                      </div>
+                    ) : null}
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </section>
       </main>
+
+      <ShopFilterDrawer
+        isOpen={isFilterDrawerOpen}
+        onClose={() => setIsFilterDrawerOpen(false)}
+        {...filterRailProps}
+      />
 
       <ProductDetailDrawer item={selectedProduct} isOpen={Boolean(selectedProduct)} onClose={() => updateQuery()} />
     </>
