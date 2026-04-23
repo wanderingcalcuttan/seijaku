@@ -15,7 +15,7 @@ Repo-root scripts coordinate both workspaces via npm workspaces.
 
 The migration is **intentionally incomplete**. There are two live content layers:
 
-1. **Frontend registries** in `frontend/src/lib/*.ts` (`shopAllItems.ts`, `navigation.ts`, `retreats.ts`) — drive most of what public visitors see today. Articles are already migrated to backend-fed reads via `publicBackendJson`; see Decision #16.
+1. **Frontend registries** in `frontend/src/lib/*.ts` (`shopAllItems.ts`, `navigation.ts`) — drive most of what public visitors see today. Articles and Retreats are already migrated to backend-fed reads via `publicBackendJson`; see Decisions #16 and #17.
 2. **Backend Prisma records** — drive admin CRUD, media, and lead flows.
 
 Backend admin edits do **not** automatically update most public pages yet. If a change must appear on the public site *today*, edit the frontend registry. If it's admin/API/database work, edit the backend. If you're migrating a domain from one to the other, update both plus the docs in the same change.

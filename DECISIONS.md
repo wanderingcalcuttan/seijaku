@@ -233,6 +233,31 @@ Seed impact:
 
 This is the first domain migration under the post-Phase-0 caching contract (Decision #15). The same pattern is expected for Retreats, Programs, Shop Bridge Pages, and Products in later phases.
 
+### 17. Retreats Are Backend-Owned; `imagePosition` Dropped
+
+Status: Active
+
+The `/experiences` retreat gallery and `/retreats/[slug]` detail page read from the backend. The frontend registry `frontend/src/lib/retreats.ts` has been deleted.
+
+Read path:
+
+- Server components call `fetchRetreats()` / `fetchRetreat(slug)` in `frontend/src/lib/retreat-types.ts`.
+- Those helpers wrap `publicBackendJson("/content/retreats", { tags: ["retreats"] })` (and the slug variant). Cached by Next's Data Cache with the 60-second default `revalidate`.
+- Admin edits on `/admin/retreats` invalidate the `retreats` tag via `/api/revalidate`, so public reads reflect within seconds.
+- `/experiences/page.tsx` and `/retreats/[slug]/page.tsx` are marked `export const dynamic = "force-dynamic"` to avoid build-time fetches (same rationale as Decision #16 — Render Free cold-start could fail a Vercel build). The fetch-level Data Cache still absorbs backend traffic.
+
+Field parity and the `imagePosition` decision:
+
+- The old frontend registry had a per-retreat `imagePosition` string (Tailwind class such as `object-[center_46%]`) describing where the cover image crop should focus. The backend `Retreat` model has no equivalent field.
+- Phase 2 dropped the feature. All retreat images now render with `object-cover object-center`. The four seeded retreats may show a slightly different crop.
+- A proper fix is tracked as a follow-up: introduce a focal-point field on `MediaAsset` so every domain (products, articles, retreats, future hero banners) can share the behaviour. Not in Phase 2's scope.
+
+Seed impact:
+
+- `backend/prisma/seed.ts` previously imported from the frontend registry. It now imports from `backend/prisma/seed-data/retreats.ts`, following the Phase 1 pattern for articles.
+
+Known existing inconsistency (not introduced by Phase 2): the public `/content/retreats` endpoint returns records of every `status`, including `DRAFT`. Articles filter to `PUBLISHED` only. Worth harmonising in a follow-up backend change; outside Phase 2's read-swap scope.
+
 ## How To Use This File
 
 - Add a new entry when a structural or cross-cutting product decision is made.

@@ -162,8 +162,8 @@ Frontend public rendering:
 
 - `frontend/src/lib/shopAllItems.ts`
 - `frontend/src/lib/navigation.ts`
-- `frontend/src/lib/retreats.ts`
-- Articles are now backend-fed via `frontend/src/lib/seijaku-life-types.ts` → `/content/articles` (Decision #16).
+- Articles are backend-fed via `frontend/src/lib/seijaku-life-types.ts` → `/content/articles` (Decision #16).
+- Retreats are backend-fed via `frontend/src/lib/retreat-types.ts` → `/content/retreats` (Decision #17).
 
 Backend data model and API:
 

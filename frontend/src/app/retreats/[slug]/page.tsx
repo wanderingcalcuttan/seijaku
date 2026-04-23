@@ -3,7 +3,9 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import RetreatInquiryForm from "@/src/components/RetreatInquiryForm";
-import { getRetreatBySlug, retreats } from "@/src/lib/retreats";
+import { fetchRetreat } from "@/src/lib/retreat-types";
+
+export const dynamic = "force-dynamic";
 
 type RetreatDetailPageProps = {
   params: Promise<{
@@ -11,15 +13,9 @@ type RetreatDetailPageProps = {
   }>;
 };
 
-export function generateStaticParams() {
-  return retreats.map((retreat) => ({
-    slug: retreat.slug,
-  }));
-}
-
 export default async function RetreatDetailPage({ params }: RetreatDetailPageProps) {
   const { slug } = await params;
-  const retreat = getRetreatBySlug(slug);
+  const retreat = await fetchRetreat(slug);
 
   if (!retreat) {
     notFound();
@@ -73,13 +69,17 @@ export default async function RetreatDetailPage({ params }: RetreatDetailPagePro
             <div className="space-y-6">
               <div className="rounded-[28px] border border-[#d8cec1] bg-[#faf7f1] p-4">
                 <div className="relative aspect-[4/5] overflow-hidden rounded-[22px]">
-                  <Image
-                    src={retreat.image}
-                    alt={retreat.name}
-                    fill
-                    sizes="(min-width: 1024px) 42vw, 100vw"
-                    className={`object-cover ${retreat.imagePosition}`}
-                  />
+                  {retreat.image ? (
+                    <Image
+                      src={retreat.image}
+                      alt={retreat.imageAlt ?? retreat.name}
+                      fill
+                      sizes="(min-width: 1024px) 42vw, 100vw"
+                      className="object-cover object-center"
+                    />
+                  ) : (
+                    <div className="h-full w-full bg-[linear-gradient(135deg,#dcd2c4_0%,#cbbca8_55%,#e2d8ca_100%)]" />
+                  )}
                 </div>
               </div>
 

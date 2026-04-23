@@ -19,11 +19,12 @@ These files still drive what most visitors actually see on the public site:
 
 - `frontend/src/lib/shopAllItems.ts`
 - `frontend/src/lib/navigation.ts`
-- `frontend/src/lib/retreats.ts`
 - route-level page files under `frontend/src/app/programs/*`
 - route-level page files and components for brand/storytelling sections
 
-Articles (editorial) are no longer in this list — they are fully backend-owned (Decision #16). Public reads at `/a-seijaku-life` and `/a-seijaku-life/[slug]` call `publicBackendJson("/content/articles", { tags: ["articles"] })`.
+Articles and Retreats are no longer in this list — both are fully backend-owned:
+- Articles: `publicBackendJson("/content/articles", { tags: ["articles"] })` (Decision #16).
+- Retreats: `publicBackendJson("/content/retreats", { tags: ["retreats"] })` (Decision #17).
 
 Use this layer when:
 
@@ -116,12 +117,7 @@ Current public source:
 
 ### Retreats
 
-Current public route content:
-
-- `frontend/src/lib/retreats.ts`
-- route-level components in `frontend/src/app/retreats`
-
-The retreat inquiry form itself posts to the backend.
+Current public source: backend-fed (Decision #17). The `/experiences` gallery (`RetreatGallery`) and the `/retreats/[slug]` detail page call `publicBackendJson("/content/retreats", { tags: ["retreats"] })` and `.../content/retreats/:slug`. Admin edits in `/admin/retreats` invalidate the `retreats` tag. The retreat inquiry form on the detail page still writes via `/api/public/lead/retreat-inquiries`.
 
 ### Programs
 

@@ -1,17 +1,17 @@
-export type Retreat = {
+export type SeedRetreat = {
   slug: string;
   name: string;
   shortDescription: string;
   detailDescription: string;
   image: string;
-  imagePosition: string;
+  imageAlt?: string;
   location: string;
   season: string;
   format: string;
   groupSize: string;
 };
 
-export const retreats: Retreat[] = [
+export const seedRetreats: SeedRetreat[] = [
   {
     slug: "shantiniketan-stillness",
     name: "Shantiniketan Stillness",
@@ -19,7 +19,6 @@ export const retreats: Retreat[] = [
     detailDescription:
       "A three-night immersion shaped by art school legacy, seasonal reading, and tactile craft encounters across Santiniketan's quieter rhythms.",
     image: "/images/Home Page hero image 1.png",
-    imagePosition: "object-[center_46%]",
     location: "Shantiniketan",
     season: "Sharad cohort",
     format: "3 nights / 4 days",
@@ -32,7 +31,6 @@ export const retreats: Retreat[] = [
     detailDescription:
       "A hillside retreat built around walks, scent-led pauses, and conversations with local makers across Kalimpong's layered landscapes.",
     image: "/images/hero banner HP 1.png",
-    imagePosition: "object-[center_44%]",
     location: "Kalimpong",
     season: "Hemanta cohort",
     format: "3 nights / 4 days",
@@ -45,7 +43,6 @@ export const retreats: Retreat[] = [
     detailDescription:
       "A retreat shaped by river pace, close listening, and shared sensory ritual in the shifting light of the Sundarbans.",
     image: "/images/seijaku_seasonal_drop_cinematic_banner.png",
-    imagePosition: "object-[center_52%]",
     location: "Sundarban",
     season: "Monsoon threshold",
     format: "3 nights / 4 days",
@@ -58,14 +55,9 @@ export const retreats: Retreat[] = [
     detailDescription:
       "An intimate retreat moving between Bishnupur's material memory, handwork traditions, and facilitator-led breath practice.",
     image: "/images/Hemanta drop HP banner 1.png",
-    imagePosition: "object-[center_36%]",
     location: "Bishnupur",
     season: "Winter cohort",
     format: "3 nights / 4 days",
     groupSize: "10 participants",
   },
 ];
-
-export function getRetreatBySlug(slug: string) {
-  return retreats.find((retreat) => retreat.slug === slug);
-}

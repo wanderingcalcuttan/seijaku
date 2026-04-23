@@ -5,11 +5,10 @@ import { hashPassword } from "../src/lib/auth.js";
 import { env } from "../src/config.js";
 import * as shopData from "../../frontend/src/lib/shopAllItems.js";
 import { seedArticles } from "./seed-data/articles.js";
-import * as retreatData from "../../frontend/src/lib/retreats.js";
+import { seedRetreats } from "./seed-data/retreats.js";
 
 const prisma = new PrismaClient();
 const shop = ((shopData as any).default ?? shopData) as typeof shopData & Record<string, any>;
-const retreatCatalog = ((retreatData as any).default ?? retreatData) as typeof retreatData & Record<string, any>;
 type ShopBridgeSlug = (typeof shop.canonicalBridgeSlugs)[number];
 
 const programs = [
@@ -651,8 +650,8 @@ async function main() {
     });
   }
 
-  for (const retreat of retreatCatalog.retreats) {
-    const primaryImage = await upsertMedia(retreat.image, retreat.name);
+  for (const retreat of seedRetreats) {
+    const primaryImage = await upsertMedia(retreat.image, retreat.imageAlt ?? retreat.name);
     await prisma.retreat.upsert({
       where: { slug: retreat.slug },
       update: {
