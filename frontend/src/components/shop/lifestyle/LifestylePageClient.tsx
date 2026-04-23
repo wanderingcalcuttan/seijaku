@@ -163,7 +163,7 @@ export default function LifestylePageClient({ products }: LifestylePageClientPro
                   Start a Daily Ritual &rarr;
                 </Link>
                 <Link
-                  href="/seasonaldrops"
+                  href="/seasonaldrops-hemanta"
                   className="inline-flex min-h-[42px] items-center justify-center rounded-full bg-[#294536] px-5 py-2.5 text-[10px] font-medium uppercase tracking-[0.22em] text-[#f4efe8] transition-colors duration-200 hover:bg-[#21382c]"
                 >
                   Explore Seasonal Drop

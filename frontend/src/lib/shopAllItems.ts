@@ -48,6 +48,14 @@ export type ShopProduct = {
   status?: string;
   ritualTag?: string;
   ritualTagHref?: string;
+  // Per-product variant pickers (e.g. colour tone). When present,
+  // `ProductDetailDrawer` renders a <select> for each entry. If `required`
+  // is true, Buy Now stays disabled until a value is chosen.
+  customizationOptions?: Array<{
+    label: string;
+    values: string[];
+    required?: boolean;
+  }>;
 };
 
 export type ShopBridgePageConfig = {
@@ -879,6 +887,107 @@ export const shopProducts: ShopProduct[] = [
     ],
     ctaLabel: "Book Retreat",
     status: "Booking Open",
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Hemanta Seasonal Drop — keep these four together. Referenced by
+  // /seasonaldrops-hemanta Reserve buttons (forms[] in SeasonalDropsPage.tsx).
+  // `videoUrl: ""` is a scaffold: drawer falls back to image-only when falsy;
+  // drop in a real URL when a clip is ready and video will render automatically.
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    id: "hemanta-nandini",
+    slug: "hemanta-nandini",
+    title: "Nandini",
+    type: "Ritual Box",
+    material: "Composed Sets",
+    shortDescription: "Warmth without submission.",
+    longDescription:
+      "Nandini is the fullest Hemanta expression — a composed ritual box that carries the Raktakarabi (Red Oleander) scent across a handcrafted terracotta diffuser, fragrance oil, wax melts, candles, a halogen lamp, a textile narrative, and an archival box. It is made to be held, not displayed; a room's quiet companion through the Bengal autumn.",
+    price: 6499,
+    priceLabel: "INR 6,499",
+    image: "/images/seasonal-drop-nandini-raktakarabi.jpg",
+    imageAlt: "Nandini ritual box paired with the Raktakarabi scent",
+    gallery: [
+      "/images/seasonal-drop-nandini-raktakarabi.jpg",
+      "/images/Hemanta drop HP banner 1.png",
+      "/images/Hemanta drop HP banner 2.png",
+    ],
+    videoUrl: "",
+  },
+  {
+    id: "hemanta-raja-diffuser",
+    slug: "hemanta-raja-diffuser",
+    title: "Raja",
+    type: "Diffuser",
+    material: "Clay & Stone",
+    shortDescription: "Power in shadow.",
+    longDescription:
+      "Raja is a terracotta diffuser in the Hemanta archive, carrying the Kundo (Star Jasmine) scent. Shaped for desks, bedside tables, and reading corners, it holds the scent low and steady through a cool autumn room. Available in three tones — Dark, Slate, and Copper — each kiln-finished and quietly distinct.",
+    price: 4499,
+    priceLabel: "INR 4,499",
+    image: "/images/seasonal-drop-raja-kundo.jpg",
+    imageAlt: "Raja diffuser paired with the Kundo scent",
+    gallery: [
+      "/images/seasonal-drop-raja-kundo.jpg",
+      "/images/Hemanta drop HP banner 1.png",
+      "/images/Hemanta drop HP banner 2.png",
+    ],
+    videoUrl: "",
+    customizationOptions: [
+      {
+        label: "Pick a tone",
+        values: ["Dark", "Slate", "Copper"],
+        required: true,
+      },
+    ],
+  },
+  {
+    id: "hemanta-ispani",
+    slug: "hemanta-ispani",
+    title: "Ispani",
+    type: "Ritual Box",
+    material: "Composed Sets",
+    shortDescription: "Home discovered through scent.",
+    longDescription:
+      "Ispani gathers the Bengal Jui (Jasmine) composition into a ritual box built around return. Diffuser, fragrance oil, wax melts, candles, a halogen lamp, a textile narrative, and an archival box arrive together — a small domestic world that asks the evening to slow. Kept close to the reading chair or the threshold of a bedroom.",
+    price: 6499,
+    priceLabel: "INR 6,499",
+    image: "/images/seasonal-drop-ispani-jui.jpg",
+    imageAlt: "Ispani ritual box paired with the Bengal Jui scent",
+    gallery: [
+      "/images/seasonal-drop-ispani-jui.jpg",
+      "/images/Hemanta drop HP banner 1.png",
+      "/images/Hemanta drop HP banner 2.png",
+    ],
+    videoUrl: "",
+  },
+  {
+    id: "hemanta-rishi-diffuser",
+    slug: "hemanta-rishi-diffuser",
+    title: "Rishi",
+    type: "Diffuser",
+    material: "Clay & Stone",
+    shortDescription: "Release without spectacle.",
+    longDescription:
+      "Rishi carries the Chhatim scent — a reflective, close-held fragrance for the quiet evenings of Hemanta. The form is a terracotta diffuser intended for a bedside table or meditation corner. Available in two tones, Emerald and Terracotta, each finished with a subtle restraint that lets the scent do the speaking.",
+    price: 5499,
+    priceLabel: "INR 5,499",
+    image: "/images/seasonal-drop-rishi-chhatim.jpg",
+    imageAlt: "Rishi diffuser paired with the Chhatim scent",
+    gallery: [
+      "/images/seasonal-drop-rishi-chhatim.jpg",
+      "/images/Hemanta drop HP banner 1.png",
+      "/images/Hemanta drop HP banner 2.png",
+    ],
+    videoUrl: "",
+    customizationOptions: [
+      {
+        label: "Pick a tone",
+        values: ["Emerald", "Terracotta"],
+        required: true,
+      },
+    ],
   },
 ];
 

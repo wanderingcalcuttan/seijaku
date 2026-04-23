@@ -56,7 +56,7 @@ export default function SeasonalDropsPreview() {
           </div>
 
           <Link
-            href="/seasonaldrops"
+            href="/seasonaldrops-hemanta"
             className="mt-10 inline-flex text-[12px] uppercase tracking-[0.18em] text-[#2e4a36] hover:text-[#1d3024]"
           >
             Explore Seasonal Drops &rarr;

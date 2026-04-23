@@ -1,7 +1,10 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useEffect, type MouseEvent } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
+
+import ProductDetailDrawer from "@/src/components/shop/ProductDetailDrawer";
+import { getShopProductBySlug } from "@/src/lib/shopAllItems";
 
 type FormEntry = {
   name: string;
@@ -10,7 +13,7 @@ type FormEntry = {
   botanical?: string;
   price: string;
   cta: string;
-  href: string;
+  slug: string;
 };
 
 const PLACEHOLDER_3X2 = "https://placehold.co/1600x1067";
@@ -56,7 +59,7 @@ const forms: FormEntry[] = [
     botanical: "Red Oleander",
     price: "6,499",
     cta: "Reserve Nandini",
-    href: "/shop?drop=hemanta&form=nandini",
+    slug: "hemanta-nandini",
   },
   {
     name: "RAJA",
@@ -65,7 +68,7 @@ const forms: FormEntry[] = [
     botanical: "Star Jasmine",
     price: "4,499",
     cta: "Reserve Raja",
-    href: "/shop?drop=hemanta&form=raja",
+    slug: "hemanta-raja-diffuser",
   },
   {
     name: "ISPANI",
@@ -74,7 +77,7 @@ const forms: FormEntry[] = [
     botanical: "Jasmine",
     price: "6,499",
     cta: "Reserve Ispani",
-    href: "/shop?drop=hemanta&form=ispani",
+    slug: "hemanta-ispani",
   },
   {
     name: "RISHI",
@@ -82,7 +85,7 @@ const forms: FormEntry[] = [
     scent: "Chhatim",
     price: "5,499",
     cta: "Reserve Rishi",
-    href: "/shop?drop=hemanta&form=rishi",
+    slug: "hemanta-rishi-diffuser",
   },
 ];
 
@@ -185,7 +188,10 @@ function ImageBreak({
 }
 
 export default function SeasonalDropsPage() {
-  const scrollToFourForms = (event: MouseEvent<HTMLAnchorElement>) => {
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+  const selectedProduct = selectedSlug ? getShopProductBySlug(selectedSlug) ?? null : null;
+
+  const scrollToFourForms = (event: MouseEvent<HTMLElement>) => {
     event.preventDefault();
 
     const target = document.getElementById("four-forms");
@@ -242,6 +248,7 @@ export default function SeasonalDropsPage() {
   }, []);
 
   return (
+    <>
     <main className="seasonaldrops-page min-h-screen bg-[#F3EFE7] pt-[72px] text-[#3a3a3a] sm:pt-[76px]">
       <section className="relative flex min-h-[74vh] max-h-[80vh] items-center justify-center overflow-hidden bg-[#1b1a18]" data-reveal>
         <img
@@ -461,12 +468,13 @@ export default function SeasonalDropsPage() {
                       </details>
                     ) : null}
 
-                    <Link
-                      href={form.href}
-                      className="mt-5 inline-flex border-b border-[#7c715f] pb-1 text-[13px] tracking-[0.08em] text-[#2d4535] hover:text-[#1f3528]"
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSlug(form.slug)}
+                      className="mt-5 inline-flex border-b border-[#7c715f] pb-1 text-[13px] tracking-[0.08em] text-[#2d4535] hover:text-[#1f3528] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7b6d57] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F3EFE7]"
                     >
                       {form.cta} &rarr;
-                    </Link>
+                    </button>
                   </div>
                 </article>
               );
@@ -552,12 +560,13 @@ export default function SeasonalDropsPage() {
         <div className="editorial-shell">
           <div className="editorial-column max-w-[760px]">
             <div className="flex flex-col items-start justify-start gap-4 sm:flex-row sm:gap-5">
-              <Link
-                href="/shop?drop=hemanta"
-                className="inline-flex min-w-[220px] items-center justify-center border border-[#92806a] px-6 py-3 text-[12px] tracking-[0.12em] text-[#2e4938] hover:border-[#6d5e4b] hover:text-[#22392c]"
+              <button
+                type="button"
+                onClick={scrollToFourForms}
+                className="inline-flex min-w-[220px] items-center justify-center border border-[#92806a] px-6 py-3 text-[12px] tracking-[0.12em] text-[#2e4938] hover:border-[#6d5e4b] hover:text-[#22392c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7b6d57] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F3EFE7]"
               >
                 Reserve a Hemanta Set
-              </Link>
+              </button>
               <Link
                 href="/ritual"
                 className="inline-flex min-w-[220px] items-center justify-center border border-[#b4a792] px-6 py-3 text-[12px] tracking-[0.12em] text-[#3f3a33] hover:border-[#93836f] hover:text-[#2f2a25]"
@@ -1367,5 +1376,12 @@ export default function SeasonalDropsPage() {
         }
       `}</style>
     </main>
+
+    <ProductDetailDrawer
+      item={selectedProduct}
+      isOpen={Boolean(selectedProduct)}
+      onClose={() => setSelectedSlug(null)}
+    />
+    </>
   );
 }

@@ -19,6 +19,8 @@ Next.js 16 App Router, React 19, TypeScript strict, Tailwind 4, Framer Motion. S
 - `src/components/shop/{diffusers,lifestyle,perfumes,textiles}/*` — per-bridge custom clients; `ShopBridgePageClient.tsx` is the generic fallback (currently only used for `dokra-ornaments`)
 - `src/components/shop/ShopFilterRail.tsx` + `ShopFilterDrawer.tsx` — Shop All filter UI (rail on desktop, drawer on mobile); `ShopFilterSection.tsx` is the shared chip-radio primitive. Rail collapse state persists in `localStorage` under `seijaku.shopFilterRail.collapsed`
 - `src/components/howSeijakuWorks.options.ts` — editable option data for the "Choose a scent" and "Choose an artifact" dropdowns in the Home Page "How Seijaku works" section. Add a new option by appending to the relevant step's `items` array; no component edit required
+- `src/app/seasonaldrops-hemanta/*` — canonical Hemanta seasonal-drop page. `/seasonaldrops` is a redirect kept for bookmark continuity; future drops should mirror this pattern (`/seasonaldrops-<slug>`). Reserve buttons on the Four Forms section open `ProductDetailDrawer` for the matching `hemanta-<name>` entries in `shopProducts`
+- `ShopProduct.customizationOptions` — optional per-product variant pickers (label + values + required flag). When set, `ProductDetailDrawer` renders a `<select>` per option and gates Buy Now until every required option is chosen
 - `src/components/admin/*` — admin shell and editors; call `/api/admin/proxy/*` from the client
 - `src/lib/admin-session.ts` — signed httpOnly cookie helpers (server-only)
 - `src/lib/admin-backend.ts` — typed admin API fetcher for server components (redirects to `/admin/login` on 401)

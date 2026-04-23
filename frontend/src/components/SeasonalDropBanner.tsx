@@ -48,7 +48,7 @@ export default function SeasonalDropBanner() {
                   &quot;The Red Oleanders&quot; in its centenary year
                 </p>
                 <Link
-                  href="/seasonaldrops"
+                  href="/seasonaldrops-hemanta"
                   className="mt-8 inline-flex rounded-full border border-white/70 px-8 py-4 text-[14px] font-medium text-white hover:bg-white/12"
                 >
                   Dive In

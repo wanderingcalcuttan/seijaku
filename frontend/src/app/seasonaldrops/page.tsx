@@ -1,5 +1,5 @@
-import SeasonalDropsPage from "./SeasonalDropsPage";
+import { redirect } from "next/navigation";
 
-export default function Page() {
-  return <SeasonalDropsPage />;
+export default function LegacySeasonalDropsPage() {
+  redirect("/seasonaldrops-hemanta");
 }

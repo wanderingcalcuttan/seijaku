@@ -22,7 +22,7 @@ export const primaryNavItems: NavItem[] = [
   { label: "Diffusers", href: canonicalShopRoutes.diffusers },
   { label: "Ornaments", href: canonicalShopRoutes.dokraOrnaments },
   { label: "Cloth", href: canonicalShopRoutes.scarvesAndSquares },
-  { label: "Seasonal Drop", href: "/seasonaldrops" },
+  { label: "Seasonal Drop", href: "/seasonaldrops-hemanta" },
 ];
 
 export const drawerSections: DrawerSection[] = [

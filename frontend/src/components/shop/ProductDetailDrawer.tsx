@@ -15,10 +15,16 @@ type ProductDetailDrawerProps = {
 
 export default function ProductDetailDrawer({ item, isOpen, onClose }: ProductDetailDrawerProps) {
   const [activeMedia, setActiveMedia] = useState<number | null>(null);
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const gallery = item?.gallery ?? (item?.image ? [item.image] : []);
   const activeIndex = activeMedia !== null && gallery[activeMedia] ? activeMedia : 0;
   const activeImage = gallery[activeIndex] ?? item?.image;
   const useCase = item ? getShopProductUseCase(item) : undefined;
+  const customizationOptions = item?.customizationOptions ?? [];
+  const allRequiredSelected = customizationOptions
+    .filter((option) => option.required)
+    .every((option) => Boolean(selectedOptions[option.label]));
+  const selectionLabel = Object.values(selectedOptions).filter(Boolean).join(" · ");
 
   useEffect(() => {
     if (!isOpen) {
@@ -31,6 +37,15 @@ export default function ProductDetailDrawer({ item, isOpen, onClose }: ProductDe
       document.body.style.overflow = "";
     };
   }, [isOpen]);
+
+  // Reset variant choices whenever the drawer closes OR the product changes
+  // — reopening a drawer should always start from a clean selection.
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedOptions({});
+      setActiveMedia(null);
+    }
+  }, [isOpen, item?.slug]);
 
   if (!item) {
     return null;
@@ -108,8 +123,55 @@ export default function ProductDetailDrawer({ item, isOpen, onClose }: ProductDe
               <p className="text-[15px] leading-[1.85] text-[#5f5850]">
                 {item.longDescription ?? item.shortDescription ?? "Detailed product notes will appear here as the catalog evolves."}
               </p>
+
+              {customizationOptions.length > 0 ? (
+                <div className="mt-7 space-y-4">
+                  {customizationOptions.map((option) => {
+                    const selectId = `${item.slug}-${option.label.replace(/\s+/g, "-").toLowerCase()}`;
+                    const selected = selectedOptions[option.label] ?? "";
+                    return (
+                      <div key={option.label}>
+                        <label
+                          htmlFor={selectId}
+                          className="mb-2 block text-[10px] uppercase tracking-[0.24em] text-[#837260]"
+                        >
+                          {option.label}
+                          {option.required ? <span className="ml-1 text-[#9a785d]" aria-hidden>*</span> : null}
+                        </label>
+                        <select
+                          id={selectId}
+                          value={selected}
+                          onChange={(event) =>
+                            setSelectedOptions((current) => ({
+                              ...current,
+                              [option.label]: event.target.value,
+                            }))
+                          }
+                          className="w-full rounded-[16px] border border-[rgba(86,76,64,0.14)] bg-[#fbf8f3] px-4 py-3 text-[14px] text-[#3f3831] outline-none transition-colors focus:border-[#2e4a36] focus:ring-2 focus:ring-[#2e4a36]/15"
+                        >
+                          <option value="">Select an option</option>
+                          {option.values.map((value) => (
+                            <option key={value} value={value}>
+                              {value}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+
               <div className="mt-8">
-                <ShopProductActions item={item} onViewDetails={onClose} />
+                <ShopProductActions
+                  item={item}
+                  onViewDetails={onClose}
+                  isBuyDisabled={!allRequiredSelected}
+                  selection={{
+                    label: selectionLabel || null,
+                    options: customizationOptions.length > 0 ? selectedOptions : null,
+                  }}
+                />
               </div>
             </div>
           </div>
