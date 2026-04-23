@@ -5,11 +5,18 @@
   scarvesAndSquares: "/shop/scarves-and-squares",
   diffusers: "/shop/diffusers",
   dokraOrnaments: "/shop/dokra-ornaments",
+  seasonaldrops: "/shop/seasonaldrops",
   checkout: "/checkout",
   collection: "/collection",
 } as const;
 
-export type ShopBridgeSlug = "lifestyle" | "perfumes" | "scarves-and-squares" | "diffusers" | "dokra-ornaments";
+export type ShopBridgeSlug =
+  | "lifestyle"
+  | "perfumes"
+  | "scarves-and-squares"
+  | "diffusers"
+  | "dokra-ornaments"
+  | "seasonaldrops";
 export type ShopItemType =
   | "Ritual Box"
   | "Perfume"
@@ -1341,6 +1348,40 @@ export const shopBridgePages: ShopBridgePageConfig[] = [
       "bengal-handfan-ii-brooch",
       "conch-brooch",
       "temple-bell-brooch"
+    ],
+  },
+  {
+    // Entry-point bridge for all seasonal drops. Today it surfaces the
+    // Hemanta diffuser sets; future drops (sravan, basanta, ...) join by
+    // appending their slugs to `productSlugs`. The editorial story for each
+    // drop still lives on its own page (e.g. /seasonaldrops-hemanta).
+    slug: "seasonaldrops",
+    href: canonicalShopRoutes.seasonaldrops,
+    navLabel: "Seasonal Drops",
+    heroEyebrow: "Seasonal Archive",
+    heroTitle: "Seasonal drops, held close.",
+    heroDescription: [
+      "Limited, place-led releases that arrive once and return only as memory.",
+      "Explore the diffuser sets currently available from the Hemanta archive.",
+    ],
+    heroImage: "/images/Hemanta drop HP banner 1.png",
+    heroImageAlt: "Hemanta seasonal drop editorial still life",
+    heroImagePosition: "object-[center_54%]",
+    heroQuote: "A chapter closes. The scent stays.",
+    introEyebrow: "On the archive",
+    introTitle: "A quieter way to discover seasonal work",
+    introDescription:
+      "Each Seijaku seasonal drop is composed around a single mood, place, and scent. The diffuser sets here are smaller-format entries — made to live in rooms without ceremony, and paired with the full editorial on each drop's dedicated page.",
+    postCtaTitle: "Read the full Hemanta story",
+    postCtaDescription:
+      "Each drop carries its own literary and material origin. The Hemanta chapter gathers the full four-form archive and the making process.",
+    postCtaPrimaryLabel: "Enter the Hemanta page",
+    postCtaPrimaryHref: "/seasonaldrops-hemanta",
+    seoFootnote:
+      "Seijaku seasonal drops are limited, place-led releases tied to a specific month, mood, or literary source. Each drop is archival — it returns only through seasonal retreats and immersive gatherings.",
+    productSlugs: [
+      "hemanta-ispani-diffuser-set",
+      "hemanta-rishi-diffuser-set",
     ],
   },
 ];

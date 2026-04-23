@@ -59,6 +59,14 @@ export async function generateMetadata({ params }: ShopSlugPageProps): Promise<M
     };
   }
 
+  if (slug === "seasonaldrops") {
+    return {
+      title: "Seasonal Drops Archive | Seijaku",
+      description:
+        "Browse Seijaku's limited seasonal drops — Hemanta and future releases. Diffuser sets, ritual boxes, and place-led fragrance work that returns only through immersive gatherings.",
+    };
+  }
+
   return {
     title: `${page.navLabel} | Seijaku`,
     description: page.heroDescription.join(" "),
