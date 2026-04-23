@@ -1,92 +1,53 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { RefObject, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
+import { RefObject, useRef } from "react";
 
 type HeroBannerProps = {
   heroRef?: RefObject<HTMLElement | null>;
 };
 
-type HeroPanel = {
-  id: string;
-  title: string;
-  description: string;
-  ctaLabel: string;
-  href: string;
-  image: string;
-  imagePosition?: string;
-};
-
-const heroPanels: HeroPanel[] = [
-  {
-    id: "lifestyle",
-    title: "Build a Ritual Set",
-    description: "Compose a daily ritual with scent, object, and atmosphere.",
-    ctaLabel: "Explore Lifestyle",
-    href: "/shop/lifestyle",
-    image: "/images/Ritual set HP Hero 1.png",
-    imagePosition: "object-[right_center]",
-  },
-  {
-    id: "perfumes",
-    title: "Find a Fragrance",
-    description: "Discover scents for skin, textiles, home, and quieter routines.",
-    ctaLabel: "Shop Perfumes",
-    href: "/shop/perfumes",
-    image: "/images/Perfume HP hero 2.png",
-    imagePosition: "object-[right_center]",
-  },
-  {
-    id: "dokra",
-    title: "Pick your Dokra Brooch",
-    description: "Wear Bengal craft as a meaningful everyday object.",
-    ctaLabel: "Shop Dokra Ornaments",
-    href: "/shop/dokra-ornaments",
-    image: "/images/Dokra brooch HP Hero 3.png",
-    imagePosition: "object-[right_center]",
-  },
-  {
-    id: "seasonal-drops",
-    title: "Smell the Red Oleanders",
-    description: "Enter the seasonal world of Nerium and limited releases.",
-    ctaLabel: "View Seasonal Drop",
-    href: "/seasonaldrops",
-    image: "/images/Red oleaners HP Hero 4.png",
-    imagePosition: "object-[right_center]",
-  },
-];
-
+const heroEyebrowColor = "#e2d6c0";
 const heroHeadlineColor = "#d8f0da";
 const heroSubtextColor = "#c8e6cc";
+
+const HERO_BACKGROUND = "/images/Ritual set HP Hero 1.png";
+// ID of the first post-hero wrapper on the home page. The Find Your Calm
+// button uses this target; if the id is ever removed the button is a no-op.
+const SCROLL_TARGET_ID = "home-next";
 
 export default function HeroBanner({ heroRef }: HeroBannerProps) {
   const localRef = useRef<HTMLElement | null>(null);
   const sectionRef = heroRef ?? localRef;
-  const [activeIndex, setActiveIndex] = useState(0);
+
+  const handleScrollDown = () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const target = document.getElementById(SCROLL_TARGET_ID);
+    if (!target) {
+      return;
+    }
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "start" });
+  };
 
   return (
     <section
       ref={sectionRef}
-      aria-label="Featured Seijaku pathways"
-      className="relative isolate mt-[118px] min-h-[72svh] w-full overflow-hidden bg-[#352d27] pb-[40px] pt-[128px] sm:mt-[124px] sm:min-h-[75svh] sm:pb-[46px] sm:pt-[140px] md:mt-[128px] md:min-h-[78svh] md:pb-[54px] md:pt-[150px] lg:mt-[132px] lg:min-h-[84vh] lg:pb-[64px] lg:pt-[162px] xl:min-h-[88vh] xl:pb-[72px] xl:pt-[172px]"
+      aria-label="Seijaku home hero"
+      className="relative isolate mt-[118px] min-h-[72svh] w-full overflow-hidden bg-[#352d27] pb-[64px] pt-[128px] sm:mt-[124px] sm:min-h-[75svh] sm:pb-[72px] sm:pt-[140px] md:mt-[128px] md:min-h-[78svh] md:pb-[88px] md:pt-[150px] lg:mt-[132px] lg:min-h-[84vh] lg:pb-[112px] lg:pt-[162px] xl:min-h-[88vh] xl:pb-[128px] xl:pt-[172px]"
     >
       <div aria-hidden className="absolute inset-0 z-0">
-        {heroPanels.map((panel, index) => (
-          <Image
-            key={panel.id}
-            src={panel.image}
-            alt=""
-            fill
-            priority={index === 0}
-            sizes="100vw"
-            className={[
-              "object-cover transition-opacity duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
-              panel.imagePosition ?? "object-center",
-              activeIndex === index ? "opacity-100" : "opacity-0",
-            ].join(" ")}
-          />
-        ))}
+        <Image
+          src={HERO_BACKGROUND}
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-[right_center]"
+        />
       </div>
 
       <div aria-hidden className="absolute inset-0 z-[1] bg-[rgba(10,8,7,0.18)]" />
@@ -107,11 +68,17 @@ export default function HeroBanner({ heroRef }: HeroBannerProps) {
         className="absolute inset-x-0 bottom-0 z-10 h-[36%] bg-[linear-gradient(180deg,rgba(10,8,7,0)_0%,rgba(10,8,7,0.1)_20%,rgba(10,8,7,0.28)_68%,rgba(10,8,7,0.54)_100%)]"
       />
 
-      <div className="page-container relative z-20 flex min-h-[calc(72svh-168px)] flex-col sm:min-h-[calc(75svh-178px)] md:min-h-[calc(78svh-192px)] lg:min-h-[calc(84vh-226px)] xl:min-h-[calc(88vh-244px)]">
+      <div className="page-container relative z-20 flex min-h-[calc(72svh-192px)] flex-col sm:min-h-[calc(75svh-212px)] md:min-h-[calc(78svh-238px)] lg:min-h-[calc(84vh-274px)] xl:min-h-[calc(88vh-300px)]">
         <div className="relative z-30 max-w-[700px] pt-2 sm:pt-4 md:pt-6 lg:pt-8 xl:pt-10">
           <div className="max-w-[620px] text-left">
+            <p
+              className="text-[11px] font-medium uppercase tracking-[0.32em] drop-shadow-[0_2px_10px_rgba(0,0,0,0.4)] sm:text-[12px]"
+              style={{ color: heroEyebrowColor }}
+            >
+              Seijaku: Quietly Arranged
+            </p>
             <h1
-              className="font-serif text-[clamp(44px,6vw,80px)] font-medium leading-[0.94] tracking-[-0.035em] [text-wrap:balance] drop-shadow-[0_4px_18px_rgba(0,0,0,0.52)]"
+              className="mt-5 font-serif text-[clamp(44px,6vw,80px)] font-medium leading-[0.94] tracking-[-0.035em] [text-wrap:balance] drop-shadow-[0_4px_18px_rgba(0,0,0,0.52)]"
               style={{ color: heroHeadlineColor }}
             >
               Perfume rituals for modern calm
@@ -125,81 +92,18 @@ export default function HeroBanner({ heroRef }: HeroBannerProps) {
           </div>
         </div>
 
-        <div className="mt-auto pt-14 sm:pt-16 lg:pt-20">
-          <div className="relative z-20 overflow-hidden rounded-[26px] border border-[rgba(255,245,232,0.12)] bg-[linear-gradient(180deg,rgba(22,17,14,0.42)_0%,rgba(22,17,14,0.3)_100%)] shadow-[0_26px_60px_rgba(8,6,5,0.12)] backdrop-blur-[12px]">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.03)_0%,rgba(255,255,255,0)_100%)]"
-            />
-            <div className="-mx-4 overflow-x-auto px-4 py-4 sm:-mx-5 sm:px-5 sm:py-5 lg:mx-0 lg:overflow-visible lg:px-6 lg:py-6">
-              <div className="flex min-w-max gap-5 lg:min-w-0 lg:grid lg:grid-cols-4 lg:gap-8 xl:gap-10">
-                {heroPanels.map((panel, index) => {
-                  const isActive = activeIndex === index;
-
-                  return (
-                    <article
-                      key={panel.id}
-                      className="group relative min-w-[276px] pt-5 text-left sm:min-w-[292px] lg:min-w-0"
-                      onMouseEnter={() => setActiveIndex(index)}
-                      onFocusCapture={() => setActiveIndex(index)}
-                    >
-                      <span
-                        aria-hidden
-                        className={[
-                          "absolute left-0 top-0 h-px rounded-full bg-[#f0dfcb] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
-                          isActive ? "w-[4.5rem] opacity-100" : "w-10 opacity-55",
-                        ].join(" ")}
-                      />
-
-                      <button
-                        type="button"
-                        aria-pressed={isActive}
-                        aria-label={`Reveal ${panel.title}`}
-                        onClick={() => setActiveIndex(index)}
-                        className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2e4cf] focus-visible:ring-offset-4 focus-visible:ring-offset-transparent"
-                      >
-                        <span
-                          className={[
-                            "block font-serif text-[28px] leading-[1.06] tracking-[-0.022em] sm:text-[30px] lg:text-[31px] xl:text-[32px]",
-                            isActive ? "text-[#fff4e7]" : "text-[#eadfce]",
-                          ].join(" ")}
-                        >
-                          {panel.title}
-                        </span>
-                        <span
-                          className={[
-                            "mt-3.5 block max-w-[24ch] text-[14px] leading-[1.8] sm:text-[15px]",
-                            isActive ? "text-[#f0e4d6]" : "text-[#d8ccbd]",
-                          ].join(" ")}
-                        >
-                          {panel.description}
-                        </span>
-                      </button>
-
-                      <div className="mt-6">
-                        <Link
-                          href={panel.href}
-                          className={[
-                            "inline-flex items-center gap-2 border-b pb-[3px] text-[11px] uppercase tracking-[0.18em] transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2e4cf] focus-visible:ring-offset-4 focus-visible:ring-offset-transparent",
-                            isActive
-                              ? "border-[rgba(240,225,205,0.82)] text-[#f4e7d6]"
-                              : "border-[rgba(240,225,205,0.44)] text-[#e6d8c8] hover:border-[rgba(240,225,205,0.72)] hover:text-[#f4e7d6]",
-                          ].join(" ")}
-                        >
-                          <span>{panel.ctaLabel}</span>
-                          <span aria-hidden className="translate-y-[-1px] text-[13px]">&rarr;</span>
-                        </Link>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+        <div className="mt-auto flex justify-center pt-14 sm:pt-16 lg:pt-20">
+          <button
+            type="button"
+            onClick={handleScrollDown}
+            aria-label="Find your calm — scroll to the next section"
+            className="inline-flex items-center gap-2 border-b border-[rgba(240,225,205,0.6)] pb-[6px] text-[12px] font-medium uppercase tracking-[0.28em] text-[#f4e7d6] transition-all duration-300 ease-out hover:border-[rgba(240,225,205,0.95)] hover:text-[#fff4e7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2e4cf] focus-visible:ring-offset-4 focus-visible:ring-offset-transparent sm:text-[13px]"
+          >
+            <span>Find Your Calm</span>
+            <ChevronDown aria-hidden size={16} strokeWidth={1.8} className="translate-y-[1px]" />
+          </button>
         </div>
       </div>
     </section>
   );
 }
-
-

@@ -51,7 +51,8 @@ export default function HomePage() {
   return (
     <main className="home-story min-h-screen bg-[#F3EFE7] text-[#3a3a3a]">
       <HeroBanner heroRef={heroRef} />
-      <motion.div className="relative z-20 home-section-shell home-bridge-warm" data-home-reveal style={{ y: sectionY, opacity: sectionOpacity }}>
+      {/* id="home-next" is the smooth-scroll target for the hero's Find Your Calm button (see HeroBanner.tsx SCROLL_TARGET_ID). */}
+      <motion.div id="home-next" className="relative z-20 home-section-shell home-bridge-warm" data-home-reveal style={{ y: sectionY, opacity: sectionOpacity }}>
         <BrowseWorldSection />
       </motion.div>
       <div className="home-section-shell home-bridge-soft" data-home-reveal>

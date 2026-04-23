@@ -4,84 +4,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-import { canonicalShopRoutes, getShopProductBySlug } from "@/src/lib/shopAllItems";
-
-type ExpandableItem = {
-  label: string;
-  href: string;
-  thumbnail: string;
-  alt: string;
-};
-
-type ExpandableStep = {
-  number: string;
-  title: string;
-  image: string;
-  alt: string;
-  panelTitle: string;
-  items: ExpandableItem[];
-};
-
-const stepCards: ExpandableStep[] = [
-  {
-    number: "01",
-    title: "Choose a scent",
-    image: "/images/Quiet Tea Ritual Box_lifestyle.JPG",
-    alt: "Perfume ritual box and scent objects",
-    panelTitle: "Curated scents",
-    items: [
-      {
-        label: "Jasmine x Neroli Oil Blend - 15 ml",
-        href: "/shop/jasmine-neroli-textile-oil",
-        thumbnail: getShopProductBySlug("jasmine-neroli-textile-oil")?.image ?? "/images/Seijaku section img 1.png",
-        alt: "Jasmine x Neroli oil blend",
-      },
-      {
-        label: "Breath of Pines Perfume - 50 ml",
-        href: "/shop/spirit-01-breath-of-pines",
-        thumbnail: getShopProductBySlug("spirit-01-breath-of-pines")?.image ?? "/images/hero banner HP 1.png",
-        alt: "Breath of Pines perfume",
-      },
-      {
-        label: "Spearmint Fragrance Oil - 15 ml",
-        href: canonicalShopRoutes.perfumes,
-        thumbnail: "/images/Quiet Tea Ritual Box_lifestyle.JPG",
-        alt: "Spearmint fragrance oil placeholder",
-      },
-    ],
-  },
-  {
-    number: "02",
-    title: "Choose an artifact",
-    image: "/images/Seijaku section img 1.png",
-    alt: "Handcrafted Seijaku artifact",
-    panelTitle: "Curated objects",
-    items: [
-      {
-        label: "Japanese Handfan Brooch",
-        href: "/shop/japan-handfan-brooch",
-        thumbnail: getShopProductBySlug("japan-handfan-brooch")?.image ?? "/images/japanese fan hero Our Story.png",
-        alt: "Japanese Handfan Brooch",
-      },
-      {
-        label: "Black Kitty Terracotta Diffuser",
-        href: "/shop/reed-diffuser-cedar-smoke",
-        thumbnail: getShopProductBySlug("reed-diffuser-cedar-smoke")?.image ?? "/images/our-story-hero-banner.png",
-        alt: "Black Kitty Terracotta Diffuser",
-      },
-      {
-        label: "Kolkata Summer Head Scarf",
-        href: "/shop/kolkata-summer-modal-silk-scarf",
-        thumbnail: getShopProductBySlug("kolkata-summer-modal-silk-scarf")?.image ?? "/images/Seijaku section img 1.png",
-        alt: "Kolkata Summer Head Scarf",
-      },
-    ],
-  },
-];
+import {
+  howSeijakuWorksSteps,
+  type HowSeijakuWorksItem,
+  type HowSeijakuWorksStep,
+} from "./howSeijakuWorks.options";
 
 const ritualVideoHref = "https://www.youtube.com/";
 
-function ExpandablePanelItem({ item }: { item: ExpandableItem }) {
+function ExpandablePanelItem({ item }: { item: HowSeijakuWorksItem }) {
   return (
     <Link
       href={item.href}
@@ -106,7 +37,7 @@ function StepExpandable({
   onOpen,
   onToggle,
 }: {
-  step: ExpandableStep;
+  step: HowSeijakuWorksStep;
   isOpen: boolean;
   onOpen: () => void;
   onToggle: () => void;
@@ -185,7 +116,7 @@ export default function HowSeijakuWorks() {
           </div>
 
           <div ref={containerRef} className="mt-8 grid items-start gap-8 sm:grid-cols-2 sm:gap-10 lg:grid-cols-3 lg:gap-8 xl:gap-10">
-            {stepCards.map((step) => (
+            {howSeijakuWorksSteps.map((step) => (
               <StepExpandable
                 key={step.number}
                 step={step}
