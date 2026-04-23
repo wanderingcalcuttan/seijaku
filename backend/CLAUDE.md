@@ -111,7 +111,7 @@ Notify Me admin ping (all optional; feature opt-in): `ADMIN_NOTIFICATION_EMAIL`,
 
 ## Common Gotchas
 
-- `multer` runs in `memoryStorage()` with a 10MB limit. If you need bigger uploads, adjust in `routes/admin.ts`.
+- `multer` runs in `memoryStorage()` with a 50 MB limit (bumped from 10 MB to accommodate short product-marketing video clips). If you need bigger uploads, adjust in `routes/admin.ts` and keep `AddMediaDialog`'s helper copy + the `LIMIT_FILE_SIZE` message in `utils/http.ts` in sync.
 - CORS defaults to reflect any origin when `CORS_ORIGIN` is unset — lock this down in prod by setting the env var.
 - Prisma client is excluded from the TS source tree but is required at runtime. `postinstall` generates it — don't remove that script.
 - The seed is destructive-ish (upserts bootstrap admin, (re)creates content). Don't run it against a populated prod DB without reading `prisma/seed.ts` first.

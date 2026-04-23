@@ -24,9 +24,13 @@ import { asyncHandler, HttpError, parseBody } from "../utils/http.js";
 
 export const adminRouter = Router();
 
+// 50 MB cap covers short product-marketing video clips (15-30s typical) while
+// still rejecting obviously-wrong payloads. Images comfortably sit well below.
+// If a limit change is needed, also update `AddMediaDialog`'s helper copy and
+// backend/CLAUDE.md.
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 },
 });
 
 const optionalString = z.string().optional().nullable();

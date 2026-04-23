@@ -240,7 +240,7 @@ export default function AddMediaDialog({ open, onClose, library, alreadySelected
                 </div>
               ) : (
                 <div className="text-[13px] text-[#62574c]">
-                  Click to pick an image or video. Max 10 MB.
+                  Click to pick an image or a short video clip. Max 50 MB.
                 </div>
               )}
             </div>
