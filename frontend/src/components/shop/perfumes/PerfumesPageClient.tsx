@@ -8,9 +8,9 @@ import ProductDetailDrawer from "@/src/components/shop/ProductDetailDrawer";
 import {
   canonicalShopRoutes,
   getShopProductBySlug,
-  type ShopBridgePageConfig,
   type ShopProduct,
 } from "@/src/lib/shopAllItems";
+import type { ShopBridgePageConfig } from "@/src/lib/bridge-page-types";
 
 import PerfumeCategorySection, { type PerfumeSubGroup } from "./PerfumeCategorySection";
 import PerfumePageIntro from "./PerfumePageIntro";

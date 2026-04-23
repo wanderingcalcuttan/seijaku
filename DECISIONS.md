@@ -285,6 +285,43 @@ Dropped from the UI (not migrated):
 
 Pre-existing inconsistency flagged (not introduced by Phase 3): the public `/content/programs` and `/content/retreats` endpoints return records of every status, including `DRAFT`. `/content/articles` filters to `PUBLISHED`. A single follow-up backend pass can harmonise the three endpoints.
 
+### 19. Shop Bridge Pages Are Backend-Owned (Products Still Frontend — Phase 4a)
+
+Status: Active
+
+The six shop bridge pages (`/shop/lifestyle`, `/shop/perfumes`, `/shop/scarves-and-squares`, `/shop/diffusers`, `/shop/dokra-ornaments`, `/shop/seasonaldrops`) now read their **page metadata** from the backend. Products on those pages still come from the frontend `shopProducts` registry — that migration is Phase 4b.
+
+Read path:
+
+- `/shop/[slug]/page.tsx` calls `fetchBridgePage(slug)` in `frontend/src/lib/bridge-page-types.ts`, which wraps `publicBackendJson("/catalog/bridge-pages/:slug", { tags: ["bridge-pages", "products"] })`. The page is marked `export const dynamic = "force-dynamic"` for consistency with Decisions #16–#18.
+- Admin edits on `/admin/bridge-pages` invalidate both tags via `/api/revalidate`.
+- The five per-bridge page clients (LifestylePageClient, PerfumesPageClient, TextilesPageClient, DiffusersPageClient, and the generic ShopBridgePageClient) were not touched. `bridge-page-types.ts` preserves the exact `ShopBridgePageConfig` shape they already consume via a `normalize()` mapper.
+
+Schema migration (first since the initial schema):
+
+- `backend/prisma/migrations/0004_bridge_page_extras/migration.sql` adds columns to `ShopBridgePage`: `heroImage`, `heroImageAlt`, `heroImagePosition`, `interludeImage`, `interludeImageAlt`, `productSectionEyebrow`, `productSectionTitle`, `productSectionDescription`, `seoFootnote`.
+- `heroImage` and `heroImageAlt` are NOT NULL with empty-string defaults (safe on existing rows; seed backfills real values immediately).
+- All other additions are nullable. Fully reversible.
+- Render's build runs `prisma migrate deploy` automatically (Decision #10); first real exercise of that path since schema churn slowed.
+- Hero/interlude images are stored as string paths (`"/images/..."`) matching the existing frontend style. A cross-domain move to `MediaAsset` FKs across articles / retreats / bridge pages is tracked as a follow-up (same focal-point follow-up flagged in Decision #17).
+
+Admin UX:
+
+- `/admin/bridge-pages` now has typed text/textarea fields for all 9 new columns. Existing admin rows open cleanly with empty values for the new fields.
+
+Seed change:
+
+- `backend/prisma/seed-data/bridge-pages.ts` is the new source of truth for bridge-page seed fixtures (6 entries). `backend/prisma/seed.ts` no longer depends on the frontend workspace for bridge-page metadata. It still reads `shop.shopProducts` for product records — that dependency clears when Phase 4b lands.
+- Seed's `bridgePageMeta` hand-maintained map was removed.
+
+Frontend cleanup:
+
+- `shopBridgePages`, `ShopBridgePageConfig`, `getShopBridgePageBySlug`, and `canonicalBridgeSlugs` were removed from `frontend/src/lib/shopAllItems.ts`. `ShopBridgeSlug` is re-exported from `bridge-page-types.ts` for backward-compatible imports.
+- `getShopBridgeProducts(slug)` stays in `shopAllItems.ts` but now uses a local static `bridgeProductSlugs` map (inlined from the old `productSlugs` arrays) so per-bridge product ordering is preserved during Phase 4a. Map is deleted in Phase 4b.
+- Client components (`SearchOverlay`, `Navbar` if ever needed) use a small static `bridgeNavLabelBySlug` + `bridgeHrefBySlug` exported from `bridge-page-types.ts`. These are code-owned on purpose — they are UI navigation labels, not editorial content, and don't need to roundtrip the backend on every client render.
+
+Phase 4b will migrate `shopProducts` itself. That's a large surface (checkout, cart, lifestyle option dropdowns, product detail drawer, nav, filter helpers) and warrants its own session — likely split further into a read migration + a checkout/cart migration.
+
 ## How To Use This File
 
 - Add a new entry when a structural or cross-cutting product decision is made.

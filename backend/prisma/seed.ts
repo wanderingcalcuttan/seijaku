@@ -5,11 +5,11 @@ import { hashPassword } from "../src/lib/auth.js";
 import { env } from "../src/config.js";
 import * as shopData from "../../frontend/src/lib/shopAllItems.js";
 import { seedArticles } from "./seed-data/articles.js";
+import { seedBridgePages } from "./seed-data/bridge-pages.js";
 import { seedRetreats } from "./seed-data/retreats.js";
 
 const prisma = new PrismaClient();
 const shop = ((shopData as any).default ?? shopData) as typeof shopData & Record<string, any>;
-type ShopBridgeSlug = (typeof shop.canonicalBridgeSlugs)[number];
 
 const programs = [
   {
@@ -204,72 +204,6 @@ const bridgePageContentBySlug: Record<string, Record<string, unknown>> = {
   },
 };
 
-const bridgePageMeta: Record<
-  ShopBridgeSlug,
-  {
-    navLabel: string;
-    heroEyebrow: string;
-    heroTitle: string;
-    heroDescription: string[];
-    heroQuote: string;
-    introEyebrow: string;
-    introTitle: string;
-    introDescription: string;
-  }
-> = {
-  lifestyle: {
-    navLabel: "Lifestyle",
-    heroEyebrow: "Curated Gifts",
-    heroTitle: "Lifestyle sets composed as quiet rituals.",
-    heroDescription: [
-      "Curated Seijaku boxes bring together fragrance, textile, and crafted object into small repeatable gestures."
-    ],
-    heroQuote: "Objects arranged to slow the pace of daily life.",
-    introEyebrow: "Lifestyle",
-    introTitle: "Composed sets for pause, gifting, and ritual.",
-    introDescription: "These pages help a visitor move from broad interest into a more grounded selection of Seijaku ritual sets.",
-  },
-  perfumes: {
-    navLabel: "Perfumes",
-    heroEyebrow: "Fragrance for Skin",
-    heroTitle: "Perfumes composed for close, quiet wear.",
-    heroDescription: ["A slower fragrance wardrobe with oils and fine mists designed to sit near the body."],
-    heroQuote: "Scent that stays intimate, soft, and close to the pulse.",
-    introEyebrow: "Perfumes",
-    introTitle: "A calmer fragrance bridge",
-    introDescription: "This page is designed as a decision-light threshold between discovery and purchase.",
-  },
-  "scarves-and-squares": {
-    navLabel: "Scarves & Squares",
-    heroEyebrow: "Textiles in Ritual",
-    heroTitle: "Scarves and squares that bring scent into movement.",
-    heroDescription: ["Hand-finished textiles for pocket, neck, table, and travel."],
-    heroQuote: "A textile can hold memory, atmosphere, and gesture at once.",
-    introEyebrow: "Textiles",
-    introTitle: "Textiles as bridge objects",
-    introDescription: "These pages help the shopper move from broad interest in fragrance textiles into concrete choices.",
-  },
-  diffusers: {
-    navLabel: "Diffusers",
-    heroEyebrow: "Home Fragrance",
-    heroTitle: "Diffusers that shape room atmosphere without noise.",
-    heroDescription: ["For desks, bedside tables, and entry rituals, these diffusers bring fragrance into the room."],
-    heroQuote: "Home scent should settle the room before it tries to fill it.",
-    introEyebrow: "Diffusers",
-    introTitle: "A lower-friction home fragrance flow",
-    introDescription: "The diffuser bridge groups products by placement and atmosphere so shoppers can choose by room and tempo.",
-  },
-  "dokra-ornaments": {
-    navLabel: "Dokra Ornaments",
-    heroEyebrow: "Metal Ritual Objects",
-    heroTitle: "Dokra ornaments shaped for stillness and memory.",
-    heroDescription: ["Small metal objects that function as talisman, accent, and slow ritual companion."],
-    heroQuote: "An object can hold memory long after the moment passes.",
-    introEyebrow: "Dokra",
-    introTitle: "Objects with quiet symbolic charge",
-    introDescription: "These ornament pages help visitors move from form and story into a specific object choice.",
-  },
-};
 
 function normalizeProductStatus(status?: string | null) {
   if (!status) return ProductStatus.IN_STOCK;
@@ -347,16 +281,17 @@ async function main() {
   });
 
   const categoryBySlug = new Map<string, string>();
-  for (const slug of shop.canonicalBridgeSlugs) {
+  for (const page of seedBridgePages) {
+    const slug = page.slug;
     const category = await prisma.productCategory.upsert({
       where: { slug },
       update: {
-        name: bridgePageMeta[slug].navLabel,
+        name: page.navLabel,
         kind: "SHOP_BRIDGE",
       },
       create: {
         slug,
-        name: bridgePageMeta[slug].navLabel,
+        name: page.navLabel,
         kind: "SHOP_BRIDGE",
       },
     });
@@ -567,44 +502,47 @@ async function main() {
     }
   }
 
-  for (const slug of shop.canonicalBridgeSlugs) {
-    const meta = bridgePageMeta[slug];
+  for (const seed of seedBridgePages) {
+    const slug = seed.slug;
+    const bridgeData = {
+      navLabel: seed.navLabel,
+      heroEyebrow: seed.heroEyebrow,
+      heroTitle: seed.heroTitle,
+      heroDescriptionJson: seed.heroDescription,
+      heroImage: seed.heroImage,
+      heroImageAlt: seed.heroImageAlt,
+      heroImagePosition: seed.heroImagePosition,
+      heroQuote: seed.heroQuote,
+      introEyebrow: seed.introEyebrow,
+      introTitle: seed.introTitle,
+      introDescription: seed.introDescription,
+      interludeImage: seed.interludeImage,
+      interludeImageAlt: seed.interludeImageAlt,
+      productSectionEyebrow: seed.productSectionEyebrow,
+      productSectionTitle: seed.productSectionTitle,
+      productSectionDescription: seed.productSectionDescription,
+      postCtaTitle: seed.postCtaTitle,
+      postCtaDescription: seed.postCtaDescription,
+      postCtaPrimaryLabel: seed.postCtaPrimaryLabel,
+      postCtaPrimaryHref: seed.postCtaPrimaryHref,
+      postCtaSecondaryLabel: seed.postCtaSecondaryLabel,
+      postCtaSecondaryHref: seed.postCtaSecondaryHref,
+      seoTitle: seed.seoTitle ?? seed.heroTitle,
+      seoDescription: seed.seoDescription ?? seed.heroDescription.join(" "),
+      seoFootnote: seed.seoFootnote,
+      contentJson: (bridgePageContentBySlug[slug] ?? undefined) as Prisma.InputJsonValue | undefined,
+    };
+
     const page = await prisma.shopBridgePage.upsert({
       where: { slug },
-      update: {
-        navLabel: meta.navLabel,
-        heroEyebrow: meta.heroEyebrow,
-        heroTitle: meta.heroTitle,
-        heroDescriptionJson: meta.heroDescription,
-        heroQuote: meta.heroQuote,
-        introEyebrow: meta.introEyebrow,
-        introTitle: meta.introTitle,
-        introDescription: meta.introDescription,
-        seoTitle: meta.heroTitle,
-        seoDescription: meta.heroDescription.join(" "),
-        contentJson: (bridgePageContentBySlug[slug] ?? undefined) as Prisma.InputJsonValue | undefined,
-      },
-      create: {
-        slug,
-        navLabel: meta.navLabel,
-        heroEyebrow: meta.heroEyebrow,
-        heroTitle: meta.heroTitle,
-        heroDescriptionJson: meta.heroDescription,
-        heroQuote: meta.heroQuote,
-        introEyebrow: meta.introEyebrow,
-        introTitle: meta.introTitle,
-        introDescription: meta.introDescription,
-        seoTitle: meta.heroTitle,
-        seoDescription: meta.heroDescription.join(" "),
-        contentJson: (bridgePageContentBySlug[slug] ?? undefined) as Prisma.InputJsonValue | undefined,
-      },
+      update: bridgeData,
+      create: { slug, ...bridgeData },
     });
 
     await prisma.shopBridgePageProduct.deleteMany({ where: { bridgePageId: page.id } });
 
-    const products = shop.getShopBridgeProducts(slug);
-    for (const [index, product] of products.entries()) {
-      const productId = productIdBySlug.get(product.slug);
+    for (const [index, productSlug] of seed.productSlugs.entries()) {
+      const productId = productIdBySlug.get(productSlug);
       if (!productId) continue;
 
       await prisma.shopBridgePageProduct.create({

@@ -163,6 +163,7 @@ Frontend public rendering:
 - Articles are backend-fed via `frontend/src/lib/seijaku-life-types.ts` → `/content/articles` (Decision #16).
 - Retreats are backend-fed via `frontend/src/lib/retreat-types.ts` → `/content/retreats` (Decision #17).
 - Programs are backend-fed via `frontend/src/lib/program-types.ts` → `/content/programs` (Decision #18).
+- Shop Bridge Page metadata is backend-fed via `frontend/src/lib/bridge-page-types.ts` → `/catalog/bridge-pages/:slug` (Decision #19). Product records are still frontend-owned pending Phase 4b.
 
 Backend data model and API:
 

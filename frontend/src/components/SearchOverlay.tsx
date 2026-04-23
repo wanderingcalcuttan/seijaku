@@ -6,10 +6,14 @@ import { X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
-  shopBridgePages,
   shopProducts,
   type ShopProduct,
 } from "@/src/lib/shopAllItems";
+import {
+  bridgeHrefBySlug,
+  bridgeNavLabelBySlug,
+  isShopBridgeSlug,
+} from "@/src/lib/bridge-page-types";
 
 type SearchOverlayProps = {
   open: boolean;
@@ -24,8 +28,6 @@ type SearchResult = {
 };
 
 const MAX_RESULTS = 12;
-
-const bridgeBySlug = new Map(shopBridgePages.map((page) => [page.slug, page]));
 
 function scoreProduct(product: ShopProduct, q: string): number {
   const needle = q.toLowerCase().trim();
@@ -101,11 +103,12 @@ export default function SearchOverlay({ open, onClose }: SearchOverlayProps) {
       const score = scoreProduct(product, q);
       if (score <= 0) continue;
 
-      const bridge = product.bridgeCategory ? bridgeBySlug.get(product.bridgeCategory) : undefined;
+      const bridgeSlug = product.bridgeCategory;
+      const isCanonical = bridgeSlug && isShopBridgeSlug(bridgeSlug);
       scored.push({
         product,
-        bridgeHref: bridge?.href ?? null,
-        bridgeLabel: bridge?.navLabel ?? null,
+        bridgeHref: isCanonical ? bridgeHrefBySlug(bridgeSlug) : null,
+        bridgeLabel: isCanonical ? bridgeNavLabelBySlug[bridgeSlug] : null,
         score,
       });
     }

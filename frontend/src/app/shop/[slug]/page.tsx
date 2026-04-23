@@ -7,13 +7,10 @@ import LifestylePageClient from "@/src/components/shop/lifestyle/LifestylePageCl
 import PerfumesPageClient from "@/src/components/shop/perfumes/PerfumesPageClient";
 import ShopBridgePageClient from "@/src/components/shop/ShopBridgePageClient";
 import TextilesPageClient from "@/src/components/shop/textiles/TextilesPageClient";
-import {
-  canonicalBridgeSlugs,
-  canonicalShopRoutes,
-  getShopBridgePageBySlug,
-  getShopBridgeProducts,
-  type ShopBridgeSlug,
-} from "@/src/lib/shopAllItems";
+import { fetchBridgePage, type ShopBridgeSlug } from "@/src/lib/bridge-page-types";
+import { canonicalShopRoutes, getShopBridgeProducts } from "@/src/lib/shopAllItems";
+
+export const dynamic = "force-dynamic";
 
 type ShopSlugPageProps = {
   params: Promise<{
@@ -21,13 +18,9 @@ type ShopSlugPageProps = {
   }>;
 };
 
-export function generateStaticParams() {
-  return canonicalBridgeSlugs.map((slug) => ({ slug }));
-}
-
 export async function generateMetadata({ params }: ShopSlugPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const page = getShopBridgePageBySlug(slug);
+  const page = await fetchBridgePage(slug);
 
   if (!page) {
     return {
@@ -75,12 +68,14 @@ export async function generateMetadata({ params }: ShopSlugPageProps): Promise<M
 
 export default async function ShopSlugPage({ params }: ShopSlugPageProps) {
   const { slug } = await params;
-  const page = getShopBridgePageBySlug(slug);
+  const page = await fetchBridgePage(slug);
 
   if (!page) {
     redirect(`${canonicalShopRoutes.shopAll}?item=${slug}`);
   }
 
+  // Products still come from the frontend registry in Phase 4a.
+  // Phase 4b will migrate this to backend-fed products.
   const products = getShopBridgeProducts(slug as ShopBridgeSlug);
 
   if (slug === "diffusers") {

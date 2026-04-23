@@ -105,10 +105,18 @@ export type BridgePage = {
   heroEyebrow: string;
   heroTitle: string;
   heroDescription: string[];
+  heroImage: string;
+  heroImageAlt: string;
+  heroImagePosition: string | null;
   heroQuote: string;
   introEyebrow: string | null;
   introTitle: string;
   introDescription: string;
+  interludeImage: string | null;
+  interludeImageAlt: string | null;
+  productSectionEyebrow: string | null;
+  productSectionTitle: string | null;
+  productSectionDescription: string | null;
   postCtaTitle: string | null;
   postCtaDescription: string | null;
   postCtaPrimaryLabel: string | null;
@@ -117,6 +125,7 @@ export type BridgePage = {
   postCtaSecondaryHref: string | null;
   seoTitle: string | null;
   seoDescription: string | null;
+  seoFootnote: string | null;
   content: Record<string, unknown> | null;
   products: ProductSummary[];
   createdAt: string;

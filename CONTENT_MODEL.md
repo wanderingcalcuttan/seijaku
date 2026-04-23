@@ -21,10 +21,13 @@ These files still drive what most visitors actually see on the public site:
 - `frontend/src/lib/navigation.ts`
 - route-level page files and components for brand/storytelling sections
 
-Articles, Retreats, and Programs are no longer in this list — all three are fully backend-owned:
+Articles, Retreats, Programs, and Shop Bridge Page *metadata* are no longer in this list — all are backend-owned:
 - Articles: `publicBackendJson("/content/articles", { tags: ["articles"] })` (Decision #16).
 - Retreats: `publicBackendJson("/content/retreats", { tags: ["retreats"] })` (Decision #17).
 - Programs: `publicBackendJson("/content/programs", { tags: ["programs", "program-sessions"] })` (Decision #18).
+- Shop Bridge Pages (metadata only — products follow in Phase 4b): `publicBackendJson("/catalog/bridge-pages/:slug", { tags: ["bridge-pages", "products"] })` (Decision #19).
+
+Still frontend-owned: `shopProducts` registry + related helpers/types/constants in `shopAllItems.ts`. The five per-bridge page clients receive the product list as a prop from `/shop/[slug]/page.tsx` which sources it via `getShopBridgeProducts(slug)` against `shopProducts`.
 
 Use this layer when:
 

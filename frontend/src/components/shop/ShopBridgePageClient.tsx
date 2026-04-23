@@ -8,9 +8,9 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   canonicalShopRoutes,
   getShopProductBySlug,
-  type ShopBridgePageConfig,
   type ShopProduct,
 } from "@/src/lib/shopAllItems";
+import type { ShopBridgePageConfig } from "@/src/lib/bridge-page-types";
 
 import EditorialProductRow from "./EditorialProductRow";
 import ProductDetailDrawer from "./ProductDetailDrawer";

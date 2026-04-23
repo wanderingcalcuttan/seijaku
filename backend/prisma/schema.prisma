@@ -299,28 +299,37 @@ model CollectionProductLink {
 }
 
 model ShopBridgePage {
-  id                   String                  @id @default(cuid())
-  slug                 String                  @unique
-  navLabel             String
-  heroEyebrow          String
-  heroTitle            String
-  heroDescriptionJson  Json
-  heroQuote            String
-  introEyebrow         String?
-  introTitle           String
-  introDescription     String
-  postCtaTitle         String?
-  postCtaDescription   String?
-  postCtaPrimaryLabel  String?
-  postCtaPrimaryHref   String?
-  postCtaSecondaryLabel String?
-  postCtaSecondaryHref String?
-  seoTitle             String?
-  seoDescription       String?
-  contentJson          Json?
-  createdAt            DateTime                @default(now())
-  updatedAt            DateTime                @updatedAt
-  products             ShopBridgePageProduct[]
+  id                         String                  @id @default(cuid())
+  slug                       String                  @unique
+  navLabel                   String
+  heroEyebrow                String
+  heroTitle                  String
+  heroDescriptionJson        Json
+  heroImage                  String                  @default("")
+  heroImageAlt               String                  @default("")
+  heroImagePosition          String?
+  heroQuote                  String
+  introEyebrow               String?
+  introTitle                 String
+  introDescription           String
+  interludeImage             String?
+  interludeImageAlt          String?
+  productSectionEyebrow      String?
+  productSectionTitle        String?
+  productSectionDescription  String?
+  postCtaTitle               String?
+  postCtaDescription         String?
+  postCtaPrimaryLabel        String?
+  postCtaPrimaryHref         String?
+  postCtaSecondaryLabel      String?
+  postCtaSecondaryHref       String?
+  seoTitle                   String?
+  seoDescription             String?
+  seoFootnote                String?
+  contentJson                Json?
+  createdAt                  DateTime                @default(now())
+  updatedAt                  DateTime                @updatedAt
+  products                   ShopBridgePageProduct[]
 }
 
 model ShopBridgePageProduct {

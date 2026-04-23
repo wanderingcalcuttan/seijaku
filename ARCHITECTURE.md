@@ -171,6 +171,7 @@ Already migrated to backend-fed reads:
 - editorial (`/a-seijaku-life` + detail pages) — reads via `publicBackendJson("/content/articles", { tags: ["articles"] })`; see Decision #16.
 - retreats (`/experiences` gallery + `/retreats/[slug]`) — reads via `publicBackendJson("/content/retreats", { tags: ["retreats"] })`; see Decision #17.
 - programs (`/programs` index + `/programs/[slug]`) — reads via `publicBackendJson("/content/programs", { tags: ["programs", "program-sessions"] })`; see Decision #18.
+- shop bridge pages (`/shop/[slug]` metadata only; products still on the frontend registry) — reads via `publicBackendJson("/catalog/bridge-pages/:slug", { tags: ["bridge-pages", "products"] })`; see Decision #19. Phase 4b will migrate the product records themselves.
 
 When a domain migrates to backend-fed reads, the server component fetches via `publicBackendJson(path, { revalidate, tags })`. Results land in Next's Data Cache with a 60-second default `revalidate`, and admin writes invalidate by tag on demand through `/api/revalidate`. Admin reads explicitly pin `no-store`. See `DECISIONS.md` #15 and `CONTENT_MODEL.md` (Cache Tags) for the contract.
 
