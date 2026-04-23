@@ -1256,7 +1256,7 @@ export const shopBridgePages: ShopBridgePageConfig[] = [
     postCtaPrimaryLabel: "Explore Ritual Sets",
     postCtaPrimaryHref: canonicalShopRoutes.lifestyle,
     postCtaSecondaryLabel: "Learn How to Use Scents",
-    postCtaSecondaryHref: "/a-seijaku-life/ritual-objects-for-urban-evenings",
+    postCtaSecondaryHref: "/a-seijaku-life",
     seoFootnote:
       "Discover natural perfumes in India for skin, textiles, and spaces. Seijaku fragrances are crafted as ritual objects, blending traditional methods with mindful scenting practices for slow living.",
     productSlugs: [

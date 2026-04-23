@@ -237,7 +237,6 @@ export default function PerfumesPageClient({ page, products }: PerfumesPageClien
             categoryLabel="Cloth"
             closingQuote="Scent does not announce. It settles."
             products={textileItems}
-            columnClassName="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
             onViewDetails={updateQuery}
           />
 
@@ -249,7 +248,6 @@ export default function PerfumesPageClient({ page, products }: PerfumesPageClien
             categoryLabel="Spaces"
             closingQuote="Space keeps what scent leaves behind."
             subGroups={spacesSubGroups}
-            columnClassName="grid gap-6 sm:grid-cols-2"
             onViewDetails={updateQuery}
           />
         </section>

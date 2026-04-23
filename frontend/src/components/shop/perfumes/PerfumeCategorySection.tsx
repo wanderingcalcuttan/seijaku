@@ -1,6 +1,6 @@
 import type { ShopProduct } from "@/src/lib/shopAllItems";
 
-import PerfumeProductCard from "./PerfumeProductCard";
+import PerfumeProductSlider from "./PerfumeProductSlider";
 
 export type PerfumeSubGroup = {
   title: string;
@@ -17,11 +17,8 @@ type PerfumeCategorySectionProps = {
   closingQuote?: string;
   products?: ShopProduct[];
   subGroups?: PerfumeSubGroup[];
-  columnClassName?: string;
   onViewDetails: (slug: string) => void;
 };
-
-const defaultColumnClass = "grid gap-6 sm:grid-cols-2 lg:grid-cols-4";
 
 export default function PerfumeCategorySection({
   id,
@@ -32,11 +29,8 @@ export default function PerfumeCategorySection({
   closingQuote,
   products,
   subGroups,
-  columnClassName,
   onViewDetails,
 }: PerfumeCategorySectionProps) {
-  const gridClass = columnClassName ?? defaultColumnClass;
-
   return (
     <section id={id} className="scroll-mt-[120px] py-10 sm:py-14 lg:py-16">
       <div className="page-container max-w-[1200px]">
@@ -49,15 +43,12 @@ export default function PerfumeCategorySection({
         </div>
 
         {products && products.length > 0 ? (
-          <div className={`mt-10 ${gridClass}`}>
-            {products.map((item) => (
-              <PerfumeProductCard
-                key={item.slug}
-                item={item}
-                categoryLabel={categoryLabel}
-                onViewDetails={onViewDetails}
-              />
-            ))}
+          <div className="mt-10">
+            <PerfumeProductSlider
+              products={products}
+              categoryLabel={categoryLabel}
+              onViewDetails={onViewDetails}
+            />
           </div>
         ) : null}
 
@@ -72,15 +63,12 @@ export default function PerfumeCategorySection({
                 <p className="mt-2 text-[14px] leading-[1.85] text-[#635a50]">{group.description}</p>
               ) : null}
             </div>
-            <div className={`mt-6 ${gridClass}`}>
-              {group.products.map((item) => (
-                <PerfumeProductCard
-                  key={item.slug}
-                  item={item}
-                  categoryLabel={categoryLabel}
-                  onViewDetails={onViewDetails}
-                />
-              ))}
+            <div className="mt-6">
+              <PerfumeProductSlider
+                products={group.products}
+                categoryLabel={categoryLabel}
+                onViewDetails={onViewDetails}
+              />
             </div>
           </div>
         ))}
