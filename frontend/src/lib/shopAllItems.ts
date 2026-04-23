@@ -500,6 +500,13 @@ export const shopProducts: ShopProduct[] = [
       "/images/seijaku sec img 2.png",
       "/images/Quiet Tea Ritual Box_lifestyle.JPG"
     ],
+    customizationOptions: [
+      {
+        label: "Colour",
+        values: ["Red Earth", "Forest Green"],
+        required: true,
+      },
+    ],
   },
   {
     id: "textile-pine-forest-scarf",
@@ -582,6 +589,13 @@ export const shopProducts: ShopProduct[] = [
       "/images/seijaku sec img 2.png",
       "/images/Seijaku section img 1.png",
       "/images/Our Story Hero Banner 1.png"
+    ],
+    customizationOptions: [
+      {
+        label: "Colour",
+        values: ["Red Earth", "Forest Green"],
+        required: true,
+      },
     ],
   },
   {

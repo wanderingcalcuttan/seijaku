@@ -4,12 +4,12 @@ import Link from "next/link";
 import { useState } from "react";
 
 import ProductDetailDrawer from "@/src/components/shop/ProductDetailDrawer";
-import LifestyleSetCard from "@/src/components/shop/lifestyle/LifestyleSetCard";
+import LifestyleSetCard, { type LifestyleFieldValue } from "@/src/components/shop/lifestyle/LifestyleSetCard";
 import { homepageFeaturedLifestyleItems } from "@/src/components/shop/lifestyle/lifestyleSetConfig";
 import { canonicalShopRoutes, getShopProductBySlug } from "@/src/lib/shopAllItems";
 
 export default function RitualSetsSection() {
-  const [selectedValues, setSelectedValues] = useState<Record<string, Record<string, string>>>({});
+  const [selectedValues, setSelectedValues] = useState<Record<string, Record<string, LifestyleFieldValue>>>({});
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const selectedProduct = selectedSlug ? getShopProductBySlug(selectedSlug) ?? null : null;
 

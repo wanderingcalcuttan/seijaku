@@ -1,4 +1,12 @@
-﻿import { type LifestyleSetField } from "./LifestyleSetCard";
+import {
+  isNotifyMeProduct,
+  isUnbuyableProduct,
+  shopProducts,
+  type ShopBridgeSlug,
+  type ShopProduct,
+} from "@/src/lib/shopAllItems";
+
+import { type LifestyleSetField } from "./LifestyleSetCard";
 
 export type LifestyleCardConfig = {
   id: string;
@@ -16,6 +24,23 @@ export type LifestyleSectionConfig = {
   items: LifestyleCardConfig[];
 };
 
+// Pull option lists out of `shopProducts` at module load. Filters out products
+// that can't be bought right now (Sold Out / Upcoming / Waitlist) so the
+// Live Calm Pouch dropdowns only surface items customers can actually gift.
+// Sorted alphabetically for a stable picker order as the catalogue grows.
+function buyableTitlesByBridge(bridge: ShopBridgeSlug): string[] {
+  return shopProducts
+    .filter((product): product is ShopProduct & { bridgeCategory: ShopBridgeSlug } =>
+      product.bridgeCategory === bridge && !isUnbuyableProduct(product) && !isNotifyMeProduct(product),
+    )
+    .map((product) => product.title)
+    .sort((a, b) => a.localeCompare(b));
+}
+
+const livePouchPerfumeOptions = buyableTitlesByBridge("perfumes");
+const livePouchTextileOptions = buyableTitlesByBridge("scarves-and-squares");
+const livePouchBroochOptions = buyableTitlesByBridge("dokra-ornaments");
+
 export const lifestyleSections: LifestyleSectionConfig[] = [
   {
     title: "Morning & Pause",
@@ -28,14 +53,17 @@ export const lifestyleSections: LifestyleSectionConfig[] = [
         includes: [
           "Terracotta diffuser inspired by Kolkata chai cups",
           "2 terracotta tea cups",
-          "2 fragrance oils (choose any 2)",
+          "2 fragrance oils (pick any 2)",
           "2 tea bags",
         ],
         fields: [
           {
             id: "oils",
-            label: "Choose your oils",
+            label: "Pick any 2 fragrance oils",
             options: ["Lavender Green", "Chamomile", "Spearmint", "Ginger Lemon", "Jasmine"],
+            selectionMode: "MULTI",
+            minSelections: 2,
+            maxSelections: 2,
           },
         ],
         imageSrc: "/images/Quiet Tea Ritual Box_lifestyle.JPG",
@@ -102,6 +130,11 @@ export const lifestyleSections: LifestyleSectionConfig[] = [
     title: "Gifting",
     items: [
       {
+        // Live Calm Gift Pouch pulls its dropdown options directly from
+        // shopProducts (perfumes / scarves-and-squares / dokra-ornaments
+        // bridges), excluding unbuyable (Sold Out / Upcoming / Waitlist)
+        // products. As the catalogue grows, this picker auto-updates —
+        // no edit to this config needed when a new perfume ships.
         id: "live-calm-gift-pouch",
         backingSlug: "dawn-reset-box",
         title: "Live Calm Gift Pouch",
@@ -111,28 +144,17 @@ export const lifestyleSections: LifestyleSectionConfig[] = [
           {
             id: "perfume",
             label: "Choose your perfume",
-            options: [
-              "Breath of Pines (10 ml / 50 ml)",
-              "Summer Held Close (10 ml / 50 ml)",
-              "The Morning Desk (10 ml / 50 ml)",
-            ],
+            options: livePouchPerfumeOptions,
           },
           {
             id: "textile",
             label: "Choose your textile",
-            options: [
-              "A Pine Forest scarf",
-              "A Pine Forest pocket square",
-              "Coffee Art scarf",
-              "Coffee Art pocket square",
-              "A Kolkata Summer scarf",
-              "A Kolkata Summer pocket square",
-            ],
+            options: livePouchTextileOptions,
           },
           {
             id: "brooch",
             label: "Choose your brooch",
-            options: ["Japan handfan", "Bengal handfan", "Conch", "Temple bell"],
+            options: livePouchBroochOptions,
           },
         ],
         imageSrc: "/images/quiet-tea-ritual-box-lifestyle-neutral.png",

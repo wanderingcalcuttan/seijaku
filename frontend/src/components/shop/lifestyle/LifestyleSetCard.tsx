@@ -10,7 +10,16 @@ export type LifestyleSetField = {
   id: string;
   label: string;
   options: string[];
+  // Optional multi-select. Defaults to SINGLE (a `<select>` dropdown) when
+  // omitted. When set to "MULTI", the card renders a checkbox list capped at
+  // `maxSelections` and gates Buy Now until `minSelections` are checked.
+  selectionMode?: "SINGLE" | "MULTI";
+  minSelections?: number;
+  maxSelections?: number;
 };
+
+// A field's selected value: string for SINGLE, string[] for MULTI.
+export type LifestyleFieldValue = string | string[];
 
 type LifestyleSetCardProps = {
   item: ShopProduct;
@@ -18,13 +27,42 @@ type LifestyleSetCardProps = {
   groupLabel: string;
   includes: string[];
   fields?: LifestyleSetField[];
-  selectedValues: Record<string, string>;
-  onSelectValue: (fieldId: string, value: string) => void;
+  selectedValues: Record<string, LifestyleFieldValue>;
+  onSelectValue: (fieldId: string, value: LifestyleFieldValue) => void;
   onViewDetails: () => void;
   imageSrc?: string;
   imageAlt?: string;
   className?: string;
 };
+
+function asArray(value: LifestyleFieldValue | undefined): string[] {
+  if (Array.isArray(value)) return value;
+  return [];
+}
+
+function asString(value: LifestyleFieldValue | undefined): string {
+  if (typeof value === "string") return value;
+  return "";
+}
+
+function fieldSatisfied(field: LifestyleSetField, raw: LifestyleFieldValue | undefined) {
+  if (field.selectionMode === "MULTI") {
+    const current = asArray(raw);
+    const min = field.minSelections ?? 1;
+    return current.length >= min;
+  }
+  return Boolean(asString(raw));
+}
+
+function formatFieldLabel(field: LifestyleSetField, raw: LifestyleFieldValue | undefined): string {
+  if (field.selectionMode === "MULTI") {
+    const current = asArray(raw);
+    if (current.length === 0) return "";
+    return `${field.label}: ${current.join(", ")}`;
+  }
+  const value = asString(raw);
+  return value ? `${field.label}: ${value}` : "";
+}
 
 export default function LifestyleSetCard({
   item,
@@ -40,10 +78,28 @@ export default function LifestyleSetCard({
   className = "",
 }: LifestyleSetCardProps) {
   const hasFields = fields.length > 0;
-  const allSelected = fields.every((field) => Boolean(selectedValues[field.id]));
+  const allSatisfied = fields.every((field) => fieldSatisfied(field, selectedValues[field.id]));
   const checkoutLabel = hasFields
-    ? fields.map((field) => `${field.label}: ${selectedValues[field.id]}`).filter(Boolean).join(" | ")
+    ? fields
+        .map((field) => formatFieldLabel(field, selectedValues[field.id]))
+        .filter(Boolean)
+        .join(" | ")
     : null;
+  const checkoutOptions: Record<string, string> = {};
+  for (const field of fields) {
+    const raw = selectedValues[field.id];
+    if (field.selectionMode === "MULTI") {
+      const current = asArray(raw);
+      if (current.length > 0) {
+        checkoutOptions[field.label] = current.join(", ");
+      }
+    } else {
+      const value = asString(raw);
+      if (value) {
+        checkoutOptions[field.label] = value;
+      }
+    }
+  }
 
   return (
     <article className={`group flex h-full flex-col rounded-xl bg-[#f7f5f2] p-7 shadow-sm sm:p-9 ${className}`.trim()}>
@@ -76,30 +132,85 @@ export default function LifestyleSetCard({
           </div>
 
           {hasFields ? (
-            <div className="mt-8 w-full space-y-4">
-              {fields.map((field) => (
-                <div key={field.id}>
-                  <label
-                    htmlFor={`${item.slug}-${field.id}`}
-                    className="mb-2.5 block text-[10px] uppercase tracking-[0.18em] text-[#86796b]"
-                  >
-                    {field.label}
-                  </label>
-                  <select
-                    id={`${item.slug}-${field.id}`}
-                    value={selectedValues[field.id] ?? ""}
-                    onChange={(event) => onSelectValue(field.id, event.target.value)}
-                    className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-[14px] text-[#3f3831] outline-none transition-colors focus:border-[#2e4a36] focus:ring-2 focus:ring-[#2e4a36]/10"
-                  >
-                    <option value="">Select an option</option>
-                    {field.options.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ))}
+            <div className="mt-8 w-full space-y-5">
+              {fields.map((field) => {
+                if (field.selectionMode === "MULTI") {
+                  const current = asArray(selectedValues[field.id]);
+                  const min = field.minSelections ?? 1;
+                  const max = field.maxSelections;
+                  const capReached = max !== undefined && current.length >= max;
+                  return (
+                    <fieldset key={field.id} className="w-full">
+                      <legend className="mb-2.5 block text-[10px] uppercase tracking-[0.18em] text-[#86796b]">
+                        {field.label}
+                      </legend>
+                      <div className="space-y-2">
+                        {field.options.map((option) => {
+                          const checked = current.includes(option);
+                          const disableForCap = !checked && capReached;
+                          return (
+                            <label
+                              key={option}
+                              className={`flex cursor-pointer items-center gap-3 rounded-md border px-3.5 py-2.5 text-[14px] transition-colors ${
+                                checked
+                                  ? "border-[#2e4a36] bg-[#eef4ef] text-[#2b3f32]"
+                                  : disableForCap
+                                    ? "cursor-not-allowed border-neutral-200 bg-white/60 text-[#9a9289]"
+                                    : "border-neutral-300 bg-white text-[#3f3831] hover:border-[#b3a895]"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                disabled={disableForCap}
+                                onChange={() => {
+                                  const next = checked
+                                    ? current.filter((entry) => entry !== option)
+                                    : [...current, option];
+                                  onSelectValue(field.id, next);
+                                }}
+                                className="h-4 w-4 accent-[#2e4a36]"
+                              />
+                              <span>{option}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                      <p className="mt-2 text-[11px] leading-[1.6] text-[#85796b]">
+                        {max !== undefined && max === min
+                          ? `Pick exactly ${min}.`
+                          : `Pick at least ${min}${max !== undefined ? ` (max ${max})` : ""}.`}
+                        {current.length > 0 ? ` Selected: ${current.length}.` : null}
+                      </p>
+                    </fieldset>
+                  );
+                }
+
+                const selectValue = asString(selectedValues[field.id]);
+                return (
+                  <div key={field.id}>
+                    <label
+                      htmlFor={`${item.slug}-${field.id}`}
+                      className="mb-2.5 block text-[10px] uppercase tracking-[0.18em] text-[#86796b]"
+                    >
+                      {field.label}
+                    </label>
+                    <select
+                      id={`${item.slug}-${field.id}`}
+                      value={selectValue}
+                      onChange={(event) => onSelectValue(field.id, event.target.value)}
+                      className="w-full rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-[14px] text-[#3f3831] outline-none transition-colors focus:border-[#2e4a36] focus:ring-2 focus:ring-[#2e4a36]/10"
+                    >
+                      <option value="">Select an option</option>
+                      {field.options.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              })}
             </div>
           ) : null}
 
@@ -107,10 +218,10 @@ export default function LifestyleSetCard({
             className="mt-9"
             item={item}
             onViewDetails={onViewDetails}
-            isBuyDisabled={hasFields && !allSelected}
+            isBuyDisabled={hasFields && !allSatisfied}
             selection={{
               label: checkoutLabel,
-              options: selectedValues,
+              options: checkoutOptions,
             }}
           />
           <p className="mt-7 text-[14px] leading-relaxed text-[#6b6258]">{item.priceLabel}</p>

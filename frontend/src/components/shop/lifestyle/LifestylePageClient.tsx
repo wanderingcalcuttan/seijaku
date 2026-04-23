@@ -8,7 +8,7 @@ import ProductDetailDrawer from "@/src/components/shop/ProductDetailDrawer";
 import { canonicalShopRoutes, getShopProductBySlug, type ShopProduct } from "@/src/lib/shopAllItems";
 
 import LifestylePageIntro from "./LifestylePageIntro";
-import LifestyleSetCard from "./LifestyleSetCard";
+import LifestyleSetCard, { type LifestyleFieldValue } from "./LifestyleSetCard";
 import { lifestyleSections } from "./lifestyleSetConfig";
 
 type LifestylePageClientProps = {
@@ -19,7 +19,9 @@ export default function LifestylePageClient({ products }: LifestylePageClientPro
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [selectedValues, setSelectedValues] = useState<Record<string, Record<string, string>>>({});
+  // Per-card field values: outer key = card id, inner key = field id, value is
+  // string (SINGLE fields) or string[] (MULTI fields). See LifestyleSetCard.
+  const [selectedValues, setSelectedValues] = useState<Record<string, Record<string, LifestyleFieldValue>>>({});
   const selectedSlug = searchParams.get("item");
   const selectedProduct = selectedSlug ? getShopProductBySlug(selectedSlug) ?? null : null;
 
