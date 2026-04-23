@@ -148,6 +148,9 @@ export default function ProductEditor({
   const [options, setOptions] = useState<ProductOptionDraft[]>(buildOptionsState(product));
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Server-returned Zod field errors, keyed by payload field name. Cleared on
+  // every save attempt and repopulated from `issues.fieldErrors` on 400.
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [addMediaOpen, setAddMediaOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -215,6 +218,7 @@ export default function ProductEditor({
     startTransition(async () => {
       setNotice(null);
       setError(null);
+      setFieldErrors({});
 
       let metadata: Record<string, unknown> | null = null;
       if (advanced.metadata.trim()) {
@@ -222,8 +226,19 @@ export default function ProductEditor({
           metadata = JSON.parse(advanced.metadata) as Record<string, unknown>;
         } catch {
           setError("Metadata JSON is invalid.");
+          setFieldErrors({ metadata: "Metadata must be valid JSON." });
           return;
         }
+      }
+
+      // Strip thousands-commas from the price input ("4,499" → 4499) so users
+      // can type naturally without tripping the server's integer validation.
+      const priceRaw = String(core.priceAmount).replace(/,/g, "").trim();
+      const priceAmount = priceRaw === "" ? NaN : Number(priceRaw);
+      if (!Number.isFinite(priceAmount) || priceAmount < 0 || !Number.isInteger(priceAmount)) {
+        setError("Price must be a whole number (e.g. 4499).");
+        setFieldErrors({ priceAmount: "Price must be a whole number (e.g. 4499)." });
+        return;
       }
 
       const effectiveWorkflow = overrides?.workflowStatus ?? core.workflowStatus;
@@ -231,7 +246,7 @@ export default function ProductEditor({
       const payload = {
         ...core,
         workflowStatus: effectiveWorkflow,
-        priceAmount: Number(core.priceAmount),
+        priceAmount,
         releaseDate: core.releaseDate ? new Date(core.releaseDate).toISOString() : null,
         metadata,
         primaryImageId: mediaState.primaryImageId || null,
@@ -243,9 +258,30 @@ export default function ProductEditor({
         body: JSON.stringify(payload),
       });
 
-      const data = (await res.json().catch(() => null)) as { error?: string; item?: { id: string } } | null;
+      const data = (await res.json().catch(() => null)) as
+        | {
+            error?: string;
+            item?: { id: string };
+            issues?: { fieldErrors?: Record<string, string[]> };
+          }
+        | null;
 
       if (!res.ok) {
+        // Surface Zod per-field errors if the server provided them (400);
+        // fall back to a single generic message otherwise (409 slug collision
+        // maps the message onto the `slug` field so users see it in place).
+        const nextFieldErrors: Record<string, string> = {};
+        if (data?.issues?.fieldErrors) {
+          for (const [field, messages] of Object.entries(data.issues.fieldErrors)) {
+            if (messages && messages.length > 0) {
+              nextFieldErrors[field] = messages[0];
+            }
+          }
+        }
+        if (res.status === 409 && data?.error) {
+          nextFieldErrors.slug = data.error;
+        }
+        setFieldErrors(nextFieldErrors);
         setError(data?.error ?? "Unable to save product.");
         return;
       }
@@ -509,7 +545,7 @@ export default function ProductEditor({
           <AdminCard>
             <h2 className="text-[18px] font-medium text-[#1d1916]">Product</h2>
             <div className="mt-4 grid gap-4">
-              <AdminField label="Title">
+              <AdminField label="Title" error={fieldErrors.title}>
                 <input
                   value={core.title}
                   onChange={(e) => setCore((c) => ({ ...c, title: e.target.value }))}
@@ -517,7 +553,11 @@ export default function ProductEditor({
                   placeholder="Product title"
                 />
               </AdminField>
-              <AdminField label="Slug" hint="URL-safe identifier. Used in /shop/<slug>.">
+              <AdminField
+                label="Slug"
+                hint="URL-safe identifier. Used in /shop/<slug>."
+                error={fieldErrors.slug}
+              >
                 <input
                   value={core.slug}
                   onChange={(e) => setCore((c) => ({ ...c, slug: e.target.value }))}
@@ -548,21 +588,21 @@ export default function ProductEditor({
           <AdminCard>
             <h2 className="text-[18px] font-medium text-[#1d1916]">Classification</h2>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <AdminField label="Type">
+              <AdminField label="Type" error={fieldErrors.type}>
                 <input
                   value={core.type}
                   onChange={(e) => setCore((c) => ({ ...c, type: e.target.value }))}
                   className={adminInputClassName}
                 />
               </AdminField>
-              <AdminField label="Material">
+              <AdminField label="Material" error={fieldErrors.material}>
                 <input
                   value={core.material}
                   onChange={(e) => setCore((c) => ({ ...c, material: e.target.value }))}
                   className={adminInputClassName}
                 />
               </AdminField>
-              <AdminField label="Use case">
+              <AdminField label="Use case" error={fieldErrors.useCase}>
                 <input
                   value={core.useCase}
                   onChange={(e) => setCore((c) => ({ ...c, useCase: e.target.value }))}
@@ -897,7 +937,7 @@ export default function ProductEditor({
                 </select>
               </AdminField>
               <div className="grid grid-cols-[1fr_90px] gap-3">
-                <AdminField label="Price">
+                <AdminField label="Price" error={fieldErrors.priceAmount}>
                   <input
                     type="number"
                     value={core.priceAmount}

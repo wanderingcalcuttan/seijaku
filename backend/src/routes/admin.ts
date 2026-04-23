@@ -28,6 +28,22 @@ export const adminRouter = Router();
 // still rejecting obviously-wrong payloads. Images comfortably sit well below.
 // If a limit change is needed, also update `AddMediaDialog`'s helper copy and
 // backend/CLAUDE.md.
+// Narrow helper: maps a Prisma unique-constraint violation on Product.slug to
+// HttpError(409) with a precise message. Any other Prisma error is rethrown
+// untouched so the generic error middleware handles it. Always throws, so TS
+// treats code after the call site as unreachable.
+function throwIfSlugCollision(error: unknown): never {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002" &&
+    (error.meta as { target?: string[] | string } | undefined)?.target &&
+    String((error.meta as { target?: string[] | string }).target).includes("slug")
+  ) {
+    throw new HttpError(409, "Slug already taken — pick a different slug.");
+  }
+  throw error;
+}
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 50 * 1024 * 1024 },
@@ -767,35 +783,40 @@ adminRouter.post(
 
     const isPublishing = payload.workflowStatus === "PUBLISHED";
 
-    const item = await prisma.product.create({
-      data: {
-        slug: payload.slug,
-        title: payload.title,
-        shortDescription: payload.shortDescription,
-        longDescription: payload.longDescription,
-        type: payload.type,
-        material: payload.material,
-        useCase: payload.useCase,
-        priceAmount: payload.priceAmount,
-        currency: payload.currency,
-        status: payload.status,
-        workflowStatus: payload.workflowStatus ?? "DRAFT",
-        releaseDate: payload.releaseDate ? new Date(payload.releaseDate) : null,
-        seoTitle: payload.seoTitle,
-        seoDescription: payload.seoDescription,
-        imageAlt: payload.imageAlt,
-        ctaLabel: payload.ctaLabel,
-        metadataJson: payload.metadata,
-        // Auto-stamp publishedAt on first publish if not explicitly supplied.
-        publishedAt: payload.publishedAt
-          ? new Date(payload.publishedAt)
-          : isPublishing
-            ? new Date()
-            : null,
-        primaryImageId: payload.primaryImageId,
-      },
-      include: productInclude,
-    });
+    let item;
+    try {
+      item = await prisma.product.create({
+        data: {
+          slug: payload.slug,
+          title: payload.title,
+          shortDescription: payload.shortDescription,
+          longDescription: payload.longDescription,
+          type: payload.type,
+          material: payload.material,
+          useCase: payload.useCase,
+          priceAmount: payload.priceAmount,
+          currency: payload.currency,
+          status: payload.status,
+          workflowStatus: payload.workflowStatus ?? "DRAFT",
+          releaseDate: payload.releaseDate ? new Date(payload.releaseDate) : null,
+          seoTitle: payload.seoTitle,
+          seoDescription: payload.seoDescription,
+          imageAlt: payload.imageAlt,
+          ctaLabel: payload.ctaLabel,
+          metadataJson: payload.metadata,
+          // Auto-stamp publishedAt on first publish if not explicitly supplied.
+          publishedAt: payload.publishedAt
+            ? new Date(payload.publishedAt)
+            : isPublishing
+              ? new Date()
+              : null,
+          primaryImageId: payload.primaryImageId,
+        },
+        include: productInclude,
+      });
+    } catch (error) {
+      throwIfSlugCollision(error);
+    }
 
     res.status(201).json({ item: serializeProduct(item) });
   })
@@ -828,31 +849,36 @@ adminRouter.patch(
       }
     }
 
-    const item = await prisma.product.update({
-      where: { id },
-      data: {
-        ...(payload.slug !== undefined ? { slug: payload.slug } : {}),
-        ...(payload.title !== undefined ? { title: payload.title } : {}),
-        ...(payload.shortDescription !== undefined ? { shortDescription: payload.shortDescription } : {}),
-        ...(payload.longDescription !== undefined ? { longDescription: payload.longDescription } : {}),
-        ...(payload.type !== undefined ? { type: payload.type } : {}),
-        ...(payload.material !== undefined ? { material: payload.material } : {}),
-        ...(payload.useCase !== undefined ? { useCase: payload.useCase } : {}),
-        ...(payload.priceAmount !== undefined ? { priceAmount: payload.priceAmount } : {}),
-        ...(payload.currency !== undefined ? { currency: payload.currency } : {}),
-        ...(payload.status !== undefined ? { status: payload.status } : {}),
-        ...(payload.workflowStatus !== undefined ? { workflowStatus: payload.workflowStatus } : {}),
-        ...(payload.releaseDate !== undefined ? { releaseDate: payload.releaseDate ? new Date(payload.releaseDate) : null } : {}),
-        ...(payload.seoTitle !== undefined ? { seoTitle: payload.seoTitle } : {}),
-        ...(payload.seoDescription !== undefined ? { seoDescription: payload.seoDescription } : {}),
-        ...(payload.imageAlt !== undefined ? { imageAlt: payload.imageAlt } : {}),
-        ...(payload.ctaLabel !== undefined ? { ctaLabel: payload.ctaLabel } : {}),
-        ...(payload.metadata !== undefined ? { metadataJson: payload.metadata } : {}),
-        ...(publishedAtUpdate !== undefined ? { publishedAt: publishedAtUpdate } : {}),
-        ...(payload.primaryImageId !== undefined ? { primaryImageId: payload.primaryImageId } : {}),
-      },
-      include: productInclude,
-    });
+    let item;
+    try {
+      item = await prisma.product.update({
+        where: { id },
+        data: {
+          ...(payload.slug !== undefined ? { slug: payload.slug } : {}),
+          ...(payload.title !== undefined ? { title: payload.title } : {}),
+          ...(payload.shortDescription !== undefined ? { shortDescription: payload.shortDescription } : {}),
+          ...(payload.longDescription !== undefined ? { longDescription: payload.longDescription } : {}),
+          ...(payload.type !== undefined ? { type: payload.type } : {}),
+          ...(payload.material !== undefined ? { material: payload.material } : {}),
+          ...(payload.useCase !== undefined ? { useCase: payload.useCase } : {}),
+          ...(payload.priceAmount !== undefined ? { priceAmount: payload.priceAmount } : {}),
+          ...(payload.currency !== undefined ? { currency: payload.currency } : {}),
+          ...(payload.status !== undefined ? { status: payload.status } : {}),
+          ...(payload.workflowStatus !== undefined ? { workflowStatus: payload.workflowStatus } : {}),
+          ...(payload.releaseDate !== undefined ? { releaseDate: payload.releaseDate ? new Date(payload.releaseDate) : null } : {}),
+          ...(payload.seoTitle !== undefined ? { seoTitle: payload.seoTitle } : {}),
+          ...(payload.seoDescription !== undefined ? { seoDescription: payload.seoDescription } : {}),
+          ...(payload.imageAlt !== undefined ? { imageAlt: payload.imageAlt } : {}),
+          ...(payload.ctaLabel !== undefined ? { ctaLabel: payload.ctaLabel } : {}),
+          ...(payload.metadata !== undefined ? { metadataJson: payload.metadata } : {}),
+          ...(publishedAtUpdate !== undefined ? { publishedAt: publishedAtUpdate } : {}),
+          ...(payload.primaryImageId !== undefined ? { primaryImageId: payload.primaryImageId } : {}),
+        },
+        include: productInclude,
+      });
+    } catch (error) {
+      throwIfSlugCollision(error);
+    }
 
     res.json({ item: serializeProduct(item) });
   })

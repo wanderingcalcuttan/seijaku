@@ -2,14 +2,23 @@ type AdminFieldProps = {
   label: string;
   children: React.ReactNode;
   hint?: string;
+  // Optional per-field error message rendered as red sub-text below the input.
+  // Used by server-side Zod errors surfaced through `issues.fieldErrors`.
+  error?: string | null;
 };
 
-export function AdminField({ label, children, hint }: AdminFieldProps) {
+export function AdminField({ label, children, hint, error }: AdminFieldProps) {
   return (
     <label className="block space-y-2">
       <span className="block text-[11px] font-medium uppercase tracking-[0.18em] text-[#6a5d50]">{label}</span>
       {children}
-      {hint ? <span className="block text-[12px] leading-[1.7] text-[#8a8075]">{hint}</span> : null}
+      {error ? (
+        <span className="block text-[12px] leading-[1.65] text-[#9f4332]" role="alert">
+          {error}
+        </span>
+      ) : hint ? (
+        <span className="block text-[12px] leading-[1.7] text-[#8a8075]">{hint}</span>
+      ) : null}
     </label>
   );
 }

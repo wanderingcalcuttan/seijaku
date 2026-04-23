@@ -13,6 +13,8 @@ export type ShopBridgeSlug = "lifestyle" | "perfumes" | "scarves-and-squares" | 
 export type ShopItemType =
   | "Ritual Box"
   | "Perfume"
+  | "Fragrance Oil"
+  | "Wax Melt"
   | "Scarf / Square"
   | "Diffuser"
   | "Dokra Ornament"
@@ -988,6 +990,207 @@ export const shopProducts: ShopProduct[] = [
         required: true,
       },
     ],
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Hemanta Collection — smaller-format diffuser sets (separate SKUs from the
+  // full ritual boxes above). Auto-join the HEMANTA collection via the seed's
+  // inferCollections slug match on "hemanta". Prices are placeholders — edit
+  // when final pricing is confirmed. Images stub to existing assets; swap to
+  // dedicated product photography when available (intended filenames noted).
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    id: "hemanta-ispani-diffuser-set",
+    slug: "hemanta-ispani-diffuser-set",
+    title: "Ispani Diffuser Set",
+    type: "Diffuser",
+    material: "Clay & Stone",
+    shortDescription: "A smaller Ispani ritual — diffuser and oil in the Bengal Jui scent.",
+    longDescription:
+      "A pared-back format of the Hemanta Ispani experience: a terracotta diffuser paired with the Bengal Jui fragrance oil, without the accompanying textile, halogen lamp, and archival box. Designed for a bedside table or a reading corner that asks for scent without ceremony.",
+    price: 3299,
+    priceLabel: "INR 3,299",
+    // TODO: swap to /images/hemanta-ispani-diffuser-set.jpg when final photography is ready.
+    image: "/images/seasonal-drop-ispani-jui.jpg",
+    imageAlt: "Ispani diffuser set paired with the Bengal Jui scent",
+    gallery: [
+      "/images/seasonal-drop-ispani-jui.jpg",
+      "/images/Hemanta drop HP banner 1.png",
+      "/images/Hemanta drop HP banner 2.png",
+    ],
+    videoUrl: "",
+  },
+  {
+    id: "hemanta-rishi-diffuser-set",
+    slug: "hemanta-rishi-diffuser-set",
+    title: "Rishi Diffuser Set",
+    type: "Diffuser",
+    material: "Clay & Stone",
+    shortDescription: "A smaller Rishi ritual — diffuser and oil in the Chhatim scent.",
+    longDescription:
+      "A compact Hemanta Rishi — a terracotta diffuser paired with the Chhatim fragrance oil. Built around the same reflective evening character as the full Rishi diffuser but in a lighter, gift-friendly format.",
+    price: 3499,
+    priceLabel: "INR 3,499",
+    // TODO: swap to /images/hemanta-rishi-diffuser-set.jpg when final photography is ready.
+    image: "/images/seasonal-drop-rishi-chhatim.jpg",
+    imageAlt: "Rishi diffuser set paired with the Chhatim scent",
+    gallery: [
+      "/images/seasonal-drop-rishi-chhatim.jpg",
+      "/images/Hemanta drop HP banner 1.png",
+      "/images/Hemanta drop HP banner 2.png",
+    ],
+    videoUrl: "",
+    customizationOptions: [
+      {
+        label: "Pick a tone",
+        values: ["Emerald", "Terracotta"],
+        required: true,
+      },
+    ],
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Bengal Kitchen Fragrance Oils (15 ml each) — tagged under /shop/perfumes
+  // via bridgeCategory. Prices are placeholders. Images stub to a nearby
+  // kitchen-warm still life; replace with dedicated bottle shots when ready.
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    id: "basmati-fragrance-oil",
+    slug: "basmati-fragrance-oil",
+    title: "Basmati Fragrance Oil",
+    type: "Fragrance Oil",
+    material: "Botanical Fragrance",
+    bridgeCategory: "perfumes",
+    useCase: "diffusion objects",
+    shortDescription: "Warm rice, kitchen memory, quiet comfort. 15 ml.",
+    longDescription:
+      "A fragrance oil composed around the softness of cooked Basmati — warm, cereal, almost buttered. Built for use in small diffusers and for layering into domestic ritual where the scent should feel like food memory rather than perfume.",
+    price: 1499,
+    priceLabel: "INR 1,499",
+    // TODO: swap to /images/basmati-fragrance-oil.jpg when final photography is ready.
+    image: "/images/Quiet Tea Ritual Box_lifestyle.JPG",
+    imageAlt: "Basmati fragrance oil bottle in a warm kitchen-toned still life",
+    gallery: [
+      "/images/Quiet Tea Ritual Box_lifestyle.JPG",
+      "/images/hero banner HP 1.png",
+    ],
+    videoUrl: "",
+  },
+  {
+    id: "gondhoraj-fragrance-oil",
+    slug: "gondhoraj-fragrance-oil",
+    title: "Gondhoraj Lime Fragrance Oil",
+    type: "Fragrance Oil",
+    material: "Botanical Fragrance",
+    bridgeCategory: "perfumes",
+    useCase: "diffusion objects",
+    shortDescription: "The bright Bengal lime, close and fragrant. 15 ml.",
+    longDescription:
+      "Gondhoraj — the fragrant Bengal lime — rendered as a diffuser oil. Bright, cut-grass green at the top, softening into a rounded floral citrus. Sits well in kitchens, reading rooms, and the quieter hours of Bengal summer.",
+    price: 1499,
+    priceLabel: "INR 1,499",
+    // TODO: swap to /images/gondhoraj-fragrance-oil.jpg when final photography is ready.
+    image: "/images/Quiet Tea Ritual Box_lifestyle.JPG",
+    imageAlt: "Gondhoraj lime fragrance oil bottle in a quiet Bengal editorial frame",
+    gallery: [
+      "/images/Quiet Tea Ritual Box_lifestyle.JPG",
+      "/images/hero banner HP 1.png",
+    ],
+    videoUrl: "",
+  },
+  {
+    id: "garam-masala-fragrance-oil",
+    slug: "garam-masala-fragrance-oil",
+    title: "Garam Masala Fragrance Oil",
+    type: "Fragrance Oil",
+    material: "Botanical Fragrance",
+    bridgeCategory: "perfumes",
+    useCase: "diffusion objects",
+    shortDescription: "A low, spiced warmth for quieter evenings. 15 ml.",
+    longDescription:
+      "A warm composition around cardamom, clove, and cinnamon — garam masala rendered as diffuser oil rather than kitchen spice. Low-sitting, evening-leaning, and particularly at home in the colder Bengal months.",
+    price: 1499,
+    priceLabel: "INR 1,499",
+    // TODO: swap to /images/garam-masala-fragrance-oil.jpg when final photography is ready.
+    image: "/images/Hemanta drop HP banner 1.png",
+    imageAlt: "Garam masala fragrance oil bottle with warm spiced tonality",
+    gallery: [
+      "/images/Hemanta drop HP banner 1.png",
+      "/images/Quiet Tea Ritual Box_lifestyle.JPG",
+    ],
+    videoUrl: "",
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Wax Melts (50 g each) — tagged under /shop/diffusers via bridgeCategory.
+  // Placeholder prices. Stubs from the Evening Unwind still life; swap when
+  // dedicated photography lands.
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    id: "coffee-wax-melt",
+    slug: "coffee-wax-melt",
+    title: "Coffee Wax Melt",
+    type: "Wax Melt",
+    material: "Botanical Fragrance",
+    bridgeCategory: "diffusers",
+    useCase: "diffusion objects",
+    shortDescription: "A low coffee warmth for the work desk. 50 g.",
+    longDescription:
+      "A wax melt composed around roasted coffee — steadier and less aromatic than a cup in the hand. Designed for the quieter afternoon hours where the scent signals pause without pulling attention.",
+    price: 899,
+    priceLabel: "INR 899",
+    // TODO: swap to /images/coffee-wax-melt.jpg when final photography is ready.
+    image: "/images/Evening Unwind Set.png",
+    imageAlt: "Coffee wax melt in a warm studio still life",
+    gallery: [
+      "/images/Evening Unwind Set.png",
+      "/images/Home Page hero image 1.png",
+    ],
+    videoUrl: "",
+  },
+  {
+    id: "caramel-wax-melt",
+    slug: "caramel-wax-melt",
+    title: "Caramel Wax Melt",
+    type: "Wax Melt",
+    material: "Botanical Fragrance",
+    bridgeCategory: "diffusers",
+    useCase: "diffusion objects",
+    shortDescription: "Softened sugar and a quiet warmth. 50 g.",
+    longDescription:
+      "A caramel wax melt with a lower-sweet register — less dessert, more late-afternoon. Pairs well with reading corners and slower evenings.",
+    price: 899,
+    priceLabel: "INR 899",
+    // TODO: swap to /images/caramel-wax-melt.jpg when final photography is ready.
+    image: "/images/Evening Unwind Set.png",
+    imageAlt: "Caramel wax melt with soft golden tonality",
+    gallery: [
+      "/images/Evening Unwind Set.png",
+      "/images/Home Page hero image 1.png",
+    ],
+    videoUrl: "",
+  },
+  {
+    id: "chocolate-wax-melt",
+    slug: "chocolate-wax-melt",
+    title: "Chocolate Wax Melt",
+    type: "Wax Melt",
+    material: "Botanical Fragrance",
+    bridgeCategory: "diffusers",
+    useCase: "diffusion objects",
+    shortDescription: "Dark chocolate, grounded and close-held. 50 g.",
+    longDescription:
+      "A dark-chocolate wax melt, warm and quieter than one might expect. Sits well in winter rooms, reading chairs, and the slow evenings of Hemanta.",
+    price: 899,
+    priceLabel: "INR 899",
+    // TODO: swap to /images/chocolate-wax-melt.jpg when final photography is ready.
+    image: "/images/Evening Unwind Set.png",
+    imageAlt: "Chocolate wax melt in a low-lit editorial still life",
+    gallery: [
+      "/images/Evening Unwind Set.png",
+      "/images/Home Page hero image 1.png",
+    ],
+    videoUrl: "",
   },
 ];
 
