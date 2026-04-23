@@ -13,9 +13,12 @@ type ProductDetailDrawerProps = {
   onClose: () => void;
 };
 
+const ENRICHMENT_TIMEOUT_MS = 8_000;
+
 export default function ProductDetailDrawer({ item, isOpen, onClose }: ProductDetailDrawerProps) {
   const [activeMedia, setActiveMedia] = useState<number | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+  const [enrichedVideoUrl, setEnrichedVideoUrl] = useState<string | null>(null);
   const gallery = item?.gallery ?? (item?.image ? [item.image] : []);
   const activeIndex = activeMedia !== null && gallery[activeMedia] ? activeMedia : 0;
   const activeImage = gallery[activeIndex] ?? item?.image;
@@ -25,6 +28,9 @@ export default function ProductDetailDrawer({ item, isOpen, onClose }: ProductDe
     .filter((option) => option.required)
     .every((option) => Boolean(selectedOptions[option.label]));
   const selectionLabel = Object.values(selectedOptions).filter(Boolean).join(" · ");
+  // Prefer a hand-maintained videoUrl from the registry (so editors can
+  // override), fall back to whatever the backend currently has attached.
+  const resolvedVideoUrl = item?.videoUrl || enrichedVideoUrl || null;
 
   useEffect(() => {
     if (!isOpen) {
@@ -45,6 +51,59 @@ export default function ProductDetailDrawer({ item, isOpen, onClose }: ProductDe
       setSelectedOptions({});
       setActiveMedia(null);
     }
+  }, [isOpen, item?.slug]);
+
+  // Lazy video enrichment: when the drawer opens for a product, fetch the
+  // matching backend record and pick up any VIDEO-kind media attached there.
+  // This closes the gap where an admin-uploaded video would not otherwise
+  // surface on the storefront without a `shopAllItems.ts` edit.
+  //
+  // Contract: single attempt, 8s abort, silent fallback to image-only on any
+  // failure. Hand-maintained `item.videoUrl` still wins — see resolvedVideoUrl.
+  useEffect(() => {
+    if (!isOpen || !item?.slug) {
+      setEnrichedVideoUrl(null);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    const slugAtFetch = item.slug;
+    const timeoutId = window.setTimeout(() => controller.abort(), ENRICHMENT_TIMEOUT_MS);
+
+    (async () => {
+      try {
+        const response = await fetch(
+          `/api/public/catalog/products/${encodeURIComponent(slugAtFetch)}`,
+          { signal: controller.signal },
+        );
+        if (!response.ok) {
+          return;
+        }
+        const data = (await response.json().catch(() => null)) as
+          | { item?: { media?: Array<{ asset?: { url?: string; kind?: string } }> } }
+          | null;
+
+        const videoAsset = data?.item?.media?.find(
+          (entry) => entry?.asset?.kind === "VIDEO" && Boolean(entry?.asset?.url),
+        );
+
+        // Guard against stale responses if the user switched products mid-fetch.
+        if (videoAsset?.asset?.url && slugAtFetch === item.slug) {
+          setEnrichedVideoUrl(videoAsset.asset.url);
+        }
+      } catch (error) {
+        if ((error as Error)?.name === "AbortError") {
+          return;
+        }
+        console.warn("[drawer] video enrichment failed", error);
+      }
+    })();
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+      setEnrichedVideoUrl(null);
+    };
   }, [isOpen, item?.slug]);
 
   if (!item) {
@@ -73,9 +132,9 @@ export default function ProductDetailDrawer({ item, isOpen, onClose }: ProductDe
 
         <div className="p-5 sm:p-7">
           <div className="relative aspect-[4/4.3] overflow-hidden rounded-[26px] bg-[#ddd1c1]">
-            {item.videoUrl ? (
+            {resolvedVideoUrl ? (
               <video className="h-full w-full object-cover" controls playsInline poster={activeImage}>
-                <source src={item.videoUrl} />
+                <source src={resolvedVideoUrl} />
               </video>
             ) : activeImage ? (
               <Image src={activeImage} alt={item.imageAlt ?? item.title} fill sizes="(min-width: 768px) 48vw, 100vw" className="object-cover" />
