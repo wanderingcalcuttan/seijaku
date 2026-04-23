@@ -75,9 +75,7 @@ Public routes:
 - `/retreats`
 - `/retreats/[slug]`
 - `/programs`
-- `/programs/adult-unwind`
-- `/programs/elder-reset`
-- `/programs/teen-senses`
+- `/programs/[slug]`
 - `/experiences`
 
 Admin routes:
@@ -164,6 +162,7 @@ Frontend public rendering:
 - `frontend/src/lib/navigation.ts`
 - Articles are backend-fed via `frontend/src/lib/seijaku-life-types.ts` → `/content/articles` (Decision #16).
 - Retreats are backend-fed via `frontend/src/lib/retreat-types.ts` → `/content/retreats` (Decision #17).
+- Programs are backend-fed via `frontend/src/lib/program-types.ts` → `/content/programs` (Decision #18).
 
 Backend data model and API:
 

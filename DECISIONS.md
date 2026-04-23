@@ -258,6 +258,33 @@ Seed impact:
 
 Known existing inconsistency (not introduced by Phase 2): the public `/content/retreats` endpoint returns records of every `status`, including `DRAFT`. Articles filter to `PUBLISHED` only. Worth harmonising in a follow-up backend change; outside Phase 2's read-swap scope.
 
+### 18. Programs Are Backend-Owned (Three Routes Collapsed Into One)
+
+Status: Active
+
+The `/programs` index and program detail pages read from the backend. The previous hand-maintained route files `frontend/src/app/programs/adult-unwind/page.tsx`, `.../elder-reset/page.tsx`, and `.../teen-senses/page.tsx` have been replaced by a single dynamic `/programs/[slug]/page.tsx` template.
+
+Read path:
+
+- Server components call `fetchPrograms()` / `fetchProgram(slug)` in `frontend/src/lib/program-types.ts`.
+- Those helpers wrap `publicBackendJson("/content/programs", { tags: ["programs", "program-sessions"] })` (and the slug variant). Both tags are included on every read so admin edits on either resource invalidate the cache.
+- Admin edits in `/admin/programs` and `/admin/program-sessions` invalidate their respective tags via `/api/revalidate`; public reads reflect within seconds.
+- Both routes marked `export const dynamic = "force-dynamic"` for the same reasons as Decisions #16 and #17 — Render Free cold-start could fail a Vercel build.
+
+UI decisions made during migration:
+
+- Three hardcoded detail routes collapsed into one. Existing URLs (`/programs/adult-unwind` etc.) still resolve through the `[slug]` catch-all. New program slugs created in admin become reachable without a deploy.
+- The "Featured Upcoming Program" block on `/programs` is data-driven: first program with `status === "BOOKING_OPEN"` that has at least one future session whose status is `UPCOMING` or `BOOKING_OPEN`, using the earliest such session for date/time/seats/location. If nothing qualifies, the block is hidden and the hero's "View Upcoming Program" CTA hides with it. Admins control visibility by adjusting program status + adding sessions.
+- The detail template renders `detailDescription` with `whitespace-pre-line` so admin-authored paragraph breaks survive without requiring a markdown renderer. A "Upcoming Sessions" panel appears only when at least one future session exists (capped at 3).
+- `ProgramReservationForm` was already backend-fed and is unchanged.
+
+Dropped from the UI (not migrated):
+
+- `sessionFlow` (a 5-bullet "what the session includes" list previously hardcoded only on the Elder Reset page). A structured "What's included" list is a natural candidate for Phase 5's block-level work. If an admin needs to surface the list now, it can be typed into `detailDescription` prose.
+- `trustNotes` and `expectations` arrays on `/programs` (small marketing decoration) remain hardcoded page-level copy. Phase 5 block work covers that territory.
+
+Pre-existing inconsistency flagged (not introduced by Phase 3): the public `/content/programs` and `/content/retreats` endpoints return records of every status, including `DRAFT`. `/content/articles` filters to `PUBLISHED`. A single follow-up backend pass can harmonise the three endpoints.
+
 ## How To Use This File
 
 - Add a new entry when a structural or cross-cutting product decision is made.

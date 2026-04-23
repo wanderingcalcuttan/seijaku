@@ -19,12 +19,12 @@ These files still drive what most visitors actually see on the public site:
 
 - `frontend/src/lib/shopAllItems.ts`
 - `frontend/src/lib/navigation.ts`
-- route-level page files under `frontend/src/app/programs/*`
 - route-level page files and components for brand/storytelling sections
 
-Articles and Retreats are no longer in this list — both are fully backend-owned:
+Articles, Retreats, and Programs are no longer in this list — all three are fully backend-owned:
 - Articles: `publicBackendJson("/content/articles", { tags: ["articles"] })` (Decision #16).
 - Retreats: `publicBackendJson("/content/retreats", { tags: ["retreats"] })` (Decision #17).
+- Programs: `publicBackendJson("/content/programs", { tags: ["programs", "program-sessions"] })` (Decision #18).
 
 Use this layer when:
 
@@ -121,11 +121,7 @@ Current public source: backend-fed (Decision #17). The `/experiences` gallery (`
 
 ### Programs
 
-Current public route content:
-
-- route-level program pages in `frontend/src/app/programs/*`
-
-The reservation form reads sessions from the backend and writes reservations to the backend.
+Current public source: backend-fed (Decision #18). The `/programs` index and a single dynamic `/programs/[slug]` detail route call `publicBackendJson("/content/programs", { tags: ["programs", "program-sessions"] })` and `.../content/programs/:slug`. Admin edits in `/admin/programs` and `/admin/program-sessions` invalidate both tags. The reservation form on the detail page still reads sessions from the backend and writes reservations via `/api/public/lead/program-reservations`. The "featured upcoming program" block on `/programs` is data-driven: first program with status `BOOKING_OPEN` that has a future session, using the earliest such session. When nothing qualifies, the block is hidden.
 
 ### Editorial
 
