@@ -15,6 +15,7 @@ export async function adminBackendJson<T>(path: string, init?: RequestInit): Pro
   try {
     return await backendJson<T>(`/admin${path.startsWith("/") ? path : `/${path}`}`, {
       ...init,
+      cache: "no-store",
       headers: {
         ...(init?.headers ?? {}),
         Authorization: `Bearer ${token}`,
@@ -31,6 +32,3 @@ export async function adminBackendJson<T>(path: string, init?: RequestInit): Pro
   }
 }
 
-export async function publicBackendJson<T>(path: string, init?: RequestInit): Promise<T> {
-  return backendJson<T>(path, init);
-}

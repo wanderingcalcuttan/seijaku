@@ -7,6 +7,7 @@ export async function POST(request: Request) {
   const body = await request.json();
   const response = await backendFetch("/admin/auth/login", {
     method: "POST",
+    cache: "no-store",
     headers: {
       "Content-Type": "application/json",
     },

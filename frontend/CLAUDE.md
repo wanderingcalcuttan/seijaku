@@ -35,7 +35,7 @@ Next.js 16 App Router, React 19, TypeScript strict, Tailwind 4, Framer Motion. S
 
 ## Patterns To Follow
 
-- **Server component → backend data:** use `adminBackendJson()` for admin pages or `publicBackendJson()` for public pages. Do not call `fetch()` directly from components.
+- **Server component → backend data:** use `adminBackendJson()` (from `src/lib/admin-backend.ts`, pins `no-store`) for admin pages, or `publicBackendJson(path, { revalidate, tags })` (from `src/lib/backend.ts`, ISR-cached) for public pages. Always pass an explicit `tags: CacheTag[]` on public reads — the admin BFF proxy invalidates by tag on writes via `tagsForAdminWrite()` in `src/lib/cache-tags.ts`. Do not call `fetch()` directly from components. Decision #15.
 - **Client editor → backend write:** POST/PATCH to `/api/admin/proxy/<endpoint>`, never directly to the backend. The proxy attaches the bearer token from the httpOnly cookie.
 - **Auth in server components:** call `requireCurrentAdmin()` at the top; it redirects to `/admin/login` on missing/invalid session.
 - **Path alias:** `@/*` resolves to the workspace root (`frontend/`). Import from `@/src/lib/...`, not relative.

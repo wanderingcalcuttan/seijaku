@@ -2,6 +2,55 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { clearAdminSessionCookie, getAdminSessionToken } from "@/src/lib/admin-session";
 import { getBackendBaseUrl } from "@/src/lib/backend";
+import { tagsForAdminWrite, type CacheTag } from "@/src/lib/cache-tags";
+
+const REVALIDATE_TIMEOUT_MS = 2000;
+
+function resolveSelfBaseUrl(request: NextRequest): string {
+  const envBase = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.SITE_URL;
+  if (envBase) {
+    return envBase.replace(/\/$/, "");
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  return request.nextUrl.origin;
+}
+
+async function fireRevalidate(request: NextRequest, tags: CacheTag[]): Promise<void> {
+  const secret = process.env.REVALIDATE_SECRET;
+  if (!secret) {
+    console.warn("[admin-proxy] skipping revalidate: REVALIDATE_SECRET not set", { tags });
+    return;
+  }
+
+  const url = `${resolveSelfBaseUrl(request)}/api/revalidate`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REVALIDATE_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      signal: controller.signal,
+      cache: "no-store",
+      headers: {
+        "content-type": "application/json",
+        "x-revalidate-secret": secret,
+      },
+      body: JSON.stringify({ tags }),
+    });
+    if (!response.ok) {
+      console.warn("[admin-proxy] revalidate returned non-2xx", {
+        tags,
+        status: response.status,
+      });
+    }
+  } catch (err) {
+    console.warn("[admin-proxy] revalidate failed", { tags, err });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 async function proxyRequest(request: NextRequest, params: { path?: string[] }) {
   const token = await getAdminSessionToken();
@@ -55,6 +104,15 @@ async function proxyRequest(request: NextRequest, params: { path?: string[] }) {
 
   if (response.status === 401) {
     return clearAdminSessionCookie(nextResponse);
+  }
+
+  const isMutation =
+    request.method !== "GET" && request.method !== "HEAD" && request.method !== "OPTIONS";
+  if (isMutation && response.ok) {
+    const tags = tagsForAdminWrite(targetPath);
+    if (tags.length > 0) {
+      await fireRevalidate(request, tags);
+    }
   }
 
   return nextResponse;

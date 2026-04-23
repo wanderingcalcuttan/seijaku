@@ -210,6 +210,29 @@ When you need to change content, decide which effect you want first:
 2. If the change is about admin CRUD, API behavior, leads, schema, or future migration, update the backend model and admin flow.
 3. If you are moving a domain from frontend-owned content to backend-owned content, update both the code and these docs in the same change.
 
+## Cache Tags
+
+When a public page starts reading from the backend (via `publicBackendJson` in `frontend/src/lib/backend.ts`), it must declare an explicit `tags: CacheTag[]` list. The admin BFF proxy invalidates those tags on successful writes. Tags are defined in `frontend/src/lib/cache-tags.ts`:
+
+| Tag | Data domain | Invalidated by admin writes on |
+|---|---|---|
+| `articles` | Editorial `Article` records | `articles/*` |
+| `retreats` | `Retreat` records | `retreats/*` |
+| `programs` | `Program` records (and cascades from sessions) | `programs/*`, `program-sessions/*` |
+| `program-sessions` | `ProgramSession` records | `program-sessions/*`, `programs/*` |
+| `products` | `Product` + `ProductMedia` + `ProductOption*` | `products/*`, `categories/*`, `collections/*`, `bridge-pages/*`, `media/*` |
+| `bridge-pages` | `ShopBridgePage` (+ product linkages) | `bridge-pages/*`, `products/*`, `categories/*`, `media/*` |
+| `collections` | `Collection` (+ product linkages) | `collections/*`, `products/*` |
+| `site-settings` | `SiteSetting` singleton (footer, logo, newsletter copy) | `site-settings`, `media/*` |
+| `home` | Home page composition (reserved for Phase 5 block work) | — |
+| `our-story` | Our Story composition (reserved for Phase 5 block work) | — |
+| `ritual` | `/ritual` page step content (reserved for Phase 6 block work) | — |
+| `navigation` | Header/footer navigation config (reserved for Phase 7) | — |
+
+The full path-to-tags map is `tagsForAdminWrite(upstreamPath)` in `cache-tags.ts`. Unknown upstream paths fall through to `[]` (fail-safe). When a new admin resource is added, the map must be updated in the same change or the new edits won't invalidate anything.
+
+See `DECISIONS.md` #15 for the full contract.
+
 ## Main Limitation
 
 The biggest content-model risk right now is drift between:

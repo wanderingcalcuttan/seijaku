@@ -78,6 +78,7 @@ Login: http://localhost:3000/admin/login (or :3001).
 - **Prisma client generation is part of the backend build.** `npm run build` in `backend/` runs `prisma generate` first; don't skip that step if you add a deploy script.
 - **Self-hosted fonts** live in `frontend/src/app/fonts/*.woff2`. Don't reintroduce `next/font/google`.
 - **`NEXT_IGNORE_INCORRECT_LOCKFILE=1`** is set in `frontend` dev and build scripts deliberately to avoid Next's lockfile patcher breaking the workspace layout. Don't remove it.
+- **Caching contract (Decision #15).** Public server reads go through `publicBackendJson(path, { revalidate, tags })` in `frontend/src/lib/backend.ts` — always pass explicit `tags: CacheTag[]`. Admin reads go through `adminBackendJson(...)` which pins `no-store`. Admin writes through `/api/admin/proxy/*` auto-invalidate tags via `tagsForAdminWrite(upstreamPath)` in `frontend/src/lib/cache-tags.ts` — add new admin resources to that map in the same change.
 
 ## When Making Changes
 

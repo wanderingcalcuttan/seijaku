@@ -168,6 +168,8 @@ Current examples:
 - retreats from `frontend/src/lib/retreats.ts`
 - editorial from `frontend/src/lib/seijakuLifeArticles.ts`
 
+When a domain migrates to backend-fed reads, the server component fetches via `publicBackendJson(path, { revalidate, tags })`. Results land in Next's Data Cache with a 60-second default `revalidate`, and admin writes invalidate by tag on demand through `/api/revalidate`. Admin reads explicitly pin `no-store`. See `DECISIONS.md` #15 and `CONTENT_MODEL.md` (Cache Tags) for the contract.
+
 ### Public Writes
 
 Public write flows now go through the backend via the Next proxy layer:

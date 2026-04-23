@@ -184,6 +184,30 @@ A small *admin-facing* ping lives in `backend/src/lib/notifier.ts` as a stub (lo
 
 Rate limiting on the public endpoint is deferred. The `@@unique([productId, email])` constraint bounds per-pair duplication, and Zod length limits (254 for email, 200 for slug) block the worst payloads. Add IP-based throttling when real traffic patterns emerge.
 
+### 15. Public Backend Reads Use ISR With Tag-Based On-Demand Invalidation
+
+Status: Active
+
+As the frontend starts migrating public reads from `frontend/src/lib/*.ts` registries to backend APIs, the caching contract is:
+
+- Public server fetches go through `publicBackendJson(path, { revalidate, tags })` in `frontend/src/lib/backend.ts`. Default `revalidate` is 60 seconds. Callers must pass an explicit `tags: CacheTag[]` so admin writes can target the right data.
+- Admin fetches go through `adminBackendJson(...)` in `frontend/src/lib/admin-backend.ts`, which pins `cache: "no-store"`. Admin responses must never land in Next's Data Cache — they are per-session and token-authenticated.
+- The tag registry lives in `frontend/src/lib/cache-tags.ts`. It is the single source of truth for valid tags and for the `tagsForAdminWrite(upstreamPath)` map that the admin BFF proxy uses to decide what to invalidate after a successful write.
+- `/api/revalidate` (secret-gated by `REVALIDATE_SECRET`, POST-only) accepts `{ tags?, paths? }` and calls `revalidateTag` / `revalidatePath`. Unknown tags return 400 so typos fail loudly.
+- The admin proxy (`/api/admin/proxy/[...path]`) calls `/api/revalidate` after a successful non-GET response. Bounded by a 2-second AbortController timeout and exactly one attempt — failure is logged and swallowed; content becomes stale for up to one ISR window.
+
+Rationale:
+
+- The backend runs on Render Free (Decision #13) and sleeps after 15 min of idle. Per-request fan-out would add 30-50 s cold-start latency to public pages; ISR insulates visitors from that.
+- Admins expect edits to appear on public without a redeploy. Tag-based invalidation keeps freshness within seconds of a write, without a polling loop or a background worker.
+- Keeping admin and public cache rules in one file (`backend.ts` + `cache-tags.ts`) prevents each new migrated page from re-deciding its own caching posture.
+
+Trade-offs:
+
+- First-ever visit after a deploy still hits Render cold. Accepted for now; revisit with a keep-warm cron (Render add-on, not a recursive fetch) when real traffic patterns warrant.
+- Unknown admin paths return `[]` from `tagsForAdminWrite`, which fails safe (stale) rather than over-invalidating. Every new admin resource added to `backend/src/routes/admin.ts` must also be mapped in `tagsForAdminWrite`, or its edits won't surface on public until the ISR window expires.
+- `REVALIDATE_SECRET` is required in every environment (local, Preview, Production). Missing secret = admin writes still succeed but revalidation skips with a server-side warning.
+
 ## How To Use This File
 
 - Add a new entry when a structural or cross-cutting product decision is made.
