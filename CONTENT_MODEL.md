@@ -20,9 +20,10 @@ These files still drive what most visitors actually see on the public site:
 - `frontend/src/lib/shopAllItems.ts`
 - `frontend/src/lib/navigation.ts`
 - `frontend/src/lib/retreats.ts`
-- `frontend/src/lib/seijakuLifeArticles.ts`
 - route-level page files under `frontend/src/app/programs/*`
 - route-level page files and components for brand/storytelling sections
+
+Articles (editorial) are no longer in this list — they are fully backend-owned (Decision #16). Public reads at `/a-seijaku-life` and `/a-seijaku-life/[slug]` call `publicBackendJson("/content/articles", { tags: ["articles"] })`.
 
 Use this layer when:
 
@@ -132,9 +133,7 @@ The reservation form reads sessions from the backend and writes reservations to 
 
 ### Editorial
 
-Current public source:
-
-- `frontend/src/lib/seijakuLifeArticles.ts`
+Current public source: backend-fed (Decision #16). The `/a-seijaku-life` index and `/a-seijaku-life/[slug]` pages call `publicBackendJson("/content/articles", { tags: ["articles"] })` and `.../content/articles/:slug`. Admin edits in `/admin/articles` invalidate the `articles` tag on save. Category filter chips are derived dynamically from whatever categories are present in the current dataset, so adding a new category in admin does not require a code change.
 
 ### Footer And Checkout Lead Flows
 

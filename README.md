@@ -163,7 +163,7 @@ Frontend public rendering:
 - `frontend/src/lib/shopAllItems.ts`
 - `frontend/src/lib/navigation.ts`
 - `frontend/src/lib/retreats.ts`
-- `frontend/src/lib/seijakuLifeArticles.ts`
+- Articles are now backend-fed via `frontend/src/lib/seijaku-life-types.ts` → `/content/articles` (Decision #16).
 
 Backend data model and API:
 

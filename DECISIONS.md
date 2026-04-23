@@ -208,6 +208,31 @@ Trade-offs:
 - Unknown admin paths return `[]` from `tagsForAdminWrite`, which fails safe (stale) rather than over-invalidating. Every new admin resource added to `backend/src/routes/admin.ts` must also be mapped in `tagsForAdminWrite`, or its edits won't surface on public until the ISR window expires.
 - `REVALIDATE_SECRET` is required in every environment (local, Preview, Production). Missing secret = admin writes still succeed but revalidation skips with a server-side warning.
 
+### 16. Articles Are Backend-Owned (First Migrated Domain)
+
+Status: Active
+
+The `/a-seijaku-life` index and `/a-seijaku-life/[slug]` detail pages read from the backend, not from a frontend registry. The frontend registry `frontend/src/lib/seijakuLifeArticles.ts` has been deleted.
+
+Read path:
+
+- Server components call `fetchArticles()` / `fetchArticle(slug)` in `frontend/src/lib/seijaku-life-types.ts`.
+- Those helpers wrap `publicBackendJson("/content/articles", { tags: ["articles"] })` (and the slug variant). Cached by Next's Data Cache with the 60-second default `revalidate` from Decision #15.
+- Admin edits in `/admin/articles` flow through the BFF proxy, which invalidates the `articles` tag via `/api/revalidate`. Public reads pick up the new content within seconds.
+- Both page routes are marked `export const dynamic = "force-dynamic"` so they render per request. The Data Cache still absorbs backend traffic via the fetch-level tag cache; this opts out of the Full Route Cache only, not the Data Cache. Rationale: Render Free wake-up during a Vercel build can fail prerender, so we do not prerender these routes at build time.
+
+UI decisions made during migration:
+
+- Category filter chips on the index are derived dynamically from the fetched categories (`getArticleCategories()` returns `["All", ...distinct sorted]`). Admins can add new categories without code changes. The tradeoff is that typos become visible on the public site until the admin fixes them.
+- The `[slug]` route no longer uses `generateStaticParams`. New articles become reachable as soon as admin saves, not at the next deploy.
+- Article `date` is computed on the frontend from backend `publishedAt` via a small `"March 2026"` formatter — no schema change was needed to preserve the display style.
+
+Seed impact:
+
+- `backend/prisma/seed.ts` previously imported from the frontend registry. It now imports from a new `backend/prisma/seed-data/articles.ts` module so the backend seed has no dependency on the frontend.
+
+This is the first domain migration under the post-Phase-0 caching contract (Decision #15). The same pattern is expected for Retreats, Programs, Shop Bridge Pages, and Products in later phases.
+
 ## How To Use This File
 
 - Add a new entry when a structural or cross-cutting product decision is made.

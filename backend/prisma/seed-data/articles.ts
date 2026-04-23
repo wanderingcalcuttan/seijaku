@@ -1,20 +1,16 @@
-export const seijakuLifeCategories = [
-  "All",
-  "Journal",
-  "Seasonal Notes",
-  "Behind the Scenes",
-  "Rituals",
-  "Materials",
-  "Places",
-  "Letters",
-] as const;
+export type SeedArticleCategory =
+  | "Journal"
+  | "Seasonal Notes"
+  | "Behind the Scenes"
+  | "Rituals"
+  | "Materials"
+  | "Places"
+  | "Letters";
 
-export type SeijakuLifeCategory = (typeof seijakuLifeCategories)[number];
-
-export type SeijakuLifeArticle = {
+export type SeedArticle = {
   slug: string;
   title: string;
-  category: Exclude<SeijakuLifeCategory, "All">;
+  category: SeedArticleCategory;
   date: string;
   excerpt: string;
   image?: string;
@@ -22,7 +18,7 @@ export type SeijakuLifeArticle = {
   featured?: boolean;
 };
 
-export const seijakuLifeArticles: SeijakuLifeArticle[] = [
+export const seedArticles: SeedArticle[] = [
   {
     slug: "hemanta-and-the-art-of-seasonal-attention",
     title: "Hemanta, and the Art of Seasonal Attention",
@@ -85,11 +81,3 @@ export const seijakuLifeArticles: SeijakuLifeArticle[] = [
     excerpt: "A quiet note on intention, anticipation, and what we hope to make space for next.",
   },
 ];
-
-export const featuredSeijakuLifeArticle = seijakuLifeArticles.find((article) => article.featured);
-
-export const recentSeijakuLifeArticles = seijakuLifeArticles.filter((article) => !article.featured);
-
-export function getSeijakuLifeArticleBySlug(slug: string) {
-  return seijakuLifeArticles.find((article) => article.slug === slug);
-}

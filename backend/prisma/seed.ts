@@ -4,12 +4,11 @@ import { CollectionKind, Prisma, PrismaClient, ProductStatus, SelectionMode, Tag
 import { hashPassword } from "../src/lib/auth.js";
 import { env } from "../src/config.js";
 import * as shopData from "../../frontend/src/lib/shopAllItems.js";
-import * as articleData from "../../frontend/src/lib/seijakuLifeArticles.js";
+import { seedArticles } from "./seed-data/articles.js";
 import * as retreatData from "../../frontend/src/lib/retreats.js";
 
 const prisma = new PrismaClient();
 const shop = ((shopData as any).default ?? shopData) as typeof shopData & Record<string, any>;
-const articles = ((articleData as any).default ?? articleData) as typeof articleData & Record<string, any>;
 const retreatCatalog = ((retreatData as any).default ?? retreatData) as typeof retreatData & Record<string, any>;
 type ShopBridgeSlug = (typeof shop.canonicalBridgeSlugs)[number];
 
@@ -619,7 +618,7 @@ async function main() {
     }
   }
 
-  for (const article of articles.seijakuLifeArticles) {
+  for (const article of seedArticles) {
     const primaryImage = article.image ? await upsertMedia(article.image, article.imageAlt ?? article.title) : null;
 
     await prisma.article.upsert({

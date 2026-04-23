@@ -166,7 +166,10 @@ Current examples:
 - shop/catalog structure from `frontend/src/lib/shopAllItems.ts`
 - navigation from `frontend/src/lib/navigation.ts`
 - retreats from `frontend/src/lib/retreats.ts`
-- editorial from `frontend/src/lib/seijakuLifeArticles.ts`
+
+Already migrated to backend-fed reads:
+
+- editorial (`/a-seijaku-life` + detail pages) — reads via `publicBackendJson("/content/articles", { tags: ["articles"] })`; see Decision #16.
 
 When a domain migrates to backend-fed reads, the server component fetches via `publicBackendJson(path, { revalidate, tags })`. Results land in Next's Data Cache with a 60-second default `revalidate`, and admin writes invalidate by tag on demand through `/api/revalidate`. Admin reads explicitly pin `no-store`. See `DECISIONS.md` #15 and `CONTENT_MODEL.md` (Cache Tags) for the contract.
 

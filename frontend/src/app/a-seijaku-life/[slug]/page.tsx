@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 
-import { getSeijakuLifeArticleBySlug, seijakuLifeArticles } from "@/src/lib/seijakuLifeArticles";
+import { fetchArticle } from "@/src/lib/seijaku-life-types";
+
+export const dynamic = "force-dynamic";
 
 type SeijakuLifeArticlePageProps = {
   params: Promise<{
@@ -8,15 +10,9 @@ type SeijakuLifeArticlePageProps = {
   }>;
 };
 
-export function generateStaticParams() {
-  return seijakuLifeArticles.map((article) => ({
-    slug: article.slug,
-  }));
-}
-
 export default async function SeijakuLifeArticlePage({ params }: SeijakuLifeArticlePageProps) {
   const { slug } = await params;
-  const article = getSeijakuLifeArticleBySlug(slug);
+  const article = await fetchArticle(slug);
 
   if (!article) {
     notFound();
@@ -28,7 +24,9 @@ export default async function SeijakuLifeArticlePage({ params }: SeijakuLifeArti
         <div className="page-container max-w-[820px]">
           <p className="text-[10px] uppercase tracking-[0.28em] text-[#9a785d]">{article.category}</p>
           <h1 className="mt-5 max-w-[16ch]">{article.title}</h1>
-          <p className="mt-6 text-[11px] uppercase tracking-[0.2em] text-[#8a7f73]">{article.date}</p>
+          {article.date ? (
+            <p className="mt-6 text-[11px] uppercase tracking-[0.2em] text-[#8a7f73]">{article.date}</p>
+          ) : null}
           <div className="mt-12 h-px w-full bg-black/6" />
           <p className="mt-10 max-w-[58ch] text-[17px] leading-[1.95] text-[#5f5850]">{article.excerpt}</p>
           <p className="mt-8 max-w-[58ch] text-[15px] leading-[1.9] text-[#6a6258]">

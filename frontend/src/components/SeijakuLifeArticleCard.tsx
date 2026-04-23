@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import type { SeijakuLifeArticle } from "@/src/lib/seijakuLifeArticles";
+import type { SeijakuLifeArticle } from "@/src/lib/seijaku-life-types";
 
 type SeijakuLifeArticleCardProps = {
   article: SeijakuLifeArticle;
