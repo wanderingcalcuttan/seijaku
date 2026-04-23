@@ -53,6 +53,7 @@ Admin (all under `/admin`, all JWT-guarded):
 - `auth/login`, `auth/me`
 - `admins/*` (SUPER_ADMIN only)
 - `media/*`, `categories/*`, `products/*`, `product-options/*`
+- `POST /admin/products/sync-new` (SUPER_ADMIN only) — one-shot sync of products from the frontend registry. Client posts the `shopProducts` payload; server creates only slugs not already in the DB inside a single `$transaction`; hand-edited records are never touched. Bounded by Zod `.max(200)`. No retries, no polling. See `SyncRegistryButton.tsx` for the admin UI trigger.
 - `bridge-pages/*`, `articles/*`, `retreats/*`, `programs/*`, `program-sessions/*`, `collections/*`
 - `site-settings`
 - `leads/*` (order requests, newsletter subs, program reservations, retreat inquiries, product notifications)

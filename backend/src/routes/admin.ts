@@ -893,6 +893,154 @@ adminRouter.delete(
   })
 );
 
+// ─────────────────────────────────────────────────────────────────────────────
+// One-shot "sync new products from frontend registry" endpoint.
+//
+// Safe-by-design: only CREATES products whose slugs don't already exist in the
+// DB. Existing admin-edited products are never touched. Caller posts the
+// registry payload (the frontend already imports `shopProducts` client-side,
+// so this avoids a cross-workspace backend import). Everything wrapped in a
+// single Prisma $transaction — atomic either all new slugs land or none.
+//
+// Guardrail notes: loop is bounded by Zod .max(200); no retries, no polling,
+// no background work, no external calls.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const syncProductInput = z.object({
+  slug: z.string().min(1).max(200),
+  title: z.string().min(1),
+  shortDescription: z.string().nullable().optional(),
+  longDescription: z.string().nullable().optional(),
+  type: z.string().min(1),
+  material: z.string().min(1),
+  useCase: z.string().nullable().optional(),
+  priceAmount: z.number().int().nonnegative(),
+  image: z.string().min(1),
+  imageAlt: z.string().nullable().optional(),
+  status: z.string().nullable().optional(),
+  bridgeCategory: z.string().nullable().optional(),
+});
+
+const syncRegistrySchema = z.object({
+  products: z.array(syncProductInput).max(200),
+});
+
+function inferCollectionKindsForSyncItem(
+  item: z.infer<typeof syncProductInput>,
+): CollectionKind[] {
+  const kinds = new Set<CollectionKind>();
+  if (item.slug.includes("hemanta") || item.image.includes("Hemanta")) {
+    kinds.add(CollectionKind.HEMANTA);
+  }
+  if (item.slug.includes("season") || item.image.includes("Seasonal")) {
+    kinds.add(CollectionKind.SEASONAL_DROP);
+  }
+  if (kinds.size === 0) {
+    kinds.add(CollectionKind.CORE_COLLECTION);
+  }
+  return Array.from(kinds);
+}
+
+function normalizeSyncStatus(value?: string | null): ProductStatus {
+  if (!value) return ProductStatus.IN_STOCK;
+  const normalized = value.toUpperCase().replace(/\s+/g, "_").replace(/\//g, "_");
+  return ProductStatus[normalized as keyof typeof ProductStatus] ?? ProductStatus.IN_STOCK;
+}
+
+adminRouter.post(
+  "/products/sync-new",
+  requireAdminRole("SUPER_ADMIN"),
+  asyncHandler(async (req, res) => {
+    const payload = parseBody(syncRegistrySchema, req.body);
+
+    // Three up-front queries so the transaction body has everything it needs
+    // by id without re-querying per item.
+    const [existing, bridgePages, collections] = await Promise.all([
+      prisma.product.findMany({ select: { slug: true } }),
+      prisma.shopBridgePage.findMany({ select: { id: true, slug: true } }),
+      prisma.collection.findMany({ select: { id: true, kind: true } }),
+    ]);
+
+    const existingSlugs = new Set(existing.map((p) => p.slug));
+    const bridgeBySlug = new Map(bridgePages.map((b) => [b.slug, b.id]));
+    const collectionByKind = new Map(collections.map((c) => [c.kind, c.id]));
+
+    const toCreate = payload.products.filter((item) => !existingSlugs.has(item.slug));
+    const skipped = payload.products
+      .filter((item) => existingSlugs.has(item.slug))
+      .map((item) => item.slug);
+
+    if (toCreate.length === 0) {
+      res.json({
+        created: [],
+        skipped,
+        totals: { created: 0, skipped: skipped.length },
+      });
+      return;
+    }
+
+    // Atomic: any failure rolls the entire batch back — no partial catalogue.
+    const created = await prisma.$transaction(async (tx) => {
+      const createdSlugs: string[] = [];
+
+      for (const item of toCreate) {
+        const mediaAsset = await tx.mediaAsset.upsert({
+          where: { url: item.image },
+          update: { altText: item.imageAlt ?? undefined },
+          create: { url: item.image, altText: item.imageAlt ?? undefined },
+        });
+
+        const product = await tx.product.create({
+          data: {
+            slug: item.slug,
+            title: item.title,
+            shortDescription: item.shortDescription ?? null,
+            longDescription: item.longDescription ?? null,
+            type: item.type,
+            material: item.material,
+            useCase: item.useCase ?? null,
+            priceAmount: item.priceAmount,
+            currency: "INR",
+            status: normalizeSyncStatus(item.status),
+            workflowStatus: "PUBLISHED",
+            imageAlt: item.imageAlt ?? null,
+            primaryImageId: mediaAsset.id,
+            publishedAt: new Date(),
+          },
+        });
+
+        if (item.bridgeCategory) {
+          const bridgePageId = bridgeBySlug.get(item.bridgeCategory);
+          if (bridgePageId) {
+            await tx.shopBridgePageProduct.create({
+              data: { bridgePageId, productId: product.id },
+            });
+          }
+        }
+
+        for (const kind of inferCollectionKindsForSyncItem(item)) {
+          const collectionId = collectionByKind.get(kind);
+          if (collectionId) {
+            await tx.collectionProductLink.create({
+              data: { collectionId, productId: product.id },
+            });
+          }
+        }
+
+        createdSlugs.push(item.slug);
+      }
+
+      return createdSlugs;
+    });
+
+    res.json({
+      created,
+      skipped,
+      totals: { created: created.length, skipped: skipped.length },
+    });
+  })
+);
+
 adminRouter.put(
   "/products/:id/media",
   asyncHandler(async (req, res) => {
