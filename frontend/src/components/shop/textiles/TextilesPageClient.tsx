@@ -5,13 +5,14 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import ProductDetailDrawer from "@/src/components/shop/ProductDetailDrawer";
-import { canonicalShopRoutes, getShopProductBySlug, type ShopProduct } from "@/src/lib/shopAllItems";
+import { canonicalShopRoutes } from "@/src/lib/shopAllItems";
+import { type ProductView } from "@/src/lib/product-types";
 
 import TextileCategorySection, { type TextileDisplayItem } from "./TextileCategorySection";
 import TextilesPageIntro from "./TextilesPageIntro";
 
 type TextilesPageClientProps = {
-  products: ShopProduct[];
+  products: ProductView[];
 };
 
 const scarfSlugs = [
@@ -39,9 +40,10 @@ export default function TextilesPageClient({ products }: TextilesPageClientProps
   const searchParams = useSearchParams();
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const selectedSlug = searchParams.get("item");
-  const selectedProduct = selectedSlug ? getShopProductBySlug(selectedSlug) ?? null : null;
 
   const productsBySlug = useMemo(() => new Map(products.map((product) => [product.slug, product])), [products]);
+
+  const selectedProduct = selectedSlug ? productsBySlug.get(selectedSlug) ?? null : null;
 
   const scarves = useMemo<TextileDisplayItem[]>(() => {
     const items: TextileDisplayItem[] = [];

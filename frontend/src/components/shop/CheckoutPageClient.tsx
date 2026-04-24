@@ -1,15 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
-import { canonicalShopRoutes, getShopProductBySlug } from "@/src/lib/shopAllItems";
+import { canonicalShopRoutes } from "@/src/lib/shopAllItems";
+import {
+  normalizeBackendProduct,
+  type BackendProduct,
+  type ProductView,
+} from "@/src/lib/product-types";
 
 import { useShopState } from "./ShopStateProvider";
 
 export default function CheckoutPageClient() {
   const { checkoutItemSlug, checkoutVariantLabel, checkoutSelectedOptions, clearCheckout } = useShopState();
-  const item = checkoutItemSlug ? getShopProductBySlug(checkoutItemSlug) : null;
+  const [item, setItem] = useState<ProductView | null>(null);
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(Boolean(checkoutItemSlug));
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -17,6 +23,48 @@ export default function CheckoutPageClient() {
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  // Resolve the selected slug against the backend. Single attempt; on failure
+  // the component falls through to the empty state (matches the pre-migration
+  // registry-miss branch). Cached in `item` state so rerenders don't refetch.
+  useEffect(() => {
+    if (!checkoutItemSlug) {
+      setItem(null);
+      setIsInitialLoading(false);
+      return;
+    }
+    setIsInitialLoading(true);
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/public/catalog/products/${encodeURIComponent(checkoutItemSlug)}`, {
+          headers: { Accept: "application/json" },
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const view = normalizeBackendProduct((await res.json()) as BackendProduct);
+        if (!cancelled) setItem(view);
+      } catch {
+        if (!cancelled) setItem(null);
+      } finally {
+        if (!cancelled) setIsInitialLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [checkoutItemSlug]);
+
+  if (isInitialLoading) {
+    return (
+      <main className="min-h-screen bg-[#f3efe7] pt-[72px] text-[#3a3a3a] sm:pt-[76px]">
+        <section className="section-primary pt-24 sm:pt-28">
+          <div className="page-container max-w-[900px] rounded-[30px] border border-[#d8cec1] bg-[#faf7f1] px-8 py-12 text-center">
+            <p className="text-[14px] leading-[1.85] text-[#625b53]">Loading your selected product…</p>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   if (!item) {
     return (

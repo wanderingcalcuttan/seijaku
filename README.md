@@ -167,7 +167,8 @@ Frontend public rendering:
 - `/shop` (Shop-All grid) is backend-fed via `frontend/src/lib/product-types.ts#fetchProducts` → `/catalog/products` (Decision #21).
 - Home `RitualSetsSection`, global `SearchOverlay`, and `howSeijakuWorks.options.ts` read from backend — the first two via client-side lazy fetches against `/api/public/catalog/products(/:slug)`; the third is pure static data (Decision #22).
 - Live Calm Gift Pouch picker options in `lifestyleSetConfig.ts` are derived at render time from the `ProductView[]` prop flowing into `LifestylePageClient` via `buildLifestyleSections(products)` (Decision #23).
-- `/seasonaldrops-hemanta` Reserve-button drawers are backend-fed via a server-component `page.tsx` that fetches the four `hemanta-*` slugs via `fetchProductBySlug` (Decision #24). Remaining `shopProducts` consumers (cart, checkout, `/collection`) migrate in Phase 4b.vi.
+- `/seasonaldrops-hemanta` Reserve-button drawers are backend-fed via a server-component `page.tsx` that fetches the four `hemanta-*` slugs via `fetchProductBySlug` (Decision #24).
+- `/checkout`, `/collection`, and the four bridge-page client drawers are backend-fed — checkout/collection via client-side lazy fetches against `/api/public/catalog/products/:slug`; the bridge-page drawers reuse the `ProductView[]` prop already flowing into them (Decision #25). After Phase 4b.vi the only remaining `shopProducts` consumer is `SyncRegistryButton.tsx`; Phase 4b.final deletes the registry and the sync button together.
 
 Backend data model and API:
 

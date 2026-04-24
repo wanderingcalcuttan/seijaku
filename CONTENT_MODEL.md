@@ -30,8 +30,9 @@ Articles, Retreats, Programs, and Shop Bridge Page *metadata* are no longer in t
 - Home `RitualSetsSection` (Featured Sets, 2 cards), `SearchOverlay`, and `HowSeijakuWorks` dropdown thumbnails: read from backend. `RitualSetsSection` + `SearchOverlay` lazy-fetch the public catalog via `/api/public/catalog/products` on mount / first open; `howSeijakuWorks.options.ts` is pure static data with hand-curated `/images/...` thumbnails (Decision #22).
 - Live Calm Gift Pouch picker options (`lifestyleSetConfig.ts`): derived at render time from the `ProductView[]` prop already flowing into `LifestylePageClient` via a `buildLifestyleSections(products)` function; no module-load reads of `shopProducts` (Decision #23).
 - `/seasonaldrops-hemanta` Reserve-button drawers: server-component `page.tsx` fetches the four `hemanta-*` slugs via `fetchProductBySlug` and passes a `Record<slug, ProductView>` prop to the client component (Decision #24). Editorial content on the page (hero copy, making steps, character/scent mapping, four-forms framing) stays hardcoded.
+- `/checkout`, `/collection`, and the four bridge-page client drawer lookups (`ShopBridgePageClient`, `DiffusersPageClient`, `PerfumesPageClient`, `TextilesPageClient`): backend-fed (Decision #25). Checkout and Collection lazy-fetch `/api/public/catalog/products/:slug` client-side from the `localStorage`-backed `ShopStateProvider`; the bridge-page drawers reuse the `ProductView[]` prop that's already flowing into them via Phase 4b.i.
 
-Still frontend-owned: the `shopProducts` array + related helpers/types in `shopAllItems.ts` serves cart, checkout, and `/collection`. Phase 4b.vi sequences these, ending with registry deletion in Phase 4b.final.
+Still frontend-owned: `shopAllItems.ts` survives only as the payload for the SUPER_ADMIN `SyncRegistryButton.tsx` admin tool. Phase 4b.final deletes both.
 
 Use this layer when:
 

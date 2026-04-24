@@ -5,11 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import ProductDetailDrawer from "@/src/components/shop/ProductDetailDrawer";
-import {
-  canonicalShopRoutes,
-  getShopProductBySlug,
-  type ShopProduct,
-} from "@/src/lib/shopAllItems";
+import { canonicalShopRoutes } from "@/src/lib/shopAllItems";
+import { type ProductView } from "@/src/lib/product-types";
 import type { ShopBridgePageConfig } from "@/src/lib/bridge-page-types";
 
 import PerfumeCategorySection, { type PerfumeSubGroup } from "./PerfumeCategorySection";
@@ -17,7 +14,7 @@ import PerfumePageIntro from "./PerfumePageIntro";
 
 type PerfumesPageClientProps = {
   page: ShopBridgePageConfig;
-  products: ShopProduct[];
+  products: ProductView[];
 };
 
 type PerfumeSectionId = "skin" | "textiles" | "objects";
@@ -66,7 +63,6 @@ export default function PerfumesPageClient({ page, products }: PerfumesPageClien
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedSlug = searchParams.get("item");
-  const selectedProduct = selectedSlug ? getShopProductBySlug(selectedSlug) ?? null : null;
   const [activeSection, setActiveSection] = useState<PerfumeSectionId>("skin");
 
   const productsBySlug = useMemo(
@@ -74,11 +70,13 @@ export default function PerfumesPageClient({ page, products }: PerfumesPageClien
     [products],
   );
 
+  const selectedProduct = selectedSlug ? productsBySlug.get(selectedSlug) ?? null : null;
+
   const skinItems = useMemo(
     () =>
       skinSlugs
         .map((slug) => productsBySlug.get(slug))
-        .filter((item): item is ShopProduct => Boolean(item)),
+        .filter((item): item is ProductView => Boolean(item)),
     [productsBySlug],
   );
 
@@ -86,7 +84,7 @@ export default function PerfumesPageClient({ page, products }: PerfumesPageClien
     () =>
       textileSlugs
         .map((slug) => productsBySlug.get(slug))
-        .filter((item): item is ShopProduct => Boolean(item)),
+        .filter((item): item is ProductView => Boolean(item)),
     [productsBySlug],
   );
 
@@ -98,7 +96,7 @@ export default function PerfumesPageClient({ page, products }: PerfumesPageClien
           description: group.description,
           products: group.slugs
             .map((slug) => productsBySlug.get(slug))
-            .filter((item): item is ShopProduct => Boolean(item)),
+            .filter((item): item is ProductView => Boolean(item)),
         }))
         .filter((group) => group.products.length > 0),
     [productsBySlug],

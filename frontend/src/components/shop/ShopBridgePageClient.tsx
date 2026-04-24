@@ -5,12 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import {
-  canonicalShopRoutes,
-  getShopProductBySlug,
-  type ShopProduct,
-} from "@/src/lib/shopAllItems";
+import { canonicalShopRoutes } from "@/src/lib/shopAllItems";
+import { type ProductView } from "@/src/lib/product-types";
 import type { ShopBridgePageConfig } from "@/src/lib/bridge-page-types";
+
+import { useMemo } from "react";
 
 import EditorialProductRow from "./EditorialProductRow";
 import ProductDetailDrawer from "./ProductDetailDrawer";
@@ -18,7 +17,7 @@ import ShopProductActions from "./ShopProductActions";
 
 type ShopBridgePageClientProps = {
   page: ShopBridgePageConfig;
-  products: ShopProduct[];
+  products: ProductView[];
 };
 
 function DokraBroochRow({
@@ -26,7 +25,7 @@ function DokraBroochRow({
   index,
   onViewDetails,
 }: {
-  item: ShopProduct;
+  item: ProductView;
   index: number;
   onViewDetails: (slug: string) => void;
 }) {
@@ -57,20 +56,6 @@ function DokraBroochRow({
           >
             {item.shortDescription ?? "A dokra brooch shaped for quiet daily ritual."}
           </p>
-          {item.ritualTag ? (
-            item.ritualTagHref ? (
-              <Link
-                href={item.ritualTagHref}
-                className="mt-5 inline-flex rounded-full border border-[rgba(116,99,77,0.14)] bg-[#F5F1EA] px-3.5 py-2 text-[10px] uppercase tracking-[0.2em] text-[#6d604f] transition-colors duration-200 hover:bg-[#efe7db] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8c7b68] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f6f1e8]"
-              >
-                {item.ritualTag}
-              </Link>
-            ) : (
-              <p className="mt-5 inline-flex rounded-full border border-[rgba(116,99,77,0.14)] bg-[#F5F1EA] px-3.5 py-2 text-[10px] uppercase tracking-[0.2em] text-[#6d604f]">
-                {item.ritualTag}
-              </p>
-            )
-          ) : null}
           <p className="mt-5 text-[15px] text-[#5f584f]">{item.priceLabel}</p>
           <ShopProductActions className="mt-7" item={item} onViewDetails={() => onViewDetails(item.slug)} />
         </div>
@@ -84,7 +69,8 @@ export default function ShopBridgePageClient({ page, products }: ShopBridgePageC
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedSlug = searchParams.get("item");
-  const selectedProduct = selectedSlug ? getShopProductBySlug(selectedSlug) ?? null : null;
+  const productsBySlug = useMemo(() => new Map(products.map((p) => [p.slug, p])), [products]);
+  const selectedProduct = selectedSlug ? productsBySlug.get(selectedSlug) ?? null : null;
   const isDokraPage = page.slug === "dokra-ornaments";
 
   const updateQuery = (slug?: string) => {

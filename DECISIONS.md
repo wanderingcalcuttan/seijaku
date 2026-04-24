@@ -446,6 +446,28 @@ Unchanged:
 
 Remaining `shopProducts` consumers: cart, checkout, `/collection`. Phase 4b.vi (transactional — cart + checkout + collection), 4b.final (registry deletion).
 
+### 25. Checkout, Collection, And Remaining Bridge-Page Drawer Lookups Read From Backend (Phase 4b.vi)
+
+Status: Active
+
+The last non-admin consumers of `shopProducts` and `getShopProductBySlug` migrate to backend reads. After this phase, only `SyncRegistryButton.tsx` (SUPER_ADMIN-only registry-feed tool on `/admin/products`) references the frontend registry — to be deleted alongside `shopAllItems.ts` in Phase 4b.final.
+
+Read paths:
+
+- `CheckoutPageClient` (`"use client"`) lazy-fetches `/api/public/catalog/products/:slug` on mount and whenever `checkoutItemSlug` (from `ShopStateProvider`, `localStorage`-backed) changes. A brief "Loading your selected product…" state covers the fetch; on failure or a slug no longer present in the backend, falls through to the pre-existing "No item is ready for checkout yet" empty state — same degradation the pre-migration registry-miss branch provided.
+- `CollectionPageClient` (`"use client"`) fetches every slug in `collection` (the wishlist array from `ShopStateProvider`) in parallel on mount and whenever the list changes. Results land in a `Record<slug, ProductView>` map. Per-slug failures are silently dropped from the rendered list (matches the pre-migration `.filter(Boolean)` behaviour). An `isInitialLoading` flag gates the "Your collection is quiet for now" empty state to avoid a false-empty flash during the first fetch cycle. The drawer reads from the same map.
+- Four bridge-page clients — `ShopBridgePageClient`, `DiffusersPageClient`, `PerfumesPageClient`, `TextilesPageClient` — drop their residual `getShopProductBySlug(selectedSlug)` drawer lookups in favor of an in-prop `productsBySlug.get(slug)` map. Each was already receiving `ProductView[]` at runtime via the Phase 4b.i server fetch; prop types tightened from `ShopProduct[]` to `ProductView[]` to match. `ShopBridgePageClient`'s dokra-row dead `ritualTag` / `ritualTagHref` rendering (Decision #20 cosmetic drop) is removed as part of the type tightening.
+- `/cart` is a 3-line `redirect(canonicalShopRoutes.collection)` that imports only the static routes object — not a migration candidate.
+
+Trade-offs:
+
+- **LocalStorage slug drift**: if a user has an old slug saved in `localStorage` (from `seijaku-collection` or `seijaku-checkout`) that was since removed from the backend catalog, the saved item silently disappears instead of rendering from the historical registry entry. This is an expected consequence of making the backend authoritative. Mirrors the "silently drop" behaviour established for collection filtering.
+- **Cold-start flash**: first visit after Render Free idle pays the 30–50 s wake-up. `/collection` shows a dedicated "Loading your collection…" state; `/checkout` shows a dedicated "Loading your selected product…" state. Returning visitors hit Next's Data Cache via the ISR tag window.
+- **Parallel fetches on `/collection`**: N slugs → N per-slug proxy requests per visit. Typical collection size is small (<10). If power users with dozens of saved items make this a hot path, a bulk-by-slug backend endpoint is the obvious follow-up. Out of scope for this phase.
+- No schema changes. No backend edits. No server-parent conversions needed (the consumer components already owned their own `"use client"` state tree).
+
+Remaining `shopProducts` consumer: `SyncRegistryButton.tsx` only. Phase 4b.final deletes `shopAllItems.ts`, drops the sync button (which becomes obsolete once the registry is gone), and closes the migration arc started in Phase 1.
+
 ## How To Use This File
 
 - Add a new entry when a structural or cross-cutting product decision is made.

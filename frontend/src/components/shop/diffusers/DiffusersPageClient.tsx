@@ -5,13 +5,14 @@ import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import ProductDetailDrawer from "@/src/components/shop/ProductDetailDrawer";
-import { canonicalShopRoutes, getShopProductBySlug, type ShopProduct } from "@/src/lib/shopAllItems";
+import { canonicalShopRoutes } from "@/src/lib/shopAllItems";
+import { type ProductView } from "@/src/lib/product-types";
 
 import DiffuserCategorySection, { type DiffuserCategorySectionData } from "./DiffuserCategorySection";
 import DiffuserPageIntro from "./DiffuserPageIntro";
 
 type DiffusersPageClientProps = {
-  products: ShopProduct[];
+  products: ProductView[];
 };
 
 const sectionContent: Omit<DiffuserCategorySectionData, "product">[] = [
@@ -86,9 +87,10 @@ export default function DiffusersPageClient({ products }: DiffusersPageClientPro
   const searchParams = useSearchParams();
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const selectedSlug = searchParams.get("item");
-  const selectedProduct = selectedSlug ? getShopProductBySlug(selectedSlug) ?? null : null;
 
   const diffuserProductsBySlug = useMemo(() => new Map(products.map((product) => [product.slug, product])), [products]);
+
+  const selectedProduct = selectedSlug ? diffuserProductsBySlug.get(selectedSlug) ?? null : null;
 
   const sections = useMemo(
     () =>
