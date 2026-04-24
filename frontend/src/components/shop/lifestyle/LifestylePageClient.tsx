@@ -5,14 +5,15 @@ import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import ProductDetailDrawer from "@/src/components/shop/ProductDetailDrawer";
-import { canonicalShopRoutes, getShopProductBySlug, type ShopProduct } from "@/src/lib/shopAllItems";
+import { canonicalShopRoutes } from "@/src/lib/shopAllItems";
+import { type ProductView } from "@/src/lib/product-types";
 
 import LifestylePageIntro from "./LifestylePageIntro";
 import LifestyleSetCard, { type LifestyleFieldValue } from "./LifestyleSetCard";
-import { lifestyleSections } from "./lifestyleSetConfig";
+import { buildLifestyleSections } from "./lifestyleSetConfig";
 
 type LifestylePageClientProps = {
-  products: ShopProduct[];
+  products: ProductView[];
 };
 
 export default function LifestylePageClient({ products }: LifestylePageClientProps) {
@@ -22,10 +23,11 @@ export default function LifestylePageClient({ products }: LifestylePageClientPro
   // Per-card field values: outer key = card id, inner key = field id, value is
   // string (SINGLE fields) or string[] (MULTI fields). See LifestyleSetCard.
   const [selectedValues, setSelectedValues] = useState<Record<string, Record<string, LifestyleFieldValue>>>({});
-  const selectedSlug = searchParams.get("item");
-  const selectedProduct = selectedSlug ? getShopProductBySlug(selectedSlug) ?? null : null;
-
   const productsBySlug = useMemo(() => new Map(products.map((product) => [product.slug, product])), [products]);
+  const selectedSlug = searchParams.get("item");
+  const selectedProduct = selectedSlug ? productsBySlug.get(selectedSlug) ?? null : null;
+
+  const lifestyleSections = useMemo(() => buildLifestyleSections(products), [products]);
 
   const updateQuery = (slug?: string) => {
     const params = new URLSearchParams(searchParams.toString());

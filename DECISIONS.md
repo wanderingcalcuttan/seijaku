@@ -402,6 +402,27 @@ Trade-offs:
 
 Remaining `shopProducts` consumers: cart, checkout, `/collection`, `lifestyleSetConfig.ts` (Lifestyle Gift Pouch picker options), `/seasonaldrops-hemanta`. Phase 4b.iv (lifestyle options), 4b.v (seasonal drops), 4b.vi (transactional — cart + checkout + collection), 4b.final (registry deletion) remain.
 
+### 23. Live Calm Gift Pouch Options Are Backend-Derived (Phase 4b.iv)
+
+Status: Active
+
+`lifestyleSetConfig.ts` no longer imports from `shopProducts`. The Live Calm Gift Pouch's three dropdowns (perfume / textile / brooch) are derived at render time from the already-flowing `ProductView[]` prop via a new `buildLifestyleSections(products)` function.
+
+Read path:
+
+- `/shop/lifestyle/page.tsx` (via `/shop/[slug]/page.tsx`) already fetches `ProductView[]` from `/catalog/products` (Phase 4b.i) and passes it to `LifestylePageClient`.
+- `LifestylePageClient` (`"use client"`) now calls `useMemo(() => buildLifestyleSections(products), [products])` to compose the three sections. The 5 cards with hardcoded option lists (Kolkata Chai Calm Box, Coffee Break Box, Unfold / Listen / Attune Ritual Boxes) are extracted to module-scope consts inside `lifestyleSetConfig.ts`. Only the Live Calm Gift Pouch's `fields` depend on `products` — its three `options: string[]` arrays come from `buyableTitlesByBridge(products, bridge)`, which filters out Sold Out / Upcoming / Waitlist products via `isUnbuyableProduct` / `isNotifyMeProduct` and sorts alphabetically.
+- `homepageFeaturedLifestyleItems` remains a pure static const (the Morning & Pause pair has no product-derived options), so `RitualSetsSection` continues to use it unchanged.
+- `LifestylePageClient`'s drawer-lookup leftover — `getShopProductBySlug(selectedSlug)` — was replaced with the in-prop `productsBySlug.get(selectedSlug)`. The prop type also tightened from `ShopProduct[]` to `ProductView[]` to match runtime reality (a leftover from the Phase 4b.i read-swap).
+
+Trade-offs:
+
+- Backend `status` is now authoritative for picker visibility. If a perfume / textile / brooch shifts between "In Stock" and "Waitlist" / "Sold Out" / "Upcoming" in admin, the Live Calm Gift Pouch dropdowns reflect within one `products` cache-tag window (Phase 0 caching contract, Decision #15). Previously the registry was the source of truth — Phase 4b.iv hands that authority to the backend for this picker.
+- `isUnbuyableProduct` / `isNotifyMeProduct` remain in `shopAllItems.ts` with `ShopProduct` parameters. ProductView is cast to ShopProduct inside `buyableTitlesByBridge` — safe because both helpers only read `.status` (a plain string present on both types). Moving the helpers to a ProductView-native location is deferred to Phase 4b.final cleanup.
+- No fetches added. No schema changes. No backend edits.
+
+Remaining `shopProducts` consumers: cart, checkout, `/collection`, `/seasonaldrops-hemanta`. Phase 4b.v (seasonal drops), 4b.vi (transactional), 4b.final (registry deletion).
+
 ## How To Use This File
 
 - Add a new entry when a structural or cross-cutting product decision is made.
