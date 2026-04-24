@@ -989,6 +989,10 @@ adminRouter.post(
     }
 
     // Atomic: any failure rolls the entire batch back — no partial catalogue.
+    // Bounded by Zod at 200 products; each product triggers ~4 sequential
+    // writes (media upsert + product + bridge-link + N collection links), so
+    // the default 5 s interactive-tx timeout is too tight for a full-registry
+    // sync. 60 s is comfortable headroom for 200 × ~4 queries on Neon free.
     const created = await prisma.$transaction(async (tx) => {
       const createdSlugs: string[] = [];
 
@@ -1040,7 +1044,7 @@ adminRouter.post(
       }
 
       return createdSlugs;
-    });
+    }, { timeout: 60_000 });
 
     res.json({
       created,
