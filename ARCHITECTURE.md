@@ -171,7 +171,8 @@ Already migrated to backend-fed reads:
 - editorial (`/a-seijaku-life` + detail pages) — reads via `publicBackendJson("/content/articles", { tags: ["articles"] })`; see Decision #16.
 - retreats (`/experiences` gallery + `/retreats/[slug]`) — reads via `publicBackendJson("/content/retreats", { tags: ["retreats"] })`; see Decision #17.
 - programs (`/programs` index + `/programs/[slug]`) — reads via `publicBackendJson("/content/programs", { tags: ["programs", "program-sessions"] })`; see Decision #18.
-- shop bridge pages (`/shop/[slug]`, both metadata AND the product list shown on that page) — reads via `publicBackendJson("/catalog/bridge-pages/:slug", { tags: ["bridge-pages", "products"] })`; see Decisions #19 (metadata) and #20 (products). Remaining `shopProducts` consumers (home, shop-all, search, cart, checkout, lifestyle pouches) migrate in Phase 4b.ii onwards.
+- shop bridge pages (`/shop/[slug]`, both metadata AND the product list shown on that page) — reads via `publicBackendJson("/catalog/bridge-pages/:slug", { tags: ["bridge-pages", "products"] })`; see Decisions #19 (metadata) and #20 (products).
+- `/shop` (Shop-All canonical route + the `/shop-all` redirect) — reads via `publicBackendJson("/catalog/products", { tags: ["products"] })`; see Decision #21. Remaining `shopProducts` consumers (home featured sets, search overlay, cart, checkout, lifestyle pouches, seasonal drops, HowSeijakuWorks) migrate in Phase 4b.iii onwards.
 
 When a domain migrates to backend-fed reads, the server component fetches via `publicBackendJson(path, { revalidate, tags })`. Results land in Next's Data Cache with a 60-second default `revalidate`, and admin writes invalidate by tag on demand through `/api/revalidate`. Admin reads explicitly pin `no-store`. See `DECISIONS.md` #15 and `CONTENT_MODEL.md` (Cache Tags) for the contract.
 

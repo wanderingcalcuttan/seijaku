@@ -358,6 +358,28 @@ Phase 4b.ii and beyond:
 - Phase 4b.iii: migrate cart + checkout so prices and titles come from the backend.
 - Phase 4b.final: delete `shopProducts` + related helpers/types from `shopAllItems.ts`.
 
+### 21. `/shop` (Shop-All) Reads from Backend (Phase 4b.ii)
+
+Status: Active
+
+The canonical `/shop` route now fetches its full product list from `/catalog/products` (via `fetchProducts()` in `frontend/src/lib/product-types.ts`) and hands it to `ShopAllPageClient` as a prop. Filter / sort / search remain client-side over the prop list — no extra network calls per interaction. Draft products are filtered at the backend (`/catalog/products` only returns `workflowStatus === "PUBLISHED"`), so drafts never leak.
+
+Read path:
+
+- Server component `/shop/page.tsx` is `dynamic = "force-dynamic"` and `await fetchProducts()`.
+- `ShopAllPageClient` accepts `products: ProductView[]`; `useMemo`-derived `filteredProducts` runs the full filter pipeline client-side.
+- `selectedProduct` for the detail drawer is looked up in the prop list (no second fetch).
+- Admin product edits invalidate the `products` tag via the Phase-0 proxy → `/api/revalidate` path; `/shop` refetches on next request.
+
+Taxonomy note:
+
+- `getShopTypes()` and `getShopMaterials()` in `shopAllItems.ts` return **static curated filter-chip taxonomies** (e.g. "Fragrances", "Body", "Dokra Ornaments") — they are NOT derived from the product set. They stay in place; no pure-function variant needed.
+- Only `useCases` was actually derived from products. `product-types.ts` adds `collectUseCases(products)` as the pure replacement for `getShopUseCases()`.
+
+`/shop-all` is a redirect to `/shop`, so it follows automatically.
+
+Remaining `shopProducts` consumers (home featured sets, `SearchOverlay`, Navbar / MenuSlider, cart, checkout, Lifestyle Gift Pouch option dropdowns, seasonal drops page, `HowSeijakuWorks` options) still read the frontend registry. Phase 4b.iii onwards.
+
 ## How To Use This File
 
 - Add a new entry when a structural or cross-cutting product decision is made.

@@ -6,14 +6,11 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import {
   getShopMaterials,
-  getShopProductBySlug,
   getShopProductReleaseDate,
   getShopProductUseCase,
   getShopTypes,
-  getShopUseCases,
   matchesShopMaterialFilter,
   matchesShopTypeFilter,
-  shopProducts,
   sortOptions,
   type ShopMaterialFilterOption,
   type ShopProduct,
@@ -21,6 +18,7 @@ import {
   type ShopTypeFilterOption,
   type ShopUseCase,
 } from "@/src/lib/shopAllItems";
+import { collectUseCases, type ProductView } from "@/src/lib/product-types";
 
 import ActiveFilterChips from "./ActiveFilterChips";
 import CompactProductCard from "./CompactProductCard";
@@ -32,7 +30,7 @@ const INITIAL_BATCH_SIZE = 8;
 const LOAD_MORE_STEP = 8;
 const RAIL_COLLAPSE_STORAGE_KEY = "seijaku.shopFilterRail.collapsed";
 
-function sortProducts(items: ShopProduct[], sortBy: ShopSortOption) {
+function sortProducts(items: ProductView[], sortBy: ShopSortOption) {
   const list = [...items];
 
   if (sortBy === "Newest") {
@@ -50,7 +48,7 @@ function sortProducts(items: ShopProduct[], sortBy: ShopSortOption) {
   return list;
 }
 
-function matchesSearch(item: ShopProduct, query: string) {
+function matchesSearch(item: ProductView, query: string) {
   if (!query) {
     return true;
   }
@@ -69,7 +67,11 @@ function matchesSearch(item: ShopProduct, query: string) {
   return haystack.includes(normalizedQuery);
 }
 
-export default function ShopAllPageClient() {
+type ShopAllPageClientProps = {
+  products: ProductView[];
+};
+
+export default function ShopAllPageClient({ products }: ShopAllPageClientProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -82,7 +84,9 @@ export default function ShopAllPageClient() {
   const [isRailCollapsed, setIsRailCollapsed] = useState(false);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const selectedSlug = searchParams.get("item");
-  const selectedProduct: ShopProduct | null = selectedSlug ? getShopProductBySlug(selectedSlug) ?? null : null;
+  const selectedProduct: ShopProduct | null = selectedSlug
+    ? products.find((p) => p.slug === selectedSlug) ?? null
+    : null;
 
   // Hydrate collapse preference from localStorage after mount to avoid SSR
   // mismatch. Reads once, writes on each toggle below.
@@ -111,7 +115,7 @@ export default function ShopAllPageClient() {
   };
 
   const filteredProducts = useMemo(() => {
-    const refined = shopProducts.filter((item) => {
+    const refined = products.filter((item) => {
       const itemUseCase = getShopProductUseCase(item);
       const bySearch = matchesSearch(item, searchValue);
       const byType = matchesShopTypeFilter(item, selectedType);
@@ -122,7 +126,15 @@ export default function ShopAllPageClient() {
     });
 
     return sortProducts(refined, sortBy);
-  }, [searchValue, selectedMaterial, selectedType, selectedUseCase, sortBy]);
+  }, [products, searchValue, selectedMaterial, selectedType, selectedUseCase, sortBy]);
+
+  // `getShopTypes()` / `getShopMaterials()` return static curated filter-chip
+  // taxonomies (not derived from the product set) — safe to keep using the
+  // static registry exports here. Only `useCases` is derived from actual
+  // product data, which now comes from the backend-fetched prop.
+  const types = getShopTypes();
+  const materials = getShopMaterials();
+  const useCases = useMemo(() => collectUseCases(products), [products]);
 
   const visibleProducts = filteredProducts.slice(0, visibleCount);
   const hasMore = visibleProducts.length < filteredProducts.length;
@@ -215,9 +227,9 @@ export default function ShopAllPageClient() {
       setSortBy(value);
       setVisibleCount(INITIAL_BATCH_SIZE);
     },
-    types: getShopTypes(),
-    materials: getShopMaterials(),
-    useCases: getShopUseCases(),
+    types,
+    materials,
+    useCases,
     sortOptions,
     onReset: resetFilters,
     hasActiveFilters,

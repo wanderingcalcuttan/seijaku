@@ -1,4 +1,6 @@
-import type { ShopProduct } from "@/src/lib/shopAllItems";
+import { publicBackendJson } from "@/src/lib/backend";
+import { cacheTags } from "@/src/lib/cache-tags";
+import type { ShopProduct, ShopUseCase } from "@/src/lib/shopAllItems";
 
 // ProductView is the read-only public shape the page clients already
 // consume. Structural subset of ShopProduct so ProductView[] assigns to
@@ -132,4 +134,29 @@ export function normalizeBackendProducts(items: BackendProduct[]): ProductView[]
   return items
     .map(normalizeBackendProduct)
     .filter((p): p is ProductView => p !== null);
+}
+
+// Fetches the full published catalog from the backend, normalized to the
+// ProductView shape. /catalog/products already filters DRAFT server-side
+// (backend/src/routes/public.ts), so the draft filter inside the normalizer
+// is defensive.
+export async function fetchProducts(): Promise<ProductView[]> {
+  const { items } = await publicBackendJson<{ items: BackendProduct[] }>(
+    "/catalog/products",
+    { tags: [cacheTags.products] },
+  );
+  return normalizeBackendProducts(items);
+}
+
+// Pure replacement for `getShopUseCases()` — derives the distinct use-case
+// list from a given product list instead of closing over the registry.
+// `getShopTypes()` / `getShopMaterials()` in shopAllItems.ts return curated
+// filter-chip taxonomies (not derived from products), so no equivalent
+// collect* helpers are needed for those.
+export function collectUseCases(products: ProductView[]): ShopUseCase[] {
+  const set = new Set<ShopUseCase>();
+  for (const p of products) {
+    if (p.useCase) set.add(p.useCase);
+  }
+  return Array.from(set).sort((a, b) => a.localeCompare(b));
 }
