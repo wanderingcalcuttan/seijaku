@@ -3,18 +3,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { canonicalShopRoutes } from "@/src/lib/shop-routes";
 import {
-  canonicalShopRoutes,
   isNotifyMeProduct,
   isUnbuyableProduct,
-  type ShopProduct,
-} from "@/src/lib/shopAllItems";
+  type ProductView,
+} from "@/src/lib/product-types";
 
 import NotifyMeModal from "./NotifyMeModal";
 import { useShopState } from "./ShopStateProvider";
 
 type ShopProductActionsProps = {
-  item: ShopProduct;
+  item: ProductView;
   onViewDetails: () => void;
   selection?: {
     label?: string | null;

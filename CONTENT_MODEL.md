@@ -13,32 +13,40 @@ This document explains which layer is authoritative for which kind of change.
 
 ## Source-Of-Truth Split
 
-### Frontend-Owned Public Presentation Content
+The migration from frontend-registry content to backend-owned records is complete (Decision #26). Every content record that surfaces on the public storefront lives in PostgreSQL and is edited through the admin UI. What remains frontend-owned is structural — routes, taxonomy labels, editorial copy, and display helpers.
 
-These files still drive what most visitors actually see on the public site:
+### Backend-Owned Content (everything on the public storefront)
 
-- `frontend/src/lib/shopAllItems.ts`
-- `frontend/src/lib/navigation.ts`
-- route-level page files and components for brand/storytelling sections
+Every content domain that a visitor sees reads from the backend via `publicBackendJson(path, { tags })` with tag-based ISR invalidation (Decision #15). Admin edits appear on public within seconds.
 
-Articles, Retreats, Programs, and Shop Bridge Page *metadata* are no longer in this list — all are backend-owned:
-- Articles: `publicBackendJson("/content/articles", { tags: ["articles"] })` (Decision #16).
-- Retreats: `publicBackendJson("/content/retreats", { tags: ["retreats"] })` (Decision #17).
-- Programs: `publicBackendJson("/content/programs", { tags: ["programs", "program-sessions"] })` (Decision #18).
-- Shop Bridge Pages AND the product list shown on each `/shop/[slug]`: `publicBackendJson("/catalog/bridge-pages/:slug", { tags: ["bridge-pages", "products"] })` (Decisions #19 and #20).
-- `/shop` (Shop-All grid + filters + search): `publicBackendJson("/catalog/products", { tags: ["products"] })` — filter/sort/search stay client-side over the fetched list (Decision #21).
-- Home `RitualSetsSection` (Featured Sets, 2 cards), `SearchOverlay`, and `HowSeijakuWorks` dropdown thumbnails: read from backend. `RitualSetsSection` + `SearchOverlay` lazy-fetch the public catalog via `/api/public/catalog/products` on mount / first open; `howSeijakuWorks.options.ts` is pure static data with hand-curated `/images/...` thumbnails (Decision #22).
-- Live Calm Gift Pouch picker options (`lifestyleSetConfig.ts`): derived at render time from the `ProductView[]` prop already flowing into `LifestylePageClient` via a `buildLifestyleSections(products)` function; no module-load reads of `shopProducts` (Decision #23).
-- `/seasonaldrops-hemanta` Reserve-button drawers: server-component `page.tsx` fetches the four `hemanta-*` slugs via `fetchProductBySlug` and passes a `Record<slug, ProductView>` prop to the client component (Decision #24). Editorial content on the page (hero copy, making steps, character/scent mapping, four-forms framing) stays hardcoded.
-- `/checkout`, `/collection`, and the four bridge-page client drawer lookups (`ShopBridgePageClient`, `DiffusersPageClient`, `PerfumesPageClient`, `TextilesPageClient`): backend-fed (Decision #25). Checkout and Collection lazy-fetch `/api/public/catalog/products/:slug` client-side from the `localStorage`-backed `ShopStateProvider`; the bridge-page drawers reuse the `ProductView[]` prop that's already flowing into them via Phase 4b.i.
+| Surface | Endpoint | Tags | Decision |
+|---|---|---|---|
+| `/a-seijaku-life` articles | `/content/articles` | `articles` | #16 |
+| `/experiences` + `/retreats/[slug]` | `/content/retreats` | `retreats` | #17 |
+| `/programs` index + `/programs/[slug]` | `/content/programs` | `programs`, `program-sessions` | #18 |
+| `/shop/[slug]` bridge pages (metadata + product list) | `/catalog/bridge-pages/:slug` | `bridge-pages`, `products` | #19, #20 |
+| `/shop` (Shop-All grid + filter/sort/search) | `/catalog/products` | `products` | #21 |
+| Home `RitualSetsSection`, `SearchOverlay` | `/catalog/products`, `/catalog/products/:slug` (client-side) | `products` | #22 |
+| `/shop/lifestyle` Live Calm Gift Pouch picker options | `ProductView[]` prop flowing into `LifestylePageClient` | `products` | #23 |
+| `/seasonaldrops-hemanta` Reserve-button drawers | `/catalog/products/:slug` (server parent) | `products` | #24 |
+| `/checkout`, `/collection`, bridge-page drawer lookups | `/catalog/products/:slug` (client lazy-fetch) or in-prop map | `products` | #25 |
 
-Still frontend-owned: `shopAllItems.ts` survives only as the payload for the SUPER_ADMIN `SyncRegistryButton.tsx` admin tool. Phase 4b.final deletes both.
+### Frontend-Owned (structure + editorial copy, not content records)
+
+- **Routes + taxonomy** — `frontend/src/lib/shop-routes.ts` (`canonicalShopRoutes`), `frontend/src/lib/shop-taxonomy.ts` (filter-option unions, `getShopTypes()` / `getShopMaterials()`, release-date lookup), `frontend/src/lib/navigation.ts` (drawer / navbar structure).
+- **Display helpers + normalizers** — `frontend/src/lib/product-types.ts` (`ProductView`, status helpers, `fetchProducts`, `fetchProductBySlug`, `collectUseCases`), `bridge-page-types.ts`, `retreat-types.ts`, `program-types.ts`, `seijaku-life-types.ts`.
+- **Route-level editorial copy** — hero sections and marketing decoration embedded in route files (`/`, `/our-story`, `/ritual`, `/seasonaldrops-hemanta`, `/programs` trust notes).
+- **Static option lists** — `frontend/src/components/howSeijakuWorks.options.ts` (curated home-page dropdowns), hand-written card content on `/shop/diffusers`, `/shop/textiles`, `/shop/perfumes` (category prose, pairings, static slug lists).
+- **Compatibility redirects** — `/cart`, `/shop-all`, `/categories/[slug]`, `/lifestyle` route stubs (Decision #1).
 
 Use this layer when:
 
-- changing copy that must appear on the public storefront immediately
-- changing route semantics for existing public pages
-- changing shop card/detail presentation that still depends on `frontend/src/lib`
+- Changing route-level editorial copy (hero text, storytelling sections) that isn't a content record.
+- Adding / renaming / reordering shop filter chip labels or taxonomy unions.
+- Adjusting navigation structure.
+- Changing a display helper, normalizer, or status-display mapping.
+
+Do **not** use this layer to change product data, article text, retreat details, bridge-page metadata, program sessions, or anything admins edit. Those live in the backend DB.
 
 ### Backend-Owned Normalized Content
 

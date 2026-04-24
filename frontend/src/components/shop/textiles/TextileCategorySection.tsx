@@ -1,9 +1,9 @@
-﻿import type { ShopProduct } from "@/src/lib/shopAllItems";
+﻿import type { ProductView } from "@/src/lib/product-types";
 
 import TextileProductCard from "./TextileProductCard";
 
 export type TextileDisplayItem = {
-  product: ShopProduct;
+  product: ProductView;
   description: string;
   pairingLabel?: string;
   pairingHref?: string;

@@ -7,7 +7,7 @@ import type {
   ShopSortOption,
   ShopTypeFilterOption,
   ShopUseCase,
-} from "@/src/lib/shopAllItems";
+} from "@/src/lib/shop-taxonomy";
 
 import ShopFilterSection from "./ShopFilterSection";
 

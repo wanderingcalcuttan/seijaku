@@ -1,7 +1,7 @@
 ﻿import Image from "next/image";
 import Link from "next/link";
 
-import { canonicalShopRoutes } from "@/src/lib/shopAllItems";
+import { canonicalShopRoutes } from "@/src/lib/shop-routes";
 
 import SplitProcessVideoStrip from "@/src/components/SplitProcessVideoStrip";
 import OurStoryHero from "./OurStoryHero";

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { canonicalShopRoutes } from "@/src/lib/shopAllItems";
+import { canonicalShopRoutes } from "@/src/lib/shop-routes";
 import {
   normalizeBackendProduct,
   type BackendProduct,

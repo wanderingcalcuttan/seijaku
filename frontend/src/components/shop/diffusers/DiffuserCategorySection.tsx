@@ -1,4 +1,4 @@
-import type { ShopProduct } from "@/src/lib/shopAllItems";
+import type { ProductView } from "@/src/lib/product-types";
 
 import DiffuserProductCard from "./DiffuserProductCard";
 
@@ -6,7 +6,7 @@ export type DiffuserCategorySectionData = {
   id: string;
   title: string;
   categoryLabel: string;
-  product: ShopProduct;
+  product: ProductView;
   description: string;
   variantLabel: string;
   options: string[];

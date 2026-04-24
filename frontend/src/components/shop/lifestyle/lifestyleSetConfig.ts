@@ -1,10 +1,9 @@
+import type { ShopBridgeSlug } from "@/src/lib/shop-routes";
 import {
   isNotifyMeProduct,
   isUnbuyableProduct,
-  type ShopBridgeSlug,
-  type ShopProduct,
-} from "@/src/lib/shopAllItems";
-import { type ProductView } from "@/src/lib/product-types";
+  type ProductView,
+} from "@/src/lib/product-types";
 
 import { type LifestyleSetField } from "./LifestyleSetCard";
 
@@ -28,11 +27,9 @@ export type LifestyleSectionConfig = {
 // Filters out products that can't be bought right now (Sold Out / Upcoming /
 // Waitlist) so the dropdowns only surface items customers can actually gift.
 // Sorted alphabetically for a stable picker order as the catalogue grows.
-// `isUnbuyableProduct` / `isNotifyMeProduct` only read `.status`, which is
-// identical on ProductView — the cast is safe.
 function buyableTitlesByBridge(products: ProductView[], bridge: ShopBridgeSlug): string[] {
   return products
-    .filter((p) => p.bridgeCategory === bridge && !isUnbuyableProduct(p as ShopProduct) && !isNotifyMeProduct(p as ShopProduct))
+    .filter((p) => p.bridgeCategory === bridge && !isUnbuyableProduct(p) && !isNotifyMeProduct(p))
     .map((p) => p.title)
     .sort((a, b) => a.localeCompare(b));
 }

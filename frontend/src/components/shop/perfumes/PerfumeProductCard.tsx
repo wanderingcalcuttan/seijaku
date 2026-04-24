@@ -2,12 +2,12 @@
 
 import Image from "next/image";
 
-import type { ShopProduct } from "@/src/lib/shopAllItems";
+import type { ProductView } from "@/src/lib/product-types";
 
 import ShopProductActions from "../ShopProductActions";
 
 type PerfumeProductCardProps = {
-  item: ShopProduct;
+  item: ProductView;
   categoryLabel: string;
   onViewDetails: (slug: string) => void;
 };

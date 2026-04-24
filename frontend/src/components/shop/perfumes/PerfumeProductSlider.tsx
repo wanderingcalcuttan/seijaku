@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { ShopProduct } from "@/src/lib/shopAllItems";
+import type { ProductView } from "@/src/lib/product-types";
 
 import PerfumeProductCard from "./PerfumeProductCard";
 
 type PerfumeProductSliderProps = {
-  products: ShopProduct[];
+  products: ProductView[];
   categoryLabel: string;
   onViewDetails: (slug: string) => void;
 };

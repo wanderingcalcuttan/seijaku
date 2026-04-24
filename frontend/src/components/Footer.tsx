@@ -1,6 +1,6 @@
 ﻿import Link from "next/link";
 
-import { canonicalShopRoutes } from "@/src/lib/shopAllItems";
+import { canonicalShopRoutes } from "@/src/lib/shop-routes";
 import FooterNewsletterForm from "@/src/components/FooterNewsletterForm";
 
 const exploreLinks = [

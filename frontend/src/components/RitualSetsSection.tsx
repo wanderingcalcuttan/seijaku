@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import ProductDetailDrawer from "@/src/components/shop/ProductDetailDrawer";
 import LifestyleSetCard, { type LifestyleFieldValue } from "@/src/components/shop/lifestyle/LifestyleSetCard";
 import { homepageFeaturedLifestyleItems } from "@/src/components/shop/lifestyle/lifestyleSetConfig";
-import { canonicalShopRoutes } from "@/src/lib/shopAllItems";
+import { canonicalShopRoutes } from "@/src/lib/shop-routes";
 import {
   normalizeBackendProduct,
   type BackendProduct,

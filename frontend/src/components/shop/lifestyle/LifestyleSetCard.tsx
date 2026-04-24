@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 
-import type { ShopProduct } from "@/src/lib/shopAllItems";
+import type { ProductView } from "@/src/lib/product-types";
 
 import ShopProductActions from "../ShopProductActions";
 
@@ -22,7 +22,7 @@ export type LifestyleSetField = {
 export type LifestyleFieldValue = string | string[];
 
 type LifestyleSetCardProps = {
-  item: ShopProduct;
+  item: ProductView;
   displayTitle: string;
   groupLabel: string;
   includes: string[];

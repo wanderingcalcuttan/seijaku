@@ -8,7 +8,7 @@ import PerfumesPageClient from "@/src/components/shop/perfumes/PerfumesPageClien
 import ShopBridgePageClient from "@/src/components/shop/ShopBridgePageClient";
 import TextilesPageClient from "@/src/components/shop/textiles/TextilesPageClient";
 import { fetchBridgePage } from "@/src/lib/bridge-page-types";
-import { canonicalShopRoutes } from "@/src/lib/shopAllItems";
+import { canonicalShopRoutes } from "@/src/lib/shop-routes";
 
 export const dynamic = "force-dynamic";
 

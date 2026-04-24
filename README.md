@@ -168,7 +168,8 @@ Frontend public rendering:
 - Home `RitualSetsSection`, global `SearchOverlay`, and `howSeijakuWorks.options.ts` read from backend — the first two via client-side lazy fetches against `/api/public/catalog/products(/:slug)`; the third is pure static data (Decision #22).
 - Live Calm Gift Pouch picker options in `lifestyleSetConfig.ts` are derived at render time from the `ProductView[]` prop flowing into `LifestylePageClient` via `buildLifestyleSections(products)` (Decision #23).
 - `/seasonaldrops-hemanta` Reserve-button drawers are backend-fed via a server-component `page.tsx` that fetches the four `hemanta-*` slugs via `fetchProductBySlug` (Decision #24).
-- `/checkout`, `/collection`, and the four bridge-page client drawers are backend-fed — checkout/collection via client-side lazy fetches against `/api/public/catalog/products/:slug`; the bridge-page drawers reuse the `ProductView[]` prop already flowing into them (Decision #25). After Phase 4b.vi the only remaining `shopProducts` consumer is `SyncRegistryButton.tsx`; Phase 4b.final deletes the registry and the sync button together.
+- `/checkout`, `/collection`, and the four bridge-page client drawers are backend-fed — checkout/collection via client-side lazy fetches against `/api/public/catalog/products/:slug`; the bridge-page drawers reuse the `ProductView[]` prop already flowing into them (Decision #25).
+- **Phase 4b.final (Decision #26): `shopAllItems.ts` is deleted.** The frontend-registry content layer is gone. Every public content surface reads from the backend; the admin UI is the authoritative editing interface for every content domain. What remains in `frontend/src/lib/` is structural + editorial: `shop-routes.ts` (route map), `shop-taxonomy.ts` (filter unions + matchers + release-date lookup), `product-types.ts` (ProductView + fetchers + status helpers), and the per-domain normalizer modules.
 
 Backend data model and API:
 

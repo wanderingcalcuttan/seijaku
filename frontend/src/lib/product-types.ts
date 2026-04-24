@@ -1,14 +1,38 @@
 import { publicBackendJson } from "@/src/lib/backend";
 import { cacheTags } from "@/src/lib/cache-tags";
-import type { ShopProduct, ShopUseCase } from "@/src/lib/shopAllItems";
+import type { ShopBridgeSlug } from "@/src/lib/shop-routes";
+import type { ShopItemType, ShopMaterial, ShopUseCase } from "@/src/lib/shop-taxonomy";
 
-// ProductView is the read-only public shape the page clients already
-// consume. Structural subset of ShopProduct so ProductView[] assigns to
-// ShopProduct[] positions without refactoring any card/drawer.
-// Dropped fields: ritualTag / ritualTagHref — not modeled backend-side.
-// Used by ~3 products on the pre-Phase-4a registry; reintroduce via a
-// metadataJson field if/when the admin needs it.
-export type ProductView = Omit<ShopProduct, "ritualTag" | "ritualTagHref">;
+// ProductView is the read-only public product shape consumed by every
+// frontend rendering surface. Defined inline here — ShopProduct (its former
+// source via Omit) was deleted in Phase 4b.final (Decision #26).
+export type ProductView = {
+  id: string;
+  slug: string;
+  title: string;
+  type: ShopItemType;
+  material: ShopMaterial;
+  bridgeCategory?: ShopBridgeSlug;
+  useCase?: ShopUseCase;
+  shortDescription?: string;
+  longDescription?: string;
+  price: number;
+  priceLabel: string;
+  image: string;
+  imageAlt?: string;
+  gallery?: string[];
+  videoUrl?: string;
+  ctaLabel?: string;
+  status?: string;
+  // Per-product variant pickers (e.g. colour tone). When present,
+  // ProductDetailDrawer renders a <select> per entry. If `required` is true,
+  // Buy Now stays disabled until a value is chosen.
+  customizationOptions?: Array<{
+    label: string;
+    values: string[];
+    required?: boolean;
+  }>;
+};
 
 export type BackendProductStatus =
   | "IN_STOCK"
@@ -87,9 +111,8 @@ function formatPriceLabel(amount: number, currency: string): string {
 
 // Drafts return null so caller can filter them out; everything else maps.
 // `type`, `material`, `useCase`, `bridgeCategory` are asserted into the
-// ShopProduct unions — free-text values outside the union will still render
-// correctly in page clients (they read the string verbatim); frontend-level
-// filter helpers elsewhere rely on the union but are unused on /shop/[slug].
+// ProductView unions — free-text values outside the union still render
+// correctly in page clients (they read the string verbatim).
 export function normalizeBackendProduct(b: BackendProduct): ProductView | null {
   if (b.workflowStatus === "DRAFT") return null;
 
@@ -163,15 +186,43 @@ export async function fetchProductBySlug(slug: string): Promise<ProductView | nu
   }
 }
 
-// Pure replacement for `getShopUseCases()` — derives the distinct use-case
-// list from a given product list instead of closing over the registry.
-// `getShopTypes()` / `getShopMaterials()` in shopAllItems.ts return curated
-// filter-chip taxonomies (not derived from products), so no equivalent
-// collect* helpers are needed for those.
+// Derives the distinct use-case list from a given product list. Pure
+// replacement for the old registry-derived `getShopUseCases()`.
+// `getShopTypes()` / `getShopMaterials()` in shop-taxonomy.ts return curated
+// filter-chip taxonomies (not derived from products).
 export function collectUseCases(products: ProductView[]): ShopUseCase[] {
   const set = new Set<ShopUseCase>();
   for (const p of products) {
     if (p.useCase) set.add(p.useCase);
   }
   return Array.from(set).sort((a, b) => a.localeCompare(b));
+}
+
+// Product statuses that should surface the "Notify Me" CTA in place of Buy
+// Now. Kept narrow on purpose — Sold Out / Upcoming stay as information-only
+// badges (no capture form) per Decision #14.
+export const notifiableStatuses = ["Waitlist"] as const;
+
+export type NotifiableStatus = (typeof notifiableStatuses)[number];
+
+// Statuses that completely suppress the primary CTA. The action row shows
+// View Details + Wishlist only, with a short status label in the CTA slot.
+export const unbuyableStatuses = ["Sold Out", "Upcoming"] as const;
+
+export function isNotifyMeProduct(item: ProductView): boolean {
+  return Boolean(item.status && (notifiableStatuses as readonly string[]).includes(item.status));
+}
+
+export function isUnbuyableProduct(item: ProductView): boolean {
+  return Boolean(item.status && (unbuyableStatuses as readonly string[]).includes(item.status));
+}
+
+// Use-case fallback for products missing an explicit `useCase`. Derives from
+// `type` via the editorial mapping kept with the domain taxonomy.
+export function getShopProductUseCase(item: ProductView): ShopUseCase | undefined {
+  if (item.useCase) return item.useCase;
+  if (item.type === "Perfume") return "skin";
+  if (item.type === "Scarf / Square") return "cloth";
+  if (item.type === "Diffuser") return "diffusion objects";
+  return undefined;
 }

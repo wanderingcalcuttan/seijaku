@@ -6,7 +6,7 @@ import { Menu, Search, ShoppingBag, User } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
-import { canonicalShopRoutes } from "@/src/lib/shopAllItems";
+import { canonicalShopRoutes } from "@/src/lib/shop-routes";
 
 import HomeDiscoveryRail from "./HomeDiscoveryRail";
 import MenuSlider from "./MenuSlider";

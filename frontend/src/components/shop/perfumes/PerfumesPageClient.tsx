@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import ProductDetailDrawer from "@/src/components/shop/ProductDetailDrawer";
-import { canonicalShopRoutes } from "@/src/lib/shopAllItems";
+import { canonicalShopRoutes } from "@/src/lib/shop-routes";
 import { type ProductView } from "@/src/lib/product-types";
 import type { ShopBridgePageConfig } from "@/src/lib/bridge-page-types";
 

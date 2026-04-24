@@ -3,12 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import type { ShopProduct } from "@/src/lib/shopAllItems";
+import type { ProductView } from "@/src/lib/product-types";
 
 import ShopProductActions from "../ShopProductActions";
 
 type TextileProductCardProps = {
-  item: ShopProduct;
+  item: ProductView;
   categoryLabel: string;
   description: string;
   pairingLabel?: string;

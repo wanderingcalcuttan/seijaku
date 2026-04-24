@@ -1,4 +1,4 @@
-﻿import { canonicalShopRoutes } from "@/src/lib/shopAllItems";
+﻿import { canonicalShopRoutes } from "@/src/lib/shop-routes";
 
 export type NavItem = {
   label: string;

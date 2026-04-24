@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import type { ShopProduct } from "@/src/lib/shopAllItems";
+import type { ProductView } from "@/src/lib/product-types";
 
 type NotifyMeModalProps = {
-  item: ShopProduct | null;
+  item: ProductView | null;
   isOpen: boolean;
   onClose: () => void;
 };

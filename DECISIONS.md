@@ -468,6 +468,58 @@ Trade-offs:
 
 Remaining `shopProducts` consumer: `SyncRegistryButton.tsx` only. Phase 4b.final deletes `shopAllItems.ts`, drops the sync button (which becomes obsolete once the registry is gone), and closes the migration arc started in Phase 1.
 
+### 26. `shopProducts` Frontend Registry Deleted (Phase 4b.final)
+
+Status: Active
+
+The frontend content-registry era — which served as the public storefront's source of truth from launch through Phase 8 — is over. `frontend/src/lib/shopAllItems.ts` has been deleted. The non-registry exports that previously co-habited the file have new homes:
+
+- `canonicalShopRoutes` + `ShopBridgeSlug` re-export → `frontend/src/lib/shop-routes.ts`
+- `ShopItemType`, `ShopMaterial`, `ShopUseCase`, `ShopSortOption`, `sortOptions`, `ShopTypeFilterOption`, `ShopMaterialFilterOption`, `getShopTypes`, `getShopMaterials`, `matchesShopTypeFilter`, `matchesShopMaterialFilter`, `shopProductReleaseDates`, `getShopProductReleaseDate` → new `frontend/src/lib/shop-taxonomy.ts`. Filter matchers and the release-date lookup now take structural-subset parameters instead of a full product type, so the taxonomy module has no dependency on `ProductView`.
+- `notifiableStatuses`, `unbuyableStatuses`, `NotifiableStatus`, `isNotifyMeProduct`, `isUnbuyableProduct`, `getShopProductUseCase` → existing `frontend/src/lib/product-types.ts`. Helpers now take `ProductView` natively (the `as ShopProduct` casts introduced in Phase 4b.iv are gone).
+
+`ShopProduct` is deleted. The 10 component files that typed a prop against it (product cards, sliders, `NotifyMeModal`, `EditorialProductRow`, `ProductDetailDrawer`, `LifestyleSetCard`, `CompactProductCard`, `ShopProductActions`, `ShopAllPageClient`'s local `selectedProduct`, `CategorySection` siblings) now type against `ProductView`. The shape is identical minus the `ritualTag` / `ritualTagHref` fields that were declared a cosmetic drop in Decision #20.
+
+`ProductView` is declared inline in `product-types.ts` instead of `Omit<ShopProduct, "ritualTag" | "ritualTagHref">` — the Omit chain is gone with its source type.
+
+Admin surface removed:
+
+- `frontend/src/components/admin/SyncRegistryButton.tsx`
+- The `<SyncRegistryButton />` slot on `/admin/products` (SUPER_ADMIN-gated action row)
+- Backend `POST /admin/products/sync-new` handler (~100 lines)
+- `syncRegistrySchema` Zod + `syncProductInput` + `normalizeSyncStatus` + `inferCollectionKindsForSyncItem` helpers in `backend/src/routes/admin.ts`
+
+The Sync button existed to bulk-import frontend-registry products into the backend DB during the migration. With the registry gone there is nothing to sync. Future product creation flows through the standard admin UI under `/admin/products/new`. If a future need for bulk JSON import emerges (e.g. a vendor catalog drop), it belongs in a new, narrower endpoint — not this one's ghost.
+
+Dead legacy shop-all filter UI components also deleted (zero importers since the Phase 4b.ii `/shop` rewrite):
+
+- `frontend/src/components/shop-all/FilterPanel.tsx`
+- `frontend/src/components/shop-all/CategoryTabs.tsx`
+- `frontend/src/components/shop-all/ProductCard.tsx`
+- `frontend/src/components/shop-all/SortDropdown.tsx`
+
+(Two files in that directory survive — `FeaturedCollectionCallout.tsx` and `ShopHero.tsx`. They have zero importers either, but don't block registry deletion; leaving them for a future cleanup PR.)
+
+Retained from the registry era:
+
+- `/cart`, `/shop-all`, `/categories/[slug]`, `/lifestyle` compatibility redirects stay per Decision #1. All swapped their `canonicalShopRoutes` import to `shop-routes.ts`.
+- The editorial release-date lookup (`shopProductReleaseDates`) was hand-maintained data that never had a backend analogue. It moved to `shop-taxonomy.ts` verbatim. If admins want to control release dates, that's a follow-up (new column on `Product` + admin field + replace the lookup with a prop read).
+
+What's frontend-owned after Phase 4b.final:
+
+- Route-level editorial copy (home sections, `/ritual`, `/our-story`, the Hemanta seasonal-drop editorial, `/programs` page-level marketing decoration)
+- Static navigation + routes maps (`shop-routes.ts`, `navigation.ts`)
+- Static taxonomy, filter-chip labels, and the release-date lookup (`shop-taxonomy.ts`)
+- Display helpers and normalizers (`product-types.ts`, `bridge-page-types.ts`, `retreat-types.ts`, `program-types.ts`, `seijaku-life-types.ts`)
+- `/cart` and `/shop-all` redirect stubs
+
+What's backend-owned:
+
+- Every content record that surfaces on the public storefront: products, bridge pages, articles, retreats, programs, program sessions, collections, site settings, media.
+- All admin auth, leads (order requests, newsletter, program reservations, retreat inquiries, product notifications), media storage.
+
+The migration arc started in Phase 1 (articles) and closed in Phase 4b.final (products + types + admin sync surface). Every public-facing content surface reads from the backend through `publicBackendJson` with tag-based ISR invalidation (Decision #15). The admin UI is the authoritative editing interface for every content domain. The two-content-layer split that framed this repo's mental model for the first eight phases is now a single backend-authoritative layer with route-level editorial copy layered on top.
+
 ## How To Use This File
 
 - Add a new entry when a structural or cross-cutting product decision is made.

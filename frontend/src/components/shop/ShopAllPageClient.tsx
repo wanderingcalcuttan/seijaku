@@ -7,18 +7,20 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   getShopMaterials,
   getShopProductReleaseDate,
-  getShopProductUseCase,
   getShopTypes,
   matchesShopMaterialFilter,
   matchesShopTypeFilter,
   sortOptions,
   type ShopMaterialFilterOption,
-  type ShopProduct,
   type ShopSortOption,
   type ShopTypeFilterOption,
   type ShopUseCase,
-} from "@/src/lib/shopAllItems";
-import { collectUseCases, type ProductView } from "@/src/lib/product-types";
+} from "@/src/lib/shop-taxonomy";
+import {
+  collectUseCases,
+  getShopProductUseCase,
+  type ProductView,
+} from "@/src/lib/product-types";
 
 import ActiveFilterChips from "./ActiveFilterChips";
 import CompactProductCard from "./CompactProductCard";
@@ -84,7 +86,7 @@ export default function ShopAllPageClient({ products }: ShopAllPageClientProps) 
   const [isRailCollapsed, setIsRailCollapsed] = useState(false);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const selectedSlug = searchParams.get("item");
-  const selectedProduct: ShopProduct | null = selectedSlug
+  const selectedProduct: ProductView | null = selectedSlug
     ? products.find((p) => p.slug === selectedSlug) ?? null
     : null;
 

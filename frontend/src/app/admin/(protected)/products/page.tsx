@@ -2,7 +2,6 @@ import Link from "next/link";
 
 import AdminPage from "@/src/components/admin/AdminPage";
 import ProductTable from "@/src/components/admin/ProductTable";
-import SyncRegistryButton from "@/src/components/admin/SyncRegistryButton";
 import { adminSecondaryButtonClassName } from "@/src/components/admin/AdminField";
 import { adminBackendJson } from "@/src/lib/admin-backend";
 import { requireCurrentAdmin } from "@/src/lib/admin-session";
@@ -45,12 +44,9 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       title="Products"
       description="Browse and manage the shop catalog. Filter by publish workflow, search by title or slug, and use bulk actions to publish, unpublish, or delete multiple products at once."
       action={
-        <div className="flex flex-wrap items-center gap-3">
-          {admin.role === "SUPER_ADMIN" ? <SyncRegistryButton /> : null}
-          <Link href="/admin/products/new" className={adminSecondaryButtonClassName}>
-            New product
-          </Link>
-        </div>
+        <Link href="/admin/products/new" className={adminSecondaryButtonClassName}>
+          New product
+        </Link>
       }
     >
       <ProductTable

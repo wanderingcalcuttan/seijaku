@@ -21,7 +21,7 @@
 // HowSeijakuWorks.tsx — it's a single editorial link, not a dropdown.
 // ──────────────────────────────────────────────────────────────────────────────
 
-import { canonicalShopRoutes } from "@/src/lib/shopAllItems";
+import { canonicalShopRoutes } from "@/src/lib/shop-routes";
 
 export type HowSeijakuWorksItem = {
   label: string;

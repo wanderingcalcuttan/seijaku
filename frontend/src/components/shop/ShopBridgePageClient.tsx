@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { canonicalShopRoutes } from "@/src/lib/shopAllItems";
+import { canonicalShopRoutes } from "@/src/lib/shop-routes";
 import { type ProductView } from "@/src/lib/product-types";
 import type { ShopBridgePageConfig } from "@/src/lib/bridge-page-types";
 

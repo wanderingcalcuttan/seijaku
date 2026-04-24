@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { canonicalShopRoutes } from "@/src/lib/shopAllItems";
+import { canonicalShopRoutes } from "@/src/lib/shop-routes";
 import { canonicalBridgeSlugs } from "@/src/lib/bridge-page-types";
 
 type LegacyCategoryPageProps = {

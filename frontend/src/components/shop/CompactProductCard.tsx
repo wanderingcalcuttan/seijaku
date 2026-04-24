@@ -2,12 +2,12 @@
 
 import Image from "next/image";
 
-import type { ShopProduct } from "@/src/lib/shopAllItems";
+import type { ProductView } from "@/src/lib/product-types";
 
 import ShopProductActions from "./ShopProductActions";
 
 type CompactProductCardProps = {
-  item: ShopProduct;
+  item: ProductView;
   onViewDetails: (slug: string) => void;
 };
 

@@ -1,11 +1,11 @@
-import type { ShopProduct } from "@/src/lib/shopAllItems";
+import type { ProductView } from "@/src/lib/product-types";
 
 import PerfumeProductSlider from "./PerfumeProductSlider";
 
 export type PerfumeSubGroup = {
   title: string;
   description?: string;
-  products: ShopProduct[];
+  products: ProductView[];
 };
 
 type PerfumeCategorySectionProps = {
@@ -15,7 +15,7 @@ type PerfumeCategorySectionProps = {
   description: string;
   categoryLabel: string;
   closingQuote?: string;
-  products?: ShopProduct[];
+  products?: ProductView[];
   subGroups?: PerfumeSubGroup[];
   onViewDetails: (slug: string) => void;
 };

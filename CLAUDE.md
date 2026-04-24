@@ -13,12 +13,17 @@ Repo-root scripts coordinate both workspaces via npm workspaces.
 
 ## Core Mental Model (read this before editing content)
 
-The migration is **intentionally incomplete**. There are two live content layers:
+The content migration is **done** (Decision #26). Every content record that surfaces on the public storefront — articles, retreats, programs, program sessions, shop bridge pages, products, collections, site settings, media — is backend-owned. Public pages read through `publicBackendJson(path, { tags })` with tag-based ISR invalidation (Decision #15). Admin edits appear on public within seconds via the `/api/revalidate` + tag fan-out path.
 
-1. **Frontend registries** in `frontend/src/lib/*.ts` (`shopAllItems.ts`, `navigation.ts`) — drive most of what public visitors see today. Articles, Retreats, Programs, Shop Bridge Pages (metadata + the `/shop/[slug]` product lists), and `/shop` (Shop-All grid) are migrated to backend-fed reads via `publicBackendJson` (Decisions #16–#21). Home `RitualSetsSection`, `SearchOverlay`, and `howSeijakuWorks.options.ts` also read from backend (Decision #22). The Live Calm Gift Pouch picker options in `lifestyleSetConfig.ts` are derived at render time from the `ProductView[]` prop flowing into `LifestylePageClient` via `buildLifestyleSections(products)` (Decision #23). `/seasonaldrops-hemanta` Reserve-button drawers read the four `hemanta-*` products via a server-component `page.tsx` that fetches `fetchProductBySlug` (Decision #24). `/checkout`, `/collection`, and the four bridge-page client drawer lookups read from backend via client-side lazy fetches or the in-prop `ProductView[]` map (Decision #25). After Phase 4b.vi, only `SyncRegistryButton.tsx` (admin SUPER_ADMIN registry-feed tool) still references `shopProducts`; Phase 4b.final deletes it alongside `shopAllItems.ts`.
-2. **Backend Prisma records** — drive admin CRUD, media, and lead flows.
+What's still frontend-owned is **structure and editorial copy**, not content records:
 
-Backend admin edits do **not** automatically update most public pages yet. If a change must appear on the public site *today*, edit the frontend registry. If it's admin/API/database work, edit the backend. If you're migrating a domain from one to the other, update both plus the docs in the same change.
+- Route-level editorial (home sections, `/our-story`, `/ritual`, the Hemanta seasonal-drop editorial, `/programs` marketing decoration)
+- Static navigation and routes maps (`frontend/src/lib/shop-routes.ts`, `frontend/src/lib/navigation.ts`)
+- Static taxonomy, filter-chip labels, release-date lookup (`frontend/src/lib/shop-taxonomy.ts`)
+- Shared display helpers and normalizers (`frontend/src/lib/product-types.ts`, `bridge-page-types.ts`, `retreat-types.ts`, `program-types.ts`, `seijaku-life-types.ts`)
+- Compatibility redirect stubs (`/cart`, `/shop-all`, `/categories/[slug]`, `/lifestyle`)
+
+The old `shopProducts` registry in `shopAllItems.ts` is deleted. Likewise `SyncRegistryButton` and the backend `/admin/products/sync-new` endpoint. If the public site needs a change today, edit the backend via the admin UI (`/admin/*`) — there is no frontend registry left to patch.
 
 See `CONTENT_MODEL.md` for the full source-of-truth breakdown and `ARCHITECTURE.md` for the system-level picture. Always consult these before changing route ownership or content ownership.
 
@@ -63,7 +68,7 @@ Login: http://localhost:3000/admin/login (or :3001).
 - Routing / shell: `frontend/src/app/layout.tsx`, `frontend/src/components/AppShell.tsx`
 - Admin session boundary: `frontend/src/lib/admin-session.ts`, `frontend/src/lib/admin-backend.ts`, `frontend/src/lib/backend.ts`
 - BFF proxy: `frontend/src/app/api/admin/session/route.ts`, `frontend/src/app/api/admin/proxy/[...path]/route.ts`, `frontend/src/app/api/public/[...path]/route.ts`
-- Public storefront truth: `frontend/src/lib/shopAllItems.ts`, `frontend/src/lib/navigation.ts`
+- Public storefront structure + taxonomy: `frontend/src/lib/shop-routes.ts`, `frontend/src/lib/shop-taxonomy.ts`, `frontend/src/lib/product-types.ts`, `frontend/src/lib/navigation.ts`. Product content itself comes from the backend via these modules' fetchers.
 - Backend entrypoint: `backend/src/app.ts`, `backend/src/routes/admin.ts`, `backend/src/routes/public.ts`
 - Schema: `backend/prisma/schema.prisma`
 

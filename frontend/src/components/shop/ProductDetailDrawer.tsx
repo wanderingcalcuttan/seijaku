@@ -3,12 +3,12 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-import { getShopProductUseCase, type ShopProduct } from "@/src/lib/shopAllItems";
+import { getShopProductUseCase, type ProductView } from "@/src/lib/product-types";
 
 import ShopProductActions from "./ShopProductActions";
 
 type ProductDetailDrawerProps = {
-  item: ShopProduct | null;
+  item: ProductView | null;
   isOpen: boolean;
   onClose: () => void;
 };
@@ -55,8 +55,8 @@ export default function ProductDetailDrawer({ item, isOpen, onClose }: ProductDe
 
   // Lazy video enrichment: when the drawer opens for a product, fetch the
   // matching backend record and pick up any VIDEO-kind media attached there.
-  // This closes the gap where an admin-uploaded video would not otherwise
-  // surface on the storefront without a `shopAllItems.ts` edit.
+  // Hand-maintained `item.videoUrl` wins when present; otherwise we fall back
+  // to whatever the backend has.
   //
   // Contract: single attempt, 8s abort, silent fallback to image-only on any
   // failure. Hand-maintained `item.videoUrl` still wins — see resolvedVideoUrl.
