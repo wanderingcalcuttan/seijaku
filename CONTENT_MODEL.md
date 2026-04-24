@@ -25,9 +25,9 @@ Articles, Retreats, Programs, and Shop Bridge Page *metadata* are no longer in t
 - Articles: `publicBackendJson("/content/articles", { tags: ["articles"] })` (Decision #16).
 - Retreats: `publicBackendJson("/content/retreats", { tags: ["retreats"] })` (Decision #17).
 - Programs: `publicBackendJson("/content/programs", { tags: ["programs", "program-sessions"] })` (Decision #18).
-- Shop Bridge Pages (metadata only — products follow in Phase 4b): `publicBackendJson("/catalog/bridge-pages/:slug", { tags: ["bridge-pages", "products"] })` (Decision #19).
+- Shop Bridge Pages AND the product list shown on each `/shop/[slug]`: `publicBackendJson("/catalog/bridge-pages/:slug", { tags: ["bridge-pages", "products"] })` (Decisions #19 and #20).
 
-Still frontend-owned: `shopProducts` registry + related helpers/types/constants in `shopAllItems.ts`. The five per-bridge page clients receive the product list as a prop from `/shop/[slug]/page.tsx` which sources it via `getShopBridgeProducts(slug)` against `shopProducts`.
+Still frontend-owned: the `shopProducts` array + related helpers/types in `shopAllItems.ts` serves every other consumer — home featured sets, shop-all grid + filters, search overlay, cart, checkout, Navbar lookups, Lifestyle Gift Pouch option dropdowns, seasonal-drops page, HowSeijakuWorks. Phase 4b.ii onwards sequence these.
 
 Use this layer when:
 

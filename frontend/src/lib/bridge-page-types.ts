@@ -1,5 +1,10 @@
 import { publicBackendJson } from "@/src/lib/backend";
 import { cacheTags } from "@/src/lib/cache-tags";
+import {
+  normalizeBackendProducts,
+  type BackendProduct,
+  type ProductView,
+} from "@/src/lib/product-types";
 
 export type ShopBridgeSlug =
   | "lifestyle"
@@ -67,6 +72,7 @@ export type ShopBridgePageConfig = {
   postCtaSecondaryHref?: string;
   seoFootnote?: string;
   productSlugs: string[];
+  products: ProductView[];
 };
 
 type BackendBridgePage = {
@@ -98,7 +104,7 @@ type BackendBridgePage = {
   seoDescription: string | null;
   seoFootnote: string | null;
   content: Record<string, unknown> | null;
-  products: Array<{ slug: string }>;
+  products: BackendProduct[];
   createdAt: string;
   updatedAt: string;
 };
@@ -112,42 +118,10 @@ export function isShopBridgeSlug(value: string): value is ShopBridgeSlug {
 }
 
 function normalize(backend: BackendBridgePage): ShopBridgePageConfig {
-  if (!isShopBridgeSlug(backend.slug)) {
-    // An admin-created slug that isn't one of the six canonical ones. We
-    // still return a valid config; the storefront will render via the
-    // generic ShopBridgePageClient fallback rather than a per-bridge client.
-    return {
-      slug: backend.slug as ShopBridgeSlug,
-      href: `/shop/${backend.slug}`,
-      navLabel: backend.navLabel,
-      heroEyebrow: backend.heroEyebrow,
-      heroTitle: backend.heroTitle,
-      heroDescription: backend.heroDescription,
-      heroImage: backend.heroImage,
-      heroImageAlt: backend.heroImageAlt,
-      heroImagePosition: nullToUndef(backend.heroImagePosition),
-      heroQuote: backend.heroQuote,
-      introEyebrow: backend.introEyebrow ?? "",
-      introTitle: backend.introTitle,
-      introDescription: backend.introDescription,
-      productSectionEyebrow: nullToUndef(backend.productSectionEyebrow),
-      productSectionTitle: nullToUndef(backend.productSectionTitle),
-      productSectionDescription: nullToUndef(backend.productSectionDescription),
-      interludeImage: nullToUndef(backend.interludeImage),
-      interludeImageAlt: nullToUndef(backend.interludeImageAlt),
-      postCtaTitle: nullToUndef(backend.postCtaTitle),
-      postCtaDescription: nullToUndef(backend.postCtaDescription),
-      postCtaPrimaryLabel: nullToUndef(backend.postCtaPrimaryLabel),
-      postCtaPrimaryHref: nullToUndef(backend.postCtaPrimaryHref),
-      postCtaSecondaryLabel: nullToUndef(backend.postCtaSecondaryLabel),
-      postCtaSecondaryHref: nullToUndef(backend.postCtaSecondaryHref),
-      seoFootnote: nullToUndef(backend.seoFootnote),
-      productSlugs: backend.products.map((p) => p.slug),
-    };
-  }
+  const products = normalizeBackendProducts(backend.products);
+  const productSlugs = products.map((p) => p.slug);
 
-  return {
-    slug: backend.slug,
+  const common = {
     href: `/shop/${backend.slug}`,
     navLabel: backend.navLabel,
     heroEyebrow: backend.heroEyebrow,
@@ -172,7 +146,16 @@ function normalize(backend: BackendBridgePage): ShopBridgePageConfig {
     postCtaSecondaryLabel: nullToUndef(backend.postCtaSecondaryLabel),
     postCtaSecondaryHref: nullToUndef(backend.postCtaSecondaryHref),
     seoFootnote: nullToUndef(backend.seoFootnote),
-    productSlugs: backend.products.map((p) => p.slug),
+    productSlugs,
+    products,
+  } as const;
+
+  // Canonical vs admin-created slugs are distinguished at the route layer
+  // (the six canonical ones map to bespoke page clients). The returned
+  // config shape is identical in both branches.
+  return {
+    slug: backend.slug as ShopBridgeSlug,
+    ...common,
   };
 }
 

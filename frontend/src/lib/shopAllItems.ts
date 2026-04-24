@@ -1189,61 +1189,6 @@ export function getShopProductBySlug(slug: string) {
   return shopProducts.find((item) => item.slug === slug);
 }
 
-// Ordered product slug lists per bridge page. The storefront still reads
-// products from this module in Phase 4a (only the bridge page *metadata*
-// moved to the backend; product records follow in Phase 4b). These arrays
-// match the pre-migration `shopBridgePages[*].productSlugs` exactly. When
-// Phase 4b lands, this map is deleted and products are sourced from the
-// backend bridge-page response (`products: [...]`).
-const bridgeProductSlugs: Record<ShopBridgeSlug, string[]> = {
-  lifestyle: ["dawn-reset-box", "reading-hour-set", "quiet-tea-ritual-box", "evening-unwind-gift-set"],
-  perfumes: [
-    "spirit-01-breath-of-pines",
-    "body-01-summer-held-close",
-    "mind-01-the-morning-desk",
-    "trilogy-discovery-kit",
-    "jasmine-neroli-textile-oil",
-    "lotus-jasmine-textile-oil",
-    "hinoki-cedar-textile-oil",
-    "rose-vetiver-textile-oil",
-    "tea-blossom-rice-textile-oil",
-    "neroli-bloom-diffusion-vessel",
-    "plum-orchard-room-stone",
-    "tea-steam-stone-diffuser",
-    "kyusu-warmth-reed-vessel",
-    "rice-citrus-bowl-diffuser",
-    "cardamom-hearth-vessel",
-  ],
-  "scarves-and-squares": [
-    "bengal-japan-modal-silk-scarf",
-    "pine-forest-modal-silk-scarf",
-    "kolkata-summer-modal-silk-scarf",
-    "coffee-clear-modal-silk-scarf",
-    "bengal-japan-modal-silk-pocket-square",
-    "pine-forest-modal-silk-pocket-square",
-    "kolkata-summer-modal-silk-pocket-square",
-    "coffee-clear-modal-silk-pocket-square",
-  ],
-  diffusers: ["stone-oil-diffuser", "brass-tea-light-diffuser", "reed-diffuser-cedar-smoke", "clay-vessel-diffuser"],
-  "dokra-ornaments": [
-    "japan-handfan-brooch",
-    "bengal-handfan-i-brooch",
-    "bengal-handfan-ii-brooch",
-    "conch-brooch",
-    "temple-bell-brooch",
-  ],
-  seasonaldrops: ["hemanta-ispani-diffuser-set", "hemanta-rishi-diffuser-set"],
-};
-
-export function getShopBridgeProducts(slug: ShopBridgeSlug) {
-  const slugs = bridgeProductSlugs[slug];
-  if (!slugs) return [];
-
-  return slugs
-    .map((productSlug) => getShopProductBySlug(productSlug))
-    .filter((item): item is ShopProduct => Boolean(item));
-}
-
 export function getProductsGroupedByMaterialThenType() {
   const grouped = new Map<ShopMaterial, Map<ShopItemType, ShopProduct[]>>();
 

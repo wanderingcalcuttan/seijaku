@@ -322,6 +322,42 @@ Frontend cleanup:
 
 Phase 4b will migrate `shopProducts` itself. That's a large surface (checkout, cart, lifestyle option dropdowns, product detail drawer, nav, filter helpers) and warrants its own session — likely split further into a read migration + a checkout/cart migration.
 
+### 20. `/shop/[slug]` Product Lists Are Backend-Fed (Phase 4b.i)
+
+Status: Active
+
+Narrow continuation of Decision #19. The six `/shop/[slug]` pages now source their product lists from the backend bridge-page response (`GET /catalog/bridge-pages/:slug` — `item.products`). Every other consumer of `shopProducts` (home featured sets, shop-all grid, shop-all filter helpers, search overlay, cart, checkout, Navbar lookups, Lifestyle Gift Pouch option dropdowns, seasonal-drops page, HowSeijakuWorks) still reads the frontend `shopProducts` registry. Phase 4b.ii (and later) sequence the remainder.
+
+Read path:
+
+- `normalize()` in `frontend/src/lib/bridge-page-types.ts` now calls `normalizeBackendProducts(backend.products)` and exposes `products: ProductView[]` on the returned `ShopBridgePageConfig`. `productSlugs` is derived from those products.
+- `ProductView` is a structural subset of `ShopProduct` (it drops `ritualTag` + `ritualTagHref`) so the five page clients (`LifestylePageClient`, `PerfumesPageClient`, `TextilesPageClient`, `DiffusersPageClient`, generic `ShopBridgePageClient`) accept the prop with no changes.
+- `/shop/[slug]/page.tsx` no longer calls `getShopBridgeProducts`; it passes `page.products` straight through.
+- `getShopBridgeProducts` and the inline `bridgeProductSlugs` map (introduced in Decision #19) are deleted.
+
+Normalizer behaviour:
+
+- Maps backend `priceAmount` + `currency` to the hand-formatted `priceLabel` pattern (`"INR 6,800"`) — backend stores whole rupees, not paise, per the current seed.
+- Maps the `status` enum (`"IN_STOCK"`, `"WAITLIST"`, etc.) to the display strings (`"In Stock"`, `"Waitlist"`) that `ShopProductActions` and friends already branch on.
+- Derives `gallery` from non-primary `IMAGE` media, `videoUrl` from the first `VIDEO`-kind asset, `image` from `primaryImage` (with a placeholder fallback when neither is set).
+- Flattens `ProductOption[] → customizationOptions[]` by taking each value's `label` into a `string[]`.
+- Drops products with `workflowStatus === "DRAFT"` from the returned list — `/shop/[slug]` now respects admin drafting without a backend endpoint change.
+
+Dropped fields:
+
+- `ritualTag` / `ritualTagHref`: no equivalent on the backend `Product` model. Three lifestyle products previously used these to surface a small tag under the card price. Cosmetic drop; reintroduce via `metadataJson` or a dedicated column later if it matters.
+
+Admin effects:
+
+- Bridge-page product assignments can now be managed entirely in `/admin/bridge-pages` (product pick list already editable). Adding a new product to a bridge page no longer needs a code change.
+- Admin edits to a `Product` record (title, description, status, media, customization options) surface on the bridge page within ~2 seconds via the Phase-0 `products` tag invalidation (the fetch tag list already includes both `bridge-pages` and `products`).
+
+Phase 4b.ii and beyond:
+
+- Phase 4b.ii: migrate `/shop-all`, `SearchOverlay`, `RitualSetsSection` (home featured sets), `MenuSlider`, `SeasonalDropsPage`, and lifestyle option dropdowns to read backend products.
+- Phase 4b.iii: migrate cart + checkout so prices and titles come from the backend.
+- Phase 4b.final: delete `shopProducts` + related helpers/types from `shopAllItems.ts`.
+
 ## How To Use This File
 
 - Add a new entry when a structural or cross-cutting product decision is made.
