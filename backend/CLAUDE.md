@@ -53,7 +53,7 @@ Admin (all under `/admin`, all JWT-guarded):
 - `auth/login`, `auth/me`
 - `admins/*` (SUPER_ADMIN only)
 - `media/*`, `categories/*`, `products/*`, `product-options/*`
-- `POST /admin/products/sync-new` (SUPER_ADMIN only) — one-shot sync of products from the frontend registry. Client posts the `shopProducts` payload; server creates only slugs not already in the DB inside a single `$transaction`; hand-edited records are never touched. Bounded by Zod `.max(200)`. No retries, no polling. See `SyncRegistryButton.tsx` for the admin UI trigger.
+- `POST /admin/products` — create a product. On save, the handler consults `defaultBridgeSlugForProductType(payload.type)` in `src/lib/product-bridge.ts` and best-effort auto-creates a `ShopBridgePageProduct` link to the default bridge page for that `type` (Perfume/Fragrance Oil → `perfumes`, Scarf/Square → `scarves-and-squares`, etc.). Failure of the link step is logged and swallowed — the product save itself is the primary contract. Does NOT run on PATCH (no re-sync when `type` is later edited). See Decision #28.
 - `bridge-pages/*`, `articles/*`, `retreats/*`, `programs/*`, `program-sessions/*`, `collections/*`
 - `site-settings`
 - `leads/*` (order requests, newsletter subs, program reservations, retreat inquiries, product notifications)

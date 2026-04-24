@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { signAdminToken, verifyPassword, hashPassword } from "../lib/auth.js";
 import { prisma } from "../lib/prisma.js";
+import { defaultBridgeSlugForProductType } from "../lib/product-bridge.js";
 import { storeUpload } from "../lib/storage.js";
 import { requireAdmin, requireAdminRole } from "../middleware/requireAdmin.js";
 import {
@@ -825,6 +826,47 @@ adminRouter.post(
       });
     } catch (error) {
       throwIfSlugCollision(error);
+    }
+
+    // Best-effort auto-assign to the default bridge page keyed by product
+    // type. Only runs on create, not update (Decision #28). Failure is
+    // logged and swallowed — the product save itself is the primary
+    // contract, and admin can always add/remove bridge links manually.
+    if (item) {
+      const defaultBridgeSlug = defaultBridgeSlugForProductType(payload.type);
+      if (defaultBridgeSlug) {
+        try {
+          const bridgePage = await prisma.shopBridgePage.findUnique({
+            where: { slug: defaultBridgeSlug },
+            select: { id: true },
+          });
+          if (bridgePage) {
+            const existingMax = await prisma.shopBridgePageProduct.aggregate({
+              where: { bridgePageId: bridgePage.id },
+              _max: { sortOrder: true },
+            });
+            await prisma.shopBridgePageProduct.create({
+              data: {
+                bridgePageId: bridgePage.id,
+                productId: item.id,
+                sortOrder: (existingMax._max.sortOrder ?? -1) + 1,
+              },
+            });
+            // Re-fetch so the response reflects the new link. Admin UI
+            // that consumes the 201 body sees the auto-assignment
+            // immediately without a separate round trip.
+            item = await prisma.product.findUniqueOrThrow({
+              where: { id: item.id },
+              include: productInclude,
+            });
+          }
+        } catch (error) {
+          console.warn(
+            "[admin/products] auto-assign to default bridge page failed:",
+            error,
+          );
+        }
+      }
     }
 
     res.status(201).json({ item: serializeProduct(item) });

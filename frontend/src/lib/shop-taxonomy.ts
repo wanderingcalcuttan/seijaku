@@ -90,6 +90,30 @@ export function getShopTypes(): ShopTypeFilterOption[] {
   return shopTypeFilterOptions;
 }
 
+// Admin-form companion to the backend's defaultBridgeSlugForProductType in
+// backend/src/lib/product-bridge.ts. Kept in sync by hand — if you add a
+// rule here, update the backend too. Only used to surface a pre-save notice
+// on /admin/products/new; the backend still makes the authoritative
+// assignment on product create. See Decision #28.
+export function defaultBridgeSlugForProductType(type: string): string | null {
+  switch (type) {
+    case "Perfume":
+    case "Fragrance Oil":
+      return "perfumes";
+    case "Scarf / Square":
+      return "scarves-and-squares";
+    case "Diffuser":
+    case "Wax Melt":
+      return "diffusers";
+    case "Dokra Ornament":
+      return "dokra-ornaments";
+    case "Ritual Box":
+      return "lifestyle";
+    default:
+      return null;
+  }
+}
+
 export function getShopMaterials(): ShopMaterialFilterOption[] {
   return shopMaterialFilterOptions;
 }

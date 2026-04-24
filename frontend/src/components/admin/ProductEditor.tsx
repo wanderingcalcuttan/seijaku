@@ -25,6 +25,7 @@ import type {
   ProductSummary,
   ProductWorkflowStatus,
 } from "@/src/lib/admin-types";
+import { defaultBridgeSlugForProductType } from "@/src/lib/shop-taxonomy";
 
 type ProductEditorProps = {
   product: ProductSummary | null;
@@ -594,6 +595,15 @@ export default function ProductEditor({
                   onChange={(e) => setCore((c) => ({ ...c, type: e.target.value }))}
                   className={adminInputClassName}
                 />
+                {!isExistingProduct && defaultBridgeSlugForProductType(core.type) ? (
+                  <p className="mt-2 text-[12px] leading-[1.6] text-[#6b6259]">
+                    On save this will auto-assign to{" "}
+                    <span className="font-medium text-[#2d2a26]">
+                      /shop/{defaultBridgeSlugForProductType(core.type)}
+                    </span>
+                    . You can add or remove bridge pages below after the product is created.
+                  </p>
+                ) : null}
               </AdminField>
               <AdminField label="Material" error={fieldErrors.material}>
                 <input

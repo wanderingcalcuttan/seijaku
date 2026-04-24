@@ -542,6 +542,34 @@ After this change, `npm run prisma:seed` produces a DB with:
 
 Local dev onboarding becomes: `prisma:seed` → log into `/admin` → create products via `/admin/products/new` → assign them to bridge pages via `/admin/bridge-pages`. This matches the post-migration mental model (backend is authoritative; admin UI is the editing interface) and makes the content-editor onboarding path the same as the dev onboarding path. If a larger demo dataset becomes useful for dev (e.g. for frontend work that needs populated pages), a small curated fixture set can be added in a separate `seed-data/products.ts` — deliberately smaller than the old 50-product registry, framed as dev fixtures rather than production-parity data.
 
+### 28. Admin-Created Products Auto-Assign To A Default Bridge Page
+
+Status: Active
+
+When an admin saves a new product in `/admin/products/new`, the backend infers a default `ShopBridgePage` from `Product.type` and creates a `ShopBridgePageProduct` link alongside the product row. Admin retains full override via the existing bridge-assignment panel on `/admin/products/[id]`.
+
+Type-to-bridge mapping (both `backend/src/lib/product-bridge.ts` and `frontend/src/lib/shop-taxonomy.ts` — kept in sync by hand):
+
+| `Product.type` | Default bridge slug |
+|---|---|
+| `Perfume`, `Fragrance Oil` | `perfumes` |
+| `Scarf / Square` | `scarves-and-squares` |
+| `Diffuser`, `Wax Melt` | `diffusers` |
+| `Dokra Ornament` | `dokra-ornaments` |
+| `Ritual Box` | `lifestyle` |
+| `Program`, `Retreat`, anything unmapped | no auto-link |
+
+Mechanism:
+
+- `POST /admin/products` runs the create, then (if the product saved) looks up the default bridge slug, fetches the bridge page id, computes the next `sortOrder` (`MAX + 1` — new products append to the bottom of the list), and creates the `ShopBridgePageProduct` link. Re-fetches the product with `productInclude` so the 201 response reflects the new link.
+- If the bridge page doesn't exist (e.g. `lifestyle` bridge was deleted), the link step silently skips — product still saves.
+- If the link creation throws for any other reason, it's logged with `console.warn` and swallowed. The product save is the primary contract; a failed auto-link degrades to "admin manually assigns via bridge-pages panel," matching pre-PR behaviour.
+- **No re-sync on update.** Editing a product's `type` does NOT move it between bridges. Changing a Perfume to a Diffuser keeps the `perfumes` bridge link and does not add a `diffusers` link. Admins reconcile manually. This is intentional — auto-moving on every type edit would be destructive in the opposite direction and surprise admins who renamed a product after-the-fact.
+- **No backfill of existing orphans.** Products created before this PR with no bridge assignment stay orphan. If that becomes worth fixing, spin a separate opt-in migration.
+- Admin form surfaces a one-line notice near the Type input on new-product flow ("On save this will auto-assign to /shop/perfumes…"), so the auto-assignment isn't hidden magic.
+
+Risk of the two-mapping-file setup: the backend mapping (authoritative for the actual link creation) and the frontend mapping (only used for the pre-save notice copy) must stay in sync. Both sites carry cross-reference comments. If a third surface needs the rule, consolidate into a single shared module.
+
 ## How To Use This File
 
 - Add a new entry when a structural or cross-cutting product decision is made.
