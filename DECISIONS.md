@@ -423,6 +423,29 @@ Trade-offs:
 
 Remaining `shopProducts` consumers: cart, checkout, `/collection`, `/seasonaldrops-hemanta`. Phase 4b.v (seasonal drops), 4b.vi (transactional), 4b.final (registry deletion).
 
+### 24. `/seasonaldrops-hemanta` Drawer Reads From Backend (Phase 4b.v)
+
+Status: Active
+
+The Hemanta seasonal-drop page's four Reserve-button drawers (`hemanta-nandini`, `hemanta-raja-diffuser`, `hemanta-ispani`, `hemanta-rishi-diffuser`) no longer look up products via `getShopProductBySlug`. The route's `page.tsx` is now an async server component that fetches the four slugs in parallel via `fetchProductBySlug` (added Phase 4b.iii) and passes a `Record<slug, ProductView>` prop down to the client component.
+
+Read path:
+
+- `/seasonaldrops-hemanta/page.tsx` is marked `export const dynamic = "force-dynamic"` for the Render Free cold-start reason established in Decisions #16–#21.
+- Fetches are tagged `products` via `publicBackendJson`; admin edits to any of the four hemanta products invalidate the cache within one ISR window (Phase 0, Decision #15).
+- Missing backend records resolve to `undefined` in the prop map. `selectedProduct` stays `null`, `ProductDetailDrawer`'s `isOpen={Boolean(null)}` stays `false` — a missing slug degrades to a no-op Reserve button rather than a crash.
+
+Prerequisite work:
+
+- All four hemanta products existed in `shopAllItems.ts` but were missing from the backend DB. The SUPER_ADMIN "Sync New Products" button on `/admin/products` (`POST /admin/products/sync-new`) idempotently inserted them. A companion fix (separate PR) bumped the sync endpoint's Prisma transaction timeout from 5 s → 60 s — the full-registry payload exceeded the default interactive-tx window mid-loop.
+
+Unchanged:
+
+- The editorial content in `SeasonalDropsPage.tsx` (hero, letter, making steps, character/scent mapping, four-forms copy, closing blocks, ~1000 lines of inline CSS) remains hardcoded per Decision #8 — route-level editorial copy stays frontend-owned.
+- The static `forms` array inside the component (names, philosophies, scents, prices, CTAs) is not migrated — this is editorial framing, distinct from the transactional product record the drawer surfaces.
+
+Remaining `shopProducts` consumers: cart, checkout, `/collection`. Phase 4b.vi (transactional — cart + checkout + collection), 4b.final (registry deletion).
+
 ## How To Use This File
 
 - Add a new entry when a structural or cross-cutting product decision is made.

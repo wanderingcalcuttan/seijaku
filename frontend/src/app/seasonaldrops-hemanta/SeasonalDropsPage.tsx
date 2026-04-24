@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, type MouseEvent } from "react";
 
 import ProductDetailDrawer from "@/src/components/shop/ProductDetailDrawer";
-import { getShopProductBySlug } from "@/src/lib/shopAllItems";
+import { type ProductView } from "@/src/lib/product-types";
 
 type FormEntry = {
   name: string;
@@ -187,9 +187,13 @@ function ImageBreak({
   );
 }
 
-export default function SeasonalDropsPage() {
+type SeasonalDropsPageProps = {
+  productsBySlug: Record<string, ProductView>;
+};
+
+export default function SeasonalDropsPage({ productsBySlug }: SeasonalDropsPageProps) {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
-  const selectedProduct = selectedSlug ? getShopProductBySlug(selectedSlug) ?? null : null;
+  const selectedProduct = selectedSlug ? productsBySlug[selectedSlug] ?? null : null;
 
   const scrollToFourForms = (event: MouseEvent<HTMLElement>) => {
     event.preventDefault();

@@ -29,8 +29,9 @@ Articles, Retreats, Programs, and Shop Bridge Page *metadata* are no longer in t
 - `/shop` (Shop-All grid + filters + search): `publicBackendJson("/catalog/products", { tags: ["products"] })` — filter/sort/search stay client-side over the fetched list (Decision #21).
 - Home `RitualSetsSection` (Featured Sets, 2 cards), `SearchOverlay`, and `HowSeijakuWorks` dropdown thumbnails: read from backend. `RitualSetsSection` + `SearchOverlay` lazy-fetch the public catalog via `/api/public/catalog/products` on mount / first open; `howSeijakuWorks.options.ts` is pure static data with hand-curated `/images/...` thumbnails (Decision #22).
 - Live Calm Gift Pouch picker options (`lifestyleSetConfig.ts`): derived at render time from the `ProductView[]` prop already flowing into `LifestylePageClient` via a `buildLifestyleSections(products)` function; no module-load reads of `shopProducts` (Decision #23).
+- `/seasonaldrops-hemanta` Reserve-button drawers: server-component `page.tsx` fetches the four `hemanta-*` slugs via `fetchProductBySlug` and passes a `Record<slug, ProductView>` prop to the client component (Decision #24). Editorial content on the page (hero copy, making steps, character/scent mapping, four-forms framing) stays hardcoded.
 
-Still frontend-owned: the `shopProducts` array + related helpers/types in `shopAllItems.ts` serves cart, checkout, `/collection`, and the `seasonaldrops-hemanta` page. Phase 4b.v onwards sequence these, ending with registry deletion in Phase 4b.final.
+Still frontend-owned: the `shopProducts` array + related helpers/types in `shopAllItems.ts` serves cart, checkout, and `/collection`. Phase 4b.vi sequences these, ending with registry deletion in Phase 4b.final.
 
 Use this layer when:
 
