@@ -1,21 +1,68 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import ProductDetailDrawer from "@/src/components/shop/ProductDetailDrawer";
 import LifestyleSetCard, { type LifestyleFieldValue } from "@/src/components/shop/lifestyle/LifestyleSetCard";
 import { homepageFeaturedLifestyleItems } from "@/src/components/shop/lifestyle/lifestyleSetConfig";
-import { canonicalShopRoutes, getShopProductBySlug } from "@/src/lib/shopAllItems";
+import { canonicalShopRoutes } from "@/src/lib/shopAllItems";
+import {
+  normalizeBackendProduct,
+  type BackendProduct,
+  type ProductView,
+} from "@/src/lib/product-types";
 
 export default function RitualSetsSection() {
   const [selectedValues, setSelectedValues] = useState<Record<string, Record<string, LifestyleFieldValue>>>({});
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
-  const selectedProduct = selectedSlug ? getShopProductBySlug(selectedSlug) ?? null : null;
+  const [productsBySlug, setProductsBySlug] = useState<Record<string, ProductView>>({});
+
+  const slugs = useMemo(
+    () => homepageFeaturedLifestyleItems.map((entry) => entry.backingSlug),
+    [],
+  );
+
+  // Fetch each backing slug on mount from the public catalog proxy. Per-slug
+  // requests keep payload minimal for a 2-card section. Silent on failure —
+  // the section's empty-state branch (`cards.length === 0 → return null`)
+  // hides it gracefully.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const entries = await Promise.all(
+        slugs.map(async (slug) => {
+          try {
+            const res = await fetch(`/api/public/catalog/products/${encodeURIComponent(slug)}`, {
+              headers: { Accept: "application/json" },
+            });
+            if (!res.ok) return null;
+            const json = (await res.json()) as BackendProduct;
+            const view = normalizeBackendProduct(json);
+            return view ? ([slug, view] as const) : null;
+          } catch {
+            return null;
+          }
+        }),
+      );
+      if (cancelled) return;
+      const map: Record<string, ProductView> = {};
+      for (const entry of entries) {
+        if (entry) map[entry[0]] = entry[1];
+      }
+      setProductsBySlug(map);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slugs]);
+
+  const selectedProduct = selectedSlug ? productsBySlug[selectedSlug] ?? null : null;
 
   const cards = homepageFeaturedLifestyleItems
     .map((entry) => {
-      const item = getShopProductBySlug(entry.backingSlug);
+      const item = productsBySlug[entry.backingSlug];
       if (!item) return null;
 
       return (

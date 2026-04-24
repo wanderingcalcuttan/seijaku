@@ -6,14 +6,15 @@ import { X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
-  shopProducts,
-  type ShopProduct,
-} from "@/src/lib/shopAllItems";
-import {
   bridgeHrefBySlug,
   bridgeNavLabelBySlug,
   isShopBridgeSlug,
 } from "@/src/lib/bridge-page-types";
+import {
+  normalizeBackendProducts,
+  type BackendProduct,
+  type ProductView,
+} from "@/src/lib/product-types";
 
 type SearchOverlayProps = {
   open: boolean;
@@ -21,7 +22,7 @@ type SearchOverlayProps = {
 };
 
 type SearchResult = {
-  product: ShopProduct;
+  product: ProductView;
   bridgeHref: string | null;
   bridgeLabel: string | null;
   score: number;
@@ -29,7 +30,7 @@ type SearchResult = {
 
 const MAX_RESULTS = 12;
 
-function scoreProduct(product: ShopProduct, q: string): number {
+function scoreProduct(product: ProductView, q: string): number {
   const needle = q.toLowerCase().trim();
   if (!needle) return 0;
 
@@ -39,7 +40,6 @@ function scoreProduct(product: ShopProduct, q: string): number {
     { text: product.material ?? "", weight: 4 },
     { text: product.bridgeCategory ?? "", weight: 3 },
     { text: product.useCase ?? "", weight: 3 },
-    { text: product.ritualTag ?? "", weight: 2 },
     { text: product.shortDescription ?? "", weight: 1 },
     { text: product.longDescription ?? "", weight: 1 },
   ];
@@ -57,6 +57,9 @@ function scoreProduct(product: ShopProduct, q: string): number {
 
 export default function SearchOverlay({ open, onClose }: SearchOverlayProps) {
   const [query, setQuery] = useState("");
+  const [products, setProducts] = useState<ProductView[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const fetchStartedRef = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Focus the input when the overlay opens. Query reset is handled by
@@ -94,12 +97,40 @@ export default function SearchOverlay({ open, onClose }: SearchOverlayProps) {
     };
   }, [open]);
 
+  // Lazy-load the catalog the first time the overlay opens. Cached for the
+  // component's lifetime — reopening the overlay doesn't refetch. Single
+  // attempt; on failure we render a quiet load-error state below.
+  useEffect(() => {
+    if (!open || fetchStartedRef.current) return;
+    fetchStartedRef.current = true;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/public/catalog/products", {
+          headers: { Accept: "application/json" },
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const { items } = (await res.json()) as { items: BackendProduct[] };
+        if (cancelled) return;
+        setProducts(normalizeBackendProducts(items));
+      } catch {
+        if (cancelled) return;
+        setLoadError(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
   const results = useMemo<SearchResult[]>(() => {
     const q = query.trim();
-    if (!q) return [];
+    if (!q || !products) return [];
 
     const scored: SearchResult[] = [];
-    for (const product of shopProducts) {
+    for (const product of products) {
       const score = scoreProduct(product, q);
       if (score <= 0) continue;
 
@@ -114,9 +145,12 @@ export default function SearchOverlay({ open, onClose }: SearchOverlayProps) {
     }
     scored.sort((a, b) => b.score - a.score);
     return scored.slice(0, MAX_RESULTS);
-  }, [query]);
+  }, [query, products]);
 
   if (!open) return null;
+
+  const trimmedQuery = query.trim();
+  const isLoading = products === null && !loadError;
 
   return (
     <div
@@ -157,9 +191,15 @@ export default function SearchOverlay({ open, onClose }: SearchOverlayProps) {
         }}
       >
         <div className="mx-auto max-w-[1480px]">
-          {!query.trim() ? (
+          {!trimmedQuery ? (
             <div className="pt-10 text-center text-[14px] text-[#b5a98a]">
               Start typing to search the shop. Try &ldquo;diffuser&rdquo;, &ldquo;dokra&rdquo;, or &ldquo;silk&rdquo;.
+            </div>
+          ) : isLoading ? (
+            <div className="pt-10 text-center text-[14px] text-[#b5a98a]">Loading catalog…</div>
+          ) : loadError ? (
+            <div className="pt-10 text-center text-[14px] text-[#b5a98a]">
+              Couldn&rsquo;t load the catalog. Please try again in a moment.
             </div>
           ) : results.length === 0 ? (
             <div className="pt-10 text-center text-[14px] text-[#b5a98a]">

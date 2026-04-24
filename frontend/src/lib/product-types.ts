@@ -148,6 +148,21 @@ export async function fetchProducts(): Promise<ProductView[]> {
   return normalizeBackendProducts(items);
 }
 
+// Server-side per-slug fetch. Returns null when the backend returns a draft
+// record or the slug is missing. Throws on transport failure — callers in
+// server components can let that bubble to Next's error boundary.
+export async function fetchProductBySlug(slug: string): Promise<ProductView | null> {
+  try {
+    const item = await publicBackendJson<BackendProduct>(
+      `/catalog/products/${encodeURIComponent(slug)}`,
+      { tags: [cacheTags.products] },
+    );
+    return normalizeBackendProduct(item);
+  } catch {
+    return null;
+  }
+}
+
 // Pure replacement for `getShopUseCases()` — derives the distinct use-case
 // list from a given product list instead of closing over the registry.
 // `getShopTypes()` / `getShopMaterials()` in shopAllItems.ts return curated

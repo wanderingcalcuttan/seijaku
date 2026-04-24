@@ -380,6 +380,28 @@ Taxonomy note:
 
 Remaining `shopProducts` consumers (home featured sets, `SearchOverlay`, Navbar / MenuSlider, cart, checkout, Lifestyle Gift Pouch option dropdowns, seasonal drops page, `HowSeijakuWorks` options) still read the frontend registry. Phase 4b.iii onwards.
 
+### 22. Home/Search Display-Side Consumers Read From Backend (Phase 4b.iii)
+
+Status: Active
+
+The home "Featured Sets" section (`RitualSetsSection`), the global `SearchOverlay`, and the home "How Seijaku works" dropdown thumbnails (`howSeijakuWorks.options.ts`) no longer import from `shopProducts`. `MenuSlider` was confirmed via git history to never have referenced product data and required no change.
+
+Read paths:
+
+- `SearchOverlay` (`"use client"`) lazy-fetches `GET /api/public/catalog/products` the first time the overlay opens and caches the normalized `ProductView[]` in a `useRef` for the component's lifetime. Reopening the overlay within the same page visit does not refetch. Single attempt; on transport failure the overlay shows a quiet "couldn't load" message rather than throwing. The scoring function drops the old `ritualTag` weight (absent from `ProductView` per Decision #20) — minor signal reduction for the three products that previously carried that tag.
+- `RitualSetsSection` (`"use client"`) fetches the two `homepageFeaturedLifestyleItems.backingSlug` values in parallel via `GET /api/public/catalog/products/:slug` on mount. Results land in a `Record<slug, ProductView>` state map; the section renders its existing `cards.length === 0 → return null` branch until at least one resolves, matching the pre-migration hiding behaviour. `ProductView` is structurally assignable to `ShopProduct` (the `ritualTag` / `ritualTagHref` drop is optional-only), so `LifestyleSetCard` and `ProductDetailDrawer` props accept it without changes.
+- `howSeijakuWorks.options.ts` is now pure static data — the `getShopProductBySlug(slug)?.image ?? fallback` pattern was replaced with hand-written `/images/...` paths for all six dropdown thumbnails. Four of the five backing-slug entries already resolved to the same fallback path; the fifth (`kolkata-summer-modal-silk-scarf`) now renders its actual product image instead of silently falling back to a mismatched placeholder.
+- `product-types.ts` gains a `fetchProductBySlug(slug)` server-side helper (tagged `products`) alongside the existing `fetchProducts()`. Not consumed in this phase's changes — both consumers above are client components that hit the public proxy directly — but retained for future server-side parents.
+
+Trade-offs:
+
+- First search after Render Free idle pays the backend cold-start (30–50 s, Decision #13). The overlay input renders instantly; only the results area stays in the loading state until the catalog arrives. Typed queries before fetch completes show an empty-results state until the list lands.
+- `RitualSetsSection` renders null for the brief window between mount and the two per-slug fetches resolving. Home page animation chrome (`data-home-reveal` opacity transition) covers the gap.
+- `howSeijakuWorks.options.ts` no longer auto-tracks backend product image changes. Editorial content; acceptable per the scope decision to keep it a pure static module. The header comment documents the manual-copy workflow for admins updating a thumbnail.
+- Why client-fetch instead of server-prop: both consumers render inside the home page, which is a `"use client"` tree (scroll animations use `useScroll` / `useRef`). A server-hoist would require restructuring home page chrome and adding a full-catalog prop to every layout that renders the Navbar (SearchOverlay's host). Client-fetch trades ~one extra request per visit for a surgical change with no structural blast radius.
+
+Remaining `shopProducts` consumers: cart, checkout, `/collection`, `lifestyleSetConfig.ts` (Lifestyle Gift Pouch picker options), `/seasonaldrops-hemanta`. Phase 4b.iv (lifestyle options), 4b.v (seasonal drops), 4b.vi (transactional — cart + checkout + collection), 4b.final (registry deletion) remain.
+
 ## How To Use This File
 
 - Add a new entry when a structural or cross-cutting product decision is made.

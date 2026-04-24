@@ -164,7 +164,8 @@ Frontend public rendering:
 - Retreats are backend-fed via `frontend/src/lib/retreat-types.ts` → `/content/retreats` (Decision #17).
 - Programs are backend-fed via `frontend/src/lib/program-types.ts` → `/content/programs` (Decision #18).
 - Shop Bridge Pages (both metadata and the `/shop/[slug]` product lists) are backend-fed via `frontend/src/lib/bridge-page-types.ts` + `frontend/src/lib/product-types.ts` → `/catalog/bridge-pages/:slug` (Decisions #19 and #20).
-- `/shop` (Shop-All grid) is backend-fed via `frontend/src/lib/product-types.ts#fetchProducts` → `/catalog/products` (Decision #21). Remaining `shopProducts` consumers (home, search, cart, checkout, lifestyle pouches, seasonal drops, HowSeijakuWorks) still read the frontend registry until Phase 4b.iii+.
+- `/shop` (Shop-All grid) is backend-fed via `frontend/src/lib/product-types.ts#fetchProducts` → `/catalog/products` (Decision #21).
+- Home `RitualSetsSection`, global `SearchOverlay`, and `howSeijakuWorks.options.ts` read from backend — the first two via client-side lazy fetches against `/api/public/catalog/products(/:slug)`; the third is pure static data (Decision #22). Remaining `shopProducts` consumers (cart, checkout, `/collection`, Lifestyle Gift Pouch options, `/seasonaldrops-hemanta`) migrate in Phase 4b.iv+.
 
 Backend data model and API:
 
