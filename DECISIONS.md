@@ -256,7 +256,7 @@ Seed impact:
 
 - `backend/prisma/seed.ts` previously imported from the frontend registry. It now imports from `backend/prisma/seed-data/retreats.ts`, following the Phase 1 pattern for articles.
 
-Known existing inconsistency (not introduced by Phase 2): the public `/content/retreats` endpoint returns records of every `status`, including `DRAFT`. Articles filter to `PUBLISHED` only. Worth harmonising in a follow-up backend change; outside Phase 2's read-swap scope.
+Known existing inconsistency (not introduced by Phase 2): the public `/content/retreats` endpoint returns records of every `status`, including `DRAFT`. Articles filter to `PUBLISHED` only. **Resolved** in a post-migration cleanup PR — both handlers now filter with `{ status: { not: "DRAFT" } }` since `RetreatStatus` has multiple valid public values (UPCOMING, INQUIRY_OPEN, CLOSED) rather than a single PUBLISHED flag.
 
 ### 18. Programs Are Backend-Owned (Three Routes Collapsed Into One)
 
@@ -283,7 +283,7 @@ Dropped from the UI (not migrated):
 - `sessionFlow` (a 5-bullet "what the session includes" list previously hardcoded only on the Elder Reset page). A structured "What's included" list is a natural candidate for Phase 5's block-level work. If an admin needs to surface the list now, it can be typed into `detailDescription` prose.
 - `trustNotes` and `expectations` arrays on `/programs` (small marketing decoration) remain hardcoded page-level copy. Phase 5 block work covers that territory.
 
-Pre-existing inconsistency flagged (not introduced by Phase 3): the public `/content/programs` and `/content/retreats` endpoints return records of every status, including `DRAFT`. `/content/articles` filters to `PUBLISHED`. A single follow-up backend pass can harmonise the three endpoints.
+Pre-existing inconsistency flagged (not introduced by Phase 3): the public `/content/programs` and `/content/retreats` endpoints return records of every status, including `DRAFT`. `/content/articles` filters to `PUBLISHED`. **Resolved** in a post-migration cleanup PR — index and by-slug handlers for both domains now filter out `DRAFT` records (programs via `{ status: { not: "DRAFT" } }`, retreats same).
 
 ### 19. Shop Bridge Pages Are Backend-Owned (Products Still Frontend — Phase 4a)
 
@@ -498,7 +498,7 @@ Dead legacy shop-all filter UI components also deleted (zero importers since the
 - `frontend/src/components/shop-all/ProductCard.tsx`
 - `frontend/src/components/shop-all/SortDropdown.tsx`
 
-(Two files in that directory survive — `FeaturedCollectionCallout.tsx` and `ShopHero.tsx`. They have zero importers either, but don't block registry deletion; leaving them for a future cleanup PR.)
+(Two files in that directory survived Phase 4b.final — `FeaturedCollectionCallout.tsx` and `ShopHero.tsx`. **Resolved** in a post-migration cleanup PR: both were deleted alongside the retreats/programs DRAFT-filter fix, and the now-empty `frontend/src/components/shop-all/` directory was removed.)
 
 Retained from the registry era:
 

@@ -231,6 +231,7 @@ publicRouter.get(
   "/content/retreats",
   asyncHandler(async (_req, res) => {
     const retreats = await prisma.retreat.findMany({
+      where: { status: { not: "DRAFT" } },
       include: { primaryImage: true },
       orderBy: { name: "asc" },
     });
@@ -247,7 +248,7 @@ publicRouter.get(
       include: { primaryImage: true },
     });
 
-    if (!retreat) {
+    if (!retreat || retreat.status === "DRAFT") {
       res.status(404).json({ error: "Retreat not found" });
       return;
     }
@@ -260,6 +261,7 @@ publicRouter.get(
   "/content/programs",
   asyncHandler(async (_req, res) => {
     const programs = await prisma.program.findMany({
+      where: { status: { not: "DRAFT" } },
       include: { sessions: true },
       orderBy: { name: "asc" },
     });
@@ -276,7 +278,7 @@ publicRouter.get(
       include: { sessions: true },
     });
 
-    if (!program) {
+    if (!program || program.status === "DRAFT") {
       res.status(404).json({ error: "Program not found" });
       return;
     }
