@@ -24,6 +24,7 @@ export type ProductView = {
   videoUrl?: string;
   ctaLabel?: string;
   status?: string;
+  releaseDate?: string | null;
   // Per-product variant pickers (e.g. colour tone). When present,
   // ProductDetailDrawer renders a <select> per entry. If `required` is true,
   // Buy Now stays disabled until a value is chosen.
@@ -78,6 +79,7 @@ export type BackendProduct = {
   currency: string;
   status: BackendProductStatus;
   workflowStatus: "DRAFT" | "PUBLISHED";
+  releaseDate: string | null;
   imageAlt: string | null;
   ctaLabel: string | null;
   primaryImage: { url: string; altText: string | null } | null;
@@ -142,6 +144,7 @@ export function normalizeBackendProduct(b: BackendProduct): ProductView | null {
     videoUrl: videoAsset?.url,
     ctaLabel: b.ctaLabel ?? undefined,
     status: STATUS_DISPLAY[b.status],
+    releaseDate: b.releaseDate,
     customizationOptions:
       b.options.length > 0
         ? b.options.map((o) => ({

@@ -1,15 +1,19 @@
-// @ts-nocheck
-import { CollectionKind, Prisma, PrismaClient, ProductStatus, SelectionMode, TagKind } from "@prisma/client";
+import { CollectionKind, Prisma, PrismaClient } from "@prisma/client";
 
 import { hashPassword } from "../src/lib/auth.js";
 import { env } from "../src/config.js";
-import * as shopData from "../../frontend/src/lib/shopAllItems.js";
 import { seedArticles } from "./seed-data/articles.js";
 import { seedBridgePages } from "./seed-data/bridge-pages.js";
 import { seedRetreats } from "./seed-data/retreats.js";
 
 const prisma = new PrismaClient();
-const shop = ((shopData as any).default ?? shopData) as typeof shopData & Record<string, any>;
+
+// Product content is no longer seeded. Since Phase 4b.final (Decision #26),
+// the backend is the sole source of truth for Product records; local dev
+// bootstraps admin + structural records (categories, collections, bridge
+// pages) then admins create products via the /admin/products UI. This keeps
+// the seed from drifting against a deleted frontend registry and makes the
+// "log in and create" flow the same path a real content editor would use.
 
 const programs = [
   {
@@ -119,84 +123,6 @@ const lifestyleSections = [
   },
 ];
 
-const productOptionsBySlug: Record<
-  string,
-  Array<{
-    code: string;
-    label: string;
-    selectionMode?: SelectionMode;
-    required?: boolean;
-    values: string[];
-  }>
-> = {
-  "quiet-tea-ritual-box": [
-    {
-      code: "oils",
-      label: "Choose your oils",
-      required: true,
-      values: ["Lavender Green", "Chamomile", "Spearmint", "Ginger Lemon", "Jasmine"],
-    },
-  ],
-  "evening-unwind-gift-set": [
-    {
-      code: "wax-blend",
-      label: "Select wax blend",
-      required: true,
-      values: ["Cool Caramel", "Coffee Break", "Choco Dark"],
-    },
-  ],
-  "dawn-reset-box": [
-    {
-      code: "perfume",
-      label: "Choose your perfume",
-      required: true,
-      values: ["Breath of Pines (10 ml / 50 ml)", "Summer Held Close (10 ml / 50 ml)", "The Morning Desk (10 ml / 50 ml)"],
-    },
-    {
-      code: "textile",
-      label: "Choose your textile",
-      required: true,
-      values: [
-        "A Pine Forest scarf",
-        "A Pine Forest pocket square",
-        "Coffee Art scarf",
-        "Coffee Art pocket square",
-        "A Kolkata Summer scarf",
-        "A Kolkata Summer pocket square",
-      ],
-    },
-    {
-      code: "brooch",
-      label: "Choose your brooch",
-      required: true,
-      values: ["Japan handfan", "Bengal handfan", "Conch", "Temple bell"],
-    },
-  ],
-  "clay-vessel-diffuser": [
-    {
-      code: "variant",
-      label: "Choose your finish",
-      required: true,
-      values: ["Matte Clay", "Smoke Clay", "Tea Glaze"],
-    },
-  ],
-  "stone-oil-diffuser": [
-    {
-      code: "variant",
-      label: "Choose your scent vessel",
-      required: true,
-      values: ["Floral & Fruity", "Tea & Steam", "Green & Resin"],
-    },
-  ],
-  "jasmine-neroli-textile-oil": [
-    {
-      code: "format",
-      label: "Choose your format",
-      required: true,
-      values: ["Scarf", "Pocket Square"],
-    },
-  ],
-};
 
 const bridgePageContentBySlug: Record<string, Record<string, unknown>> = {
   lifestyle: {
@@ -204,31 +130,6 @@ const bridgePageContentBySlug: Record<string, Record<string, unknown>> = {
   },
 };
 
-
-function normalizeProductStatus(status?: string | null) {
-  if (!status) return ProductStatus.IN_STOCK;
-
-  const normalized = status.toUpperCase().replace(/\s+/g, "_");
-  return ProductStatus[normalized as keyof typeof ProductStatus] ?? ProductStatus.IN_STOCK;
-}
-
-function inferCollections(product: (typeof shop.shopProducts)[number]) {
-  const set = new Set<CollectionKind>();
-
-  if (product.slug.includes("hemanta") || product.image.includes("Hemanta")) {
-    set.add(CollectionKind.HEMANTA);
-  }
-
-  if (product.slug.includes("season") || product.image.includes("Seasonal")) {
-    set.add(CollectionKind.SEASONAL_DROP);
-  }
-
-  if (set.size === 0) {
-    set.add(CollectionKind.CORE_COLLECTION);
-  }
-
-  return Array.from(set);
-}
 
 async function upsertMedia(url: string, altText?: string) {
   return prisma.mediaAsset.upsert({
@@ -312,196 +213,6 @@ async function main() {
     collectionByKind.set(kind, collection.id);
   }
 
-  const productIdBySlug = new Map<string, string>();
-  for (const product of shop.shopProducts) {
-    const primaryImage = await upsertMedia(product.image, product.imageAlt ?? product.title);
-
-    const savedProduct = await prisma.product.upsert({
-      where: { slug: product.slug },
-      update: {
-        title: product.title,
-        shortDescription: product.shortDescription,
-        longDescription: product.longDescription,
-        type: product.type,
-        material: product.material,
-        useCase: product.useCase,
-        priceAmount: product.price,
-        currency: "INR",
-        status: normalizeProductStatus(product.status),
-        releaseDate: null,
-        seoTitle: product.title,
-        seoDescription: product.shortDescription ?? product.longDescription ?? undefined,
-        imageAlt: product.imageAlt,
-        ctaLabel: product.ctaLabel,
-        metadataJson: {
-          ritualTag: product.ritualTag ?? null,
-          ritualTagHref: product.ritualTagHref ?? null,
-          gallery: product.gallery ?? [],
-          videoUrl: product.videoUrl ?? null,
-        },
-        primaryImageId: primaryImage.id,
-        publishedAt: new Date(),
-      },
-      create: {
-        slug: product.slug,
-        title: product.title,
-        shortDescription: product.shortDescription,
-        longDescription: product.longDescription,
-        type: product.type,
-        material: product.material,
-        useCase: product.useCase,
-        priceAmount: product.price,
-        currency: "INR",
-        status: normalizeProductStatus(product.status),
-        seoTitle: product.title,
-        seoDescription: product.shortDescription ?? product.longDescription ?? undefined,
-        imageAlt: product.imageAlt,
-        ctaLabel: product.ctaLabel,
-        metadataJson: {
-          ritualTag: product.ritualTag ?? null,
-          ritualTagHref: product.ritualTagHref ?? null,
-          gallery: product.gallery ?? [],
-          videoUrl: product.videoUrl ?? null,
-        },
-        primaryImageId: primaryImage.id,
-        publishedAt: new Date(),
-      },
-    });
-
-    productIdBySlug.set(product.slug, savedProduct.id);
-
-    await prisma.productMedia.deleteMany({ where: { productId: savedProduct.id } });
-
-    const gallery = product.gallery?.length ? product.gallery : [product.image];
-    for (const [index, url] of gallery.entries()) {
-      const mediaAsset = await upsertMedia(url, product.imageAlt ?? product.title);
-      await prisma.productMedia.create({
-        data: {
-          productId: savedProduct.id,
-          mediaAssetId: mediaAsset.id,
-          sortOrder: index,
-          mediaType: index === 0 ? "PRIMARY" : "GALLERY",
-        },
-      });
-    }
-
-    if (product.bridgeCategory) {
-      const categoryId = categoryBySlug.get(product.bridgeCategory);
-      if (categoryId) {
-        await prisma.productCategoryMembership.upsert({
-          where: {
-            productId_categoryId: {
-              productId: savedProduct.id,
-              categoryId,
-            },
-          },
-          update: {},
-          create: {
-            productId: savedProduct.id,
-            categoryId,
-          },
-        });
-      }
-    }
-
-    for (const kind of inferCollections(product)) {
-      const collectionId = collectionByKind.get(kind);
-      if (!collectionId) continue;
-
-      await prisma.collectionProductLink.upsert({
-        where: {
-          collectionId_productId: {
-            collectionId,
-            productId: savedProduct.id,
-          },
-        },
-        update: {},
-        create: {
-          collectionId,
-          productId: savedProduct.id,
-        },
-      });
-    }
-
-    if (product.ritualTag) {
-      const tag = await prisma.productTag.upsert({
-        where: { slug: product.ritualTag.toLowerCase().replace(/\s+/g, "-") },
-        update: {
-          name: product.ritualTag,
-          kind: TagKind.RITUAL,
-        },
-        create: {
-          slug: product.ritualTag.toLowerCase().replace(/\s+/g, "-"),
-          name: product.ritualTag,
-          kind: TagKind.RITUAL,
-        },
-      });
-
-      await prisma.productTagLink.upsert({
-        where: {
-          productId_tagId: {
-            productId: savedProduct.id,
-            tagId: tag.id,
-          },
-        },
-        update: {},
-        create: {
-          productId: savedProduct.id,
-          tagId: tag.id,
-        },
-      });
-    }
-
-    const optionDefinitions = productOptionsBySlug[product.slug] ?? [];
-    for (const [optionIndex, option] of optionDefinitions.entries()) {
-      const savedOption = await prisma.productOption.upsert({
-        where: {
-          productId_code: {
-            productId: savedProduct.id,
-            code: option.code,
-          },
-        },
-        update: {
-          label: option.label,
-          selectionMode: option.selectionMode ?? SelectionMode.SINGLE,
-          required: option.required ?? false,
-          sortOrder: optionIndex,
-        },
-        create: {
-          productId: savedProduct.id,
-          code: option.code,
-          label: option.label,
-          selectionMode: option.selectionMode ?? SelectionMode.SINGLE,
-          required: option.required ?? false,
-          sortOrder: optionIndex,
-        },
-      });
-
-      for (const [valueIndex, value] of option.values.entries()) {
-        await prisma.productOptionValue.upsert({
-          where: {
-            productOptionId_value: {
-              productOptionId: savedOption.id,
-              value,
-            },
-          },
-          update: {
-            label: value,
-            sortOrder: valueIndex,
-            isActive: true,
-          },
-          create: {
-            productOptionId: savedOption.id,
-            value,
-            label: value,
-            sortOrder: valueIndex,
-            isActive: true,
-          },
-        });
-      }
-    }
-  }
-
   for (const seed of seedBridgePages) {
     const slug = seed.slug;
     const bridgeData = {
@@ -533,26 +244,15 @@ async function main() {
       contentJson: (bridgePageContentBySlug[slug] ?? undefined) as Prisma.InputJsonValue | undefined,
     };
 
-    const page = await prisma.shopBridgePage.upsert({
+    await prisma.shopBridgePage.upsert({
       where: { slug },
       update: bridgeData,
       create: { slug, ...bridgeData },
     });
 
-    await prisma.shopBridgePageProduct.deleteMany({ where: { bridgePageId: page.id } });
-
-    for (const [index, productSlug] of seed.productSlugs.entries()) {
-      const productId = productIdBySlug.get(productSlug);
-      if (!productId) continue;
-
-      await prisma.shopBridgePageProduct.create({
-        data: {
-          bridgePageId: page.id,
-          productId,
-          sortOrder: index,
-        },
-      });
-    }
+    // Product → bridge-page links are no longer seeded. Admins assign
+    // products to bridge pages via /admin/bridge-pages after creating
+    // products in /admin/products.
   }
 
   for (const article of seedArticles) {

@@ -520,6 +520,28 @@ What's backend-owned:
 
 The migration arc started in Phase 1 (articles) and closed in Phase 4b.final (products + types + admin sync surface). Every public-facing content surface reads from the backend through `publicBackendJson` with tag-based ISR invalidation (Decision #15). The admin UI is the authoritative editing interface for every content domain. The two-content-layer split that framed this repo's mental model for the first eight phases is now a single backend-authoritative layer with route-level editorial copy layered on top.
 
+### 27. Product Release Dates Are Admin-Editable; Seed Stops Mirroring Deleted Registry
+
+Status: Active
+
+**Release dates.** The `/shop` "Newest" sort previously read from a hand-maintained map in `frontend/src/lib/shop-taxonomy.ts` (`shopProductReleaseDates` / `getShopProductReleaseDate`). That map is deleted. The sort now reads `ProductView.releaseDate` directly — surfaced through the existing `Product.releaseDate` column (present since the initial schema), serialized by `serializeProduct` (already emitting it), and plumbed into `BackendProduct` + `ProductView` + `normalizeBackendProduct` as part of this change. Fallback for products without a set value remains `"2026-01-01"` — identical sort position to pre-change for unmapped slugs.
+
+The admin UI to edit release dates already existed — `ProductEditor.tsx` has a date field wired through the admin Zod schema. This change flipped the read side to match.
+
+Backfill: `backend/prisma/migrations/0005_backfill_product_release_dates/migration.sql` populates `Product.releaseDate` for the 23 slugs that carried values in the old static map. Guarded by `WHERE slug = ... AND "releaseDate" IS NULL` so admin edits are never overwritten. On prod Render runs it automatically via `prisma:deploy`. On local after a fresh DB reset, the seed no longer creates those products (see below), so the UPDATEs are no-ops — harmless.
+
+**Seed simplified.** `backend/prisma/seed.ts` previously imported from the deleted `frontend/src/lib/shopAllItems.ts` (broken since Phase 4b.final) and mirrored the entire frontend registry into the DB on every `prisma:seed`. With the registry gone, the seed's original rationale is gone too. Removed: the product upsert loop, `productOptionsBySlug` fixture, `inferCollections` helper, `normalizeProductStatus` helper, and the bridge-page → product link seeding block. Kept: admin bootstrap, site settings, bridge page categories, collection records (Core / Seasonal / Hemanta), bridge page metadata, articles, retreats, programs, program sessions, the Hemanta seasonal-drop record.
+
+After this change, `npm run prisma:seed` produces a DB with:
+- admin bootstrap account
+- site settings
+- bridge page categories + collections (structural records — so admin-created products can opt in)
+- bridge page metadata (hero copy, intro text, etc. — no product links)
+- articles, retreats, programs, sessions, seasonal drop metadata
+- **zero products**
+
+Local dev onboarding becomes: `prisma:seed` → log into `/admin` → create products via `/admin/products/new` → assign them to bridge pages via `/admin/bridge-pages`. This matches the post-migration mental model (backend is authoritative; admin UI is the editing interface) and makes the content-editor onboarding path the same as the dev onboarding path. If a larger demo dataset becomes useful for dev (e.g. for frontend work that needs populated pages), a small curated fixture set can be added in a separate `seed-data/products.ts` — deliberately smaller than the old 50-product registry, framed as dev fixtures rather than production-parity data.
+
 ## How To Use This File
 
 - Add a new entry when a structural or cross-cutting product decision is made.

@@ -47,7 +47,7 @@ cd backend
 npm run prisma:generate              # regenerate client (also runs on postinstall)
 npm run prisma:migrate -- --name X   # dev migration
 npm run prisma:deploy                # prod migration (run manually against prod DB after schema changes)
-npm run prisma:seed                  # seed bootstrap admin + content
+npm run prisma:seed                  # bootstrap admin + structural records (no products — create via /admin/products)
 
 # health checks
 curl -sS http://localhost:4001/health                    # backend

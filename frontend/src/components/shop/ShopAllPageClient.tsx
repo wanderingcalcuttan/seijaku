@@ -6,7 +6,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import {
   getShopMaterials,
-  getShopProductReleaseDate,
   getShopTypes,
   matchesShopMaterialFilter,
   matchesShopTypeFilter,
@@ -36,7 +35,12 @@ function sortProducts(items: ProductView[], sortBy: ShopSortOption) {
   const list = [...items];
 
   if (sortBy === "Newest") {
-    return list.sort((a, b) => new Date(getShopProductReleaseDate(b)).getTime() - new Date(getShopProductReleaseDate(a)).getTime());
+    const fallback = "2026-01-01";
+    return list.sort(
+      (a, b) =>
+        new Date(b.releaseDate ?? fallback).getTime() -
+        new Date(a.releaseDate ?? fallback).getTime(),
+    );
   }
 
   if (sortBy === "Price low to high") {

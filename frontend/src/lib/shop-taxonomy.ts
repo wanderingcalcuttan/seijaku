@@ -124,37 +124,3 @@ export function matchesShopMaterialFilter(
   return false;
 }
 
-// Hand-maintained editorial release-date map for the "Newest" sort order on
-// /shop. Not modeled on the backend — these dates pre-date the backend
-// migration and no product record carries a comparable field. If this needs
-// to become admin-editable, add a `releasedAt` column on Product and swap
-// this lookup for a prop read. Slugs not in the map sort under the fallback.
-const shopProductReleaseDates: Record<string, string> = {
-  "quiet-tea-ritual-box": "2026-03-12",
-  "reading-hour-set": "2026-03-08",
-  "dawn-reset-box": "2026-03-03",
-  "evening-unwind-gift-set": "2026-02-25",
-  "smoke-tea-parfum": "2026-03-15",
-  "saffron-plum-attar": "2026-03-10",
-  "neroli-linen-mist": "2026-03-01",
-  "hinoki-morning-oil": "2026-02-20",
-  "table-ritual-napkin-pair": "2026-03-11",
-  "tea-room-pocket-square": "2026-03-05",
-  "rain-quiet-wrap": "2026-02-28",
-  "mulberry-dawn-scarf": "2026-02-18",
-  "clay-vessel-diffuser": "2026-03-14",
-  "reed-diffuser-cedar-smoke": "2026-03-07",
-  "brass-tea-light-diffuser": "2026-02-27",
-  "stone-oil-diffuser": "2026-02-22",
-  "threshold-bell-ornament": "2026-03-13",
-  "dokra-bird-figure": "2026-03-09",
-  "dokra-talisman-pair": "2026-02-26",
-  "quiet-lamp-charm": "2026-02-19",
-  "adult-unwind-program": "2026-03-06",
-  "elder-reset-program": "2026-02-24",
-  "autumn-quiet-retreat": "2026-02-16",
-};
-
-export function getShopProductReleaseDate(item: { slug: string }): string {
-  return shopProductReleaseDates[item.slug] ?? "2026-01-01";
-}
