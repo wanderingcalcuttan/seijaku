@@ -205,3 +205,38 @@ export type SiteSettings = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type StoryStatusAdmin = "ACTIVE" | "INACTIVE";
+
+// Lightweight summary for the /admin/stories index table.
+export type StorySummary = {
+  id: string;
+  launchDate: string;
+  status: StoryStatusAdmin;
+  videoUrl: string;
+  perfumeTitles: string[];
+  artifactTitles: string[];
+  updatedAt: string;
+};
+
+// Slot-flat product reference for the StoryEditor product pickers.
+export type StoryProductRef = {
+  id: string;
+  slug: string;
+  title: string;
+  bridgePages: { slug: string }[];
+  primaryImage: { url: string } | null;
+  status: string;
+};
+
+// Full story shape returned by GET /admin/stories/:id (includes the 6
+// resolved products — same shape that serializeStory emits on the public
+// side, but we carry the admin payload here for editor convenience).
+export type StoryDetail = {
+  id: string;
+  launchDate: string;
+  videoUrl: string;
+  status: StoryStatusAdmin;
+  perfumes: StoryProductRef[];
+  artifacts: StoryProductRef[];
+};

@@ -295,3 +295,31 @@ export function serializeProductNotification(record: any) {
       : null,
   };
 }
+
+export function serializeStory(story: any) {
+  return {
+    id: story.id,
+    launchDate: story.launchDate.toISOString(),
+    videoUrl: story.videoUrl,
+    status: story.status,
+    perfumes: [story.perfume1, story.perfume2, story.perfume3].map(serializeProduct),
+    artifacts: [story.artifact1, story.artifact2, story.artifact3].map(serializeProduct),
+    createdAt: story.createdAt.toISOString(),
+    updatedAt: story.updatedAt.toISOString(),
+  };
+}
+
+// Lightweight summary for the admin index list — avoids dragging the full
+// product include payload across the wire when only counts and titles are
+// needed in the table.
+export function serializeStorySummary(story: any) {
+  return {
+    id: story.id,
+    launchDate: story.launchDate.toISOString(),
+    status: story.status,
+    videoUrl: story.videoUrl,
+    perfumeTitles: [story.perfume1?.title, story.perfume2?.title, story.perfume3?.title].filter(Boolean),
+    artifactTitles: [story.artifact1?.title, story.artifact2?.title, story.artifact3?.title].filter(Boolean),
+    updatedAt: story.updatedAt.toISOString(),
+  };
+}

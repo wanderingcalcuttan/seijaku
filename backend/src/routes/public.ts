@@ -12,6 +12,7 @@ import {
   serializeProgram,
   serializeRetreat,
   serializeSiteSettings,
+  serializeStory,
 } from "../utils/serializers.js";
 import { asyncHandler, parseBody } from "../utils/http.js";
 
@@ -284,6 +285,37 @@ publicRouter.get(
     }
 
     res.json({ item: serializeProgram(program) });
+  })
+);
+
+// Latest active story whose launchDate has passed. Drives the home
+// "How Seijaku Works" section. Returns 404 if no story qualifies — the
+// frontend hides the section in that case (Decision #29).
+publicRouter.get(
+  "/content/story/current",
+  asyncHandler(async (_req, res) => {
+    const story = await prisma.story.findFirst({
+      where: {
+        status: "ACTIVE",
+        launchDate: { lte: new Date() },
+      },
+      orderBy: { launchDate: "desc" },
+      include: {
+        perfume1: { include: productInclude },
+        perfume2: { include: productInclude },
+        perfume3: { include: productInclude },
+        artifact1: { include: productInclude },
+        artifact2: { include: productInclude },
+        artifact3: { include: productInclude },
+      },
+    });
+
+    if (!story) {
+      res.status(404).json({ error: "No active story" });
+      return;
+    }
+
+    res.json({ item: serializeStory(story) });
   })
 );
 

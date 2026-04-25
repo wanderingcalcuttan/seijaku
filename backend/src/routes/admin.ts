@@ -20,6 +20,8 @@ import {
   serializeProgram,
   serializeRetreat,
   serializeSiteSettings,
+  serializeStory,
+  serializeStorySummary,
 } from "../utils/serializers.js";
 import { asyncHandler, HttpError, parseBody } from "../utils/http.js";
 
@@ -1723,6 +1725,205 @@ adminRouter.patch(
       include: { product: { select: { id: true, slug: true, title: true, status: true } } },
     });
     res.json({ item: serializeProductNotification(item) });
+  })
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Story (homepage "How Seijaku Works" curation) — Decision #29.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const storyInputBaseSchema = z.object({
+  perfume1Id: z.string().min(1),
+  perfume2Id: z.string().min(1),
+  perfume3Id: z.string().min(1),
+  artifact1Id: z.string().min(1),
+  artifact2Id: z.string().min(1),
+  artifact3Id: z.string().min(1),
+  launchDate: z.string().datetime(),
+  videoUrl: z.string().url().max(500),
+  status: z.enum(["ACTIVE", "INACTIVE"]).optional(),
+});
+
+const storyInputSchema = storyInputBaseSchema
+  .refine(
+    (data) => {
+      const perfumes = [data.perfume1Id, data.perfume2Id, data.perfume3Id];
+      return new Set(perfumes).size === perfumes.length;
+    },
+    { message: "Perfume slots must reference three distinct products", path: ["perfume2Id"] },
+  )
+  .refine(
+    (data) => {
+      const artifacts = [data.artifact1Id, data.artifact2Id, data.artifact3Id];
+      return new Set(artifacts).size === artifacts.length;
+    },
+    { message: "Artifact slots must reference three distinct products", path: ["artifact2Id"] },
+  );
+
+const storyUpdateSchema = storyInputBaseSchema.partial();
+
+const storyInclude = {
+  perfume1: { include: productInclude },
+  perfume2: { include: productInclude },
+  perfume3: { include: productInclude },
+  artifact1: { include: productInclude },
+  artifact2: { include: productInclude },
+  artifact3: { include: productInclude },
+} satisfies Prisma.StoryInclude;
+
+const storySummaryInclude = {
+  perfume1: { select: { title: true } },
+  perfume2: { select: { title: true } },
+  perfume3: { select: { title: true } },
+  artifact1: { select: { title: true } },
+  artifact2: { select: { title: true } },
+  artifact3: { select: { title: true } },
+} satisfies Prisma.StoryInclude;
+
+// Cross-validate that perfume slots reference perfumes-bridge products and
+// artifact slots reference non-perfumes-bridge products. Throws HttpError on
+// violation so the admin form can surface a clear message.
+async function validateStorySlots(payload: z.infer<typeof storyInputSchema>) {
+  const perfumeIds = [payload.perfume1Id, payload.perfume2Id, payload.perfume3Id];
+  const artifactIds = [payload.artifact1Id, payload.artifact2Id, payload.artifact3Id];
+  const allIds = [...perfumeIds, ...artifactIds];
+
+  const products = await prisma.product.findMany({
+    where: { id: { in: allIds } },
+    include: { bridgePages: { include: { bridgePage: true } } },
+  });
+
+  const byId = new Map(products.map((p) => [p.id, p]));
+  for (const id of allIds) {
+    if (!byId.has(id)) {
+      throw new HttpError(400, `Product not found: ${id}`);
+    }
+  }
+
+  const isInPerfumesBridge = (id: string) =>
+    byId.get(id)!.bridgePages.some((bp) => bp.bridgePage.slug === "perfumes");
+
+  for (const id of perfumeIds) {
+    if (!isInPerfumesBridge(id)) {
+      throw new HttpError(400, `Perfume slot product is not assigned to /shop/perfumes: ${byId.get(id)!.slug}`);
+    }
+  }
+  for (const id of artifactIds) {
+    if (isInPerfumesBridge(id)) {
+      throw new HttpError(400, `Artifact slot cannot reference a perfume: ${byId.get(id)!.slug}`);
+    }
+  }
+}
+
+adminRouter.get(
+  "/stories",
+  asyncHandler(async (_req, res) => {
+    const items = await prisma.story.findMany({
+      include: storySummaryInclude,
+      orderBy: { launchDate: "desc" },
+    });
+    res.json({ items: items.map(serializeStorySummary) });
+  })
+);
+
+adminRouter.get(
+  "/stories/:id",
+  asyncHandler(async (req, res) => {
+    const item = await prisma.story.findUnique({
+      where: { id: routeParam(req, "id") },
+      include: storyInclude,
+    });
+    if (!item) {
+      throw new HttpError(404, "Story not found");
+    }
+    res.json({ item: serializeStory(item) });
+  })
+);
+
+adminRouter.post(
+  "/stories",
+  asyncHandler(async (req, res) => {
+    const payload = parseBody(storyInputSchema, req.body);
+    await validateStorySlots(payload);
+
+    const item = await prisma.story.create({
+      data: {
+        perfume1Id: payload.perfume1Id,
+        perfume2Id: payload.perfume2Id,
+        perfume3Id: payload.perfume3Id,
+        artifact1Id: payload.artifact1Id,
+        artifact2Id: payload.artifact2Id,
+        artifact3Id: payload.artifact3Id,
+        launchDate: new Date(payload.launchDate),
+        videoUrl: payload.videoUrl,
+        status: payload.status ?? "INACTIVE",
+      },
+      include: storyInclude,
+    });
+    res.status(201).json({ item: serializeStory(item) });
+  })
+);
+
+adminRouter.patch(
+  "/stories/:id",
+  asyncHandler(async (req, res) => {
+    const payload = parseBody(storyUpdateSchema, req.body);
+
+    // If any slot id is being changed, re-validate the full set against
+    // bridge-page rules. Cheap (one query) and prevents drift.
+    const isSlotChange = [
+      payload.perfume1Id,
+      payload.perfume2Id,
+      payload.perfume3Id,
+      payload.artifact1Id,
+      payload.artifact2Id,
+      payload.artifact3Id,
+    ].some((v) => v !== undefined);
+
+    if (isSlotChange) {
+      const existing = await prisma.story.findUnique({
+        where: { id: routeParam(req, "id") },
+      });
+      if (!existing) {
+        throw new HttpError(404, "Story not found");
+      }
+      await validateStorySlots({
+        perfume1Id: payload.perfume1Id ?? existing.perfume1Id,
+        perfume2Id: payload.perfume2Id ?? existing.perfume2Id,
+        perfume3Id: payload.perfume3Id ?? existing.perfume3Id,
+        artifact1Id: payload.artifact1Id ?? existing.artifact1Id,
+        artifact2Id: payload.artifact2Id ?? existing.artifact2Id,
+        artifact3Id: payload.artifact3Id ?? existing.artifact3Id,
+        launchDate: existing.launchDate.toISOString(),
+        videoUrl: existing.videoUrl,
+      });
+    }
+
+    const item = await prisma.story.update({
+      where: { id: routeParam(req, "id") },
+      data: {
+        ...(payload.perfume1Id !== undefined ? { perfume1Id: payload.perfume1Id } : {}),
+        ...(payload.perfume2Id !== undefined ? { perfume2Id: payload.perfume2Id } : {}),
+        ...(payload.perfume3Id !== undefined ? { perfume3Id: payload.perfume3Id } : {}),
+        ...(payload.artifact1Id !== undefined ? { artifact1Id: payload.artifact1Id } : {}),
+        ...(payload.artifact2Id !== undefined ? { artifact2Id: payload.artifact2Id } : {}),
+        ...(payload.artifact3Id !== undefined ? { artifact3Id: payload.artifact3Id } : {}),
+        ...(payload.launchDate !== undefined ? { launchDate: new Date(payload.launchDate) } : {}),
+        ...(payload.videoUrl !== undefined ? { videoUrl: payload.videoUrl } : {}),
+        ...(payload.status !== undefined ? { status: payload.status } : {}),
+      },
+      include: storyInclude,
+    });
+    res.json({ item: serializeStory(item) });
+  })
+);
+
+adminRouter.delete(
+  "/stories/:id",
+  requireAdminRole("SUPER_ADMIN"),
+  asyncHandler(async (req, res) => {
+    await prisma.story.delete({ where: { id: routeParam(req, "id") } });
+    res.status(204).send();
   })
 );
 

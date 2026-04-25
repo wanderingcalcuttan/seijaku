@@ -79,6 +79,11 @@ enum ArticleStatus {
   PUBLISHED
 }
 
+enum StoryStatus {
+  ACTIVE
+  INACTIVE
+}
+
 enum ProgramStatus {
   DRAFT
   UPCOMING
@@ -203,6 +208,12 @@ model Product {
   orderItems       OrderRequestItem[]
   wishlistItems    WishlistItem[]
   notifications    ProductNotification[]
+  storyPerfume1    Story[]                     @relation("StoryPerfume1")
+  storyPerfume2    Story[]                     @relation("StoryPerfume2")
+  storyPerfume3    Story[]                     @relation("StoryPerfume3")
+  storyArtifact1   Story[]                     @relation("StoryArtifact1")
+  storyArtifact2   Story[]                     @relation("StoryArtifact2")
+  storyArtifact3   Story[]                     @relation("StoryArtifact3")
 }
 
 model ProductMedia {
@@ -544,4 +555,28 @@ model RitualEntry {
   streakSnapshot Int?
   createdAt     DateTime @default(now())
   customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model Story {
+  id          String      @id @default(cuid())
+  perfume1Id  String
+  perfume2Id  String
+  perfume3Id  String
+  artifact1Id String
+  artifact2Id String
+  artifact3Id String
+  launchDate  DateTime
+  videoUrl    String
+  status      StoryStatus @default(INACTIVE)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  perfume1  Product @relation("StoryPerfume1", fields: [perfume1Id], references: [id], onDelete: Restrict)
+  perfume2  Product @relation("StoryPerfume2", fields: [perfume2Id], references: [id], onDelete: Restrict)
+  perfume3  Product @relation("StoryPerfume3", fields: [perfume3Id], references: [id], onDelete: Restrict)
+  artifact1 Product @relation("StoryArtifact1", fields: [artifact1Id], references: [id], onDelete: Restrict)
+  artifact2 Product @relation("StoryArtifact2", fields: [artifact2Id], references: [id], onDelete: Restrict)
+  artifact3 Product @relation("StoryArtifact3", fields: [artifact3Id], references: [id], onDelete: Restrict)
+
+  @@index([status, launchDate])
 }

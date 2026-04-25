@@ -570,6 +570,55 @@ Mechanism:
 
 Risk of the two-mapping-file setup: the backend mapping (authoritative for the actual link creation) and the frontend mapping (only used for the pre-save notice copy) must stay in sync. Both sites carry cross-reference comments. If a third surface needs the rule, consolidate into a single shared module.
 
+### 29. Homepage "How Seijaku Works" Section Is Admin-Curated Monthly
+
+Status: Active
+
+The homepage "How Seijaku Works" section (3 perfumes + 3 artifacts + a ritual video link) is admin-curated via a new `/admin/stories` CMS surface. The static `frontend/src/components/howSeijakuWorks.options.ts` module is deleted.
+
+Schema:
+
+- New `Story` model with six product foreign keys (slot-based: `perfume1Id`/`perfume2Id`/`perfume3Id` / `artifact1Id`/`artifact2Id`/`artifact3Id`), `launchDate`, `videoUrl`, `status: ACTIVE | INACTIVE`, timestamps.
+- All six FKs use `onDelete: Restrict` — products referenced by a story cannot be deleted until the reference is removed. Strict but safe; prevents silent broken-story state.
+- Index on `(status, launchDate)` for the public-read query.
+- Migration `0006_add_story_model` is hand-written SQL per the local-prisma-migrate-dev block; Render auto-applies on deploy.
+
+Public read path:
+
+- `GET /content/story/current` returns the latest `status=ACTIVE` story whose `launchDate <= NOW()`. Returns 404 if none — frontend hides the homepage section in that case.
+- Frontend lazy-fetches via `/api/public/content/story/current` on mount inside `HowSeijakuWorks.tsx` (mirroring the `RitualSetsSection` pattern from Phase 4b.iii — the home page is a `"use client"` tree, no server-parent restructuring needed).
+- Tagged `[stories, products]` via `publicBackendJson` so admin product writes (title / image changes) also invalidate stories that reference those products.
+
+Admin write path:
+
+- `GET /admin/stories` (list summary), `GET /admin/stories/:id` (full detail with included products), `POST /admin/stories` (create), `PATCH /admin/stories/:id` (partial update), `DELETE /admin/stories/:id` (SUPER_ADMIN only).
+- Cross-slot validation: perfume slots must reference products in the `/shop/perfumes` bridge; artifact slots cannot be in `/shop/perfumes`. Distinct IDs enforced per side. Bridge membership verified server-side at create + update time (any slot change re-validates).
+- Cache tag wiring: `tagsForAdminWrite("stories")` returns `[stories]`. Product writes also invalidate `stories` (mapping in `cache-tags.ts`). Media writes invalidate `stories` so an admin replacing a primary image refreshes the homepage.
+
+Step background images:
+
+- Derived deterministically from the 6 product images on the story. Step 1 picks from the 3 perfume images; step 2 from the 3 artifact images; step 3 from any of the 6. `pickBackground(seedKey, candidates, fallback)` uses a small djb2-style hash of `${story.id}:${slotIndex}` modulo the candidate count — same story always renders the same backgrounds, new story rotates them. Avoids hydration mismatch and per-refresh jitter.
+- If no image is available (e.g. one of the 3 products has no `primaryImage`), falls back to the first valid image in the candidate list, or to a hardcoded placeholder.
+
+Admin form (StoryEditor):
+
+- Two columns of three single-select dropdowns (perfumes left, artifacts right). Options partitioned client-side from a single `/admin/products?workflow=published` fetch.
+- Datetime-local input for launch date (admin can schedule precisely; future-dated stories stay hidden until their launch date passes).
+- URL input for video (any URL — YouTube, Vimeo, etc. — admins paste; not enforced by validator beyond being a valid URL).
+- Active/Inactive radio toggle.
+- Client-side validation (all 6 slots populated, distinct per side, valid URL) plus server-side validation (bridge membership, distinctness re-checked, ID existence).
+- Status pill on the index table distinguishes "Live" (ACTIVE + launch date passed), "Scheduled" (ACTIVE + future launch), "Inactive".
+
+Trade-offs:
+
+- **No fallback to a static default when no story exists** — section hides entirely. Per scope decision Q6, brand-new install or fully deactivated state means the section is invisible. Forces admins to create at least one story for the section to appear.
+- **No bulk product reassignment.** If a product is renamed or its image changes, the story re-renders with new content (good — content tracking is the whole point). If a product is deleted, the FK Restrict prevents that until admin updates the story (good — explicit failure rather than silent half-state).
+- **Two-mapping risk avoided.** The bridge-page filter rule (perfumes vs not-perfumes) lives only in the backend validator; the frontend filter in `StoryEditor` reads the same `bridgePages.slug` field. No duplicated mapping.
+- **Foreign key on products.** `Product.deleted` now harder for admins — they must remove the story reference first. This is a deliberate UX trade-off vs `SetNull` + filter-at-display, which would silently break stories.
+- **Single video per story.** No per-pair video matrix (per scope decision Q1). The ritual demo is a single curated piece per month, regardless of which (perfume, artifact) combination the visitor selects.
+
+Onboarding note: a fresh local seed (post-Decision-#27) creates no products. Workflow to see the homepage section locally: log into `/admin` → `/admin/products/new` → create at least 3 perfumes (auto-routed to /shop/perfumes via Decision #28) and 3 non-perfume products → `/admin/stories/new` → fill the 6 slots + launch date in the past + video URL + ACTIVE → save. Visit `/`.
+
 ## How To Use This File
 
 - Add a new entry when a structural or cross-cutting product decision is made.

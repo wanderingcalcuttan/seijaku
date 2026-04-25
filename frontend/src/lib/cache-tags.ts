@@ -7,6 +7,7 @@ export const cacheTags = {
   bridgePages: "bridge-pages",
   collections: "collections",
   siteSettings: "site-settings",
+  stories: "stories",
   home: "home",
   ourStory: "our-story",
   ritual: "ritual",
@@ -42,11 +43,13 @@ export function tagsForAdminWrite(upstreamPath: string): CacheTag[] {
     case "program-sessions":
       return [cacheTags.programSessions, cacheTags.programs];
     case "products":
-      return [cacheTags.products, cacheTags.bridgePages, cacheTags.collections];
+      return [cacheTags.products, cacheTags.bridgePages, cacheTags.collections, cacheTags.stories];
     case "bridge-pages":
       return [cacheTags.bridgePages, cacheTags.products];
     case "collections":
       return [cacheTags.collections, cacheTags.products];
+    case "stories":
+      return [cacheTags.stories];
     case "media":
       return [
         cacheTags.products,
@@ -54,6 +57,7 @@ export function tagsForAdminWrite(upstreamPath: string): CacheTag[] {
         cacheTags.articles,
         cacheTags.retreats,
         cacheTags.siteSettings,
+        cacheTags.stories,
       ];
     case "site-settings":
       return [cacheTags.siteSettings];

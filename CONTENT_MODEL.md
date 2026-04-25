@@ -30,13 +30,14 @@ Every content domain that a visitor sees reads from the backend via `publicBacke
 | `/shop/lifestyle` Live Calm Gift Pouch picker options | `ProductView[]` prop flowing into `LifestylePageClient` | `products` | #23 |
 | `/seasonaldrops-hemanta` Reserve-button drawers | `/catalog/products/:slug` (server parent) | `products` | #24 |
 | `/checkout`, `/collection`, bridge-page drawer lookups | `/catalog/products/:slug` (client lazy-fetch) or in-prop map | `products` | #25 |
+| Home `HowSeijakuWorks` section (3 perfumes + 3 artifacts + ritual video, monthly admin curation) | `/content/story/current` (client lazy-fetch) | `stories`, `products` | #29 |
 
 ### Frontend-Owned (structure + editorial copy, not content records)
 
 - **Routes + taxonomy** — `frontend/src/lib/shop-routes.ts` (`canonicalShopRoutes`), `frontend/src/lib/shop-taxonomy.ts` (filter-option unions, `getShopTypes()` / `getShopMaterials()`, release-date lookup), `frontend/src/lib/navigation.ts` (drawer / navbar structure).
 - **Display helpers + normalizers** — `frontend/src/lib/product-types.ts` (`ProductView`, status helpers, `fetchProducts`, `fetchProductBySlug`, `collectUseCases`), `bridge-page-types.ts`, `retreat-types.ts`, `program-types.ts`, `seijaku-life-types.ts`.
 - **Route-level editorial copy** — hero sections and marketing decoration embedded in route files (`/`, `/our-story`, `/ritual`, `/seasonaldrops-hemanta`, `/programs` trust notes).
-- **Static option lists** — `frontend/src/components/howSeijakuWorks.options.ts` (curated home-page dropdowns), hand-written card content on `/shop/diffusers`, `/shop/textiles`, `/shop/perfumes` (category prose, pairings, static slug lists).
+- **Static option lists** — hand-written card content on `/shop/diffusers`, `/shop/textiles`, `/shop/perfumes` (category prose, pairings, static slug lists). The previous home-page `howSeijakuWorks.options.ts` was deleted in Decision #29 — its products + video URL are now admin-curated via the `Story` model.
 - **Compatibility redirects** — `/cart`, `/shop-all`, `/categories/[slug]`, `/lifestyle` route stubs (Decision #1).
 
 Use this layer when:

@@ -46,7 +46,7 @@ Express 4, Prisma 6, PostgreSQL (Neon in prod), Zod, JWT, bcryptjs, multer, morg
 Public:
 - `GET  /health`
 - `GET  /catalog/products`, `/catalog/products/:slug`, `/catalog/bridge-pages/:slug`
-- `GET  /content/articles`, `/content/articles/:slug`, `/content/retreats`, `/content/retreats/:slug`, `/content/programs`, `/content/programs/:slug`, `/content/site-settings`
+- `GET  /content/articles`, `/content/articles/:slug`, `/content/retreats`, `/content/retreats/:slug`, `/content/programs`, `/content/programs/:slug`, `/content/story/current`, `/content/site-settings`
 - `POST /lead/order-requests`, `/lead/newsletter-subscriptions`, `/lead/program-reservations`, `/lead/retreat-inquiries`, `/lead/product-notifications`
 
 Admin (all under `/admin`, all JWT-guarded):
@@ -54,6 +54,7 @@ Admin (all under `/admin`, all JWT-guarded):
 - `admins/*` (SUPER_ADMIN only)
 - `media/*`, `categories/*`, `products/*`, `product-options/*`
 - `POST /admin/products` — create a product. On save, the handler consults `defaultBridgeSlugForProductType(payload.type)` in `src/lib/product-bridge.ts` and best-effort auto-creates a `ShopBridgePageProduct` link to the default bridge page for that `type` (Perfume/Fragrance Oil → `perfumes`, Scarf/Square → `scarves-and-squares`, etc.). Failure of the link step is logged and swallowed — the product save itself is the primary contract. Does NOT run on PATCH (no re-sync when `type` is later edited). See Decision #28.
+- `stories/*` — admin CRUD for the homepage `Story` model that drives the "How Seijaku Works" section (3 perfumes + 3 artifacts + launch date + video URL + ACTIVE/INACTIVE). Cross-slot validation: perfume slots must reference products in the `/shop/perfumes` bridge; artifact slots must NOT. `GET /content/story/current` (public) returns the latest active story whose `launchDate <= now`. See Decision #29.
 - `bridge-pages/*`, `articles/*`, `retreats/*`, `programs/*`, `program-sessions/*`, `collections/*`
 - `site-settings`
 - `leads/*` (order requests, newsletter subs, program reservations, retreat inquiries, product notifications)
