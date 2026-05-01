@@ -92,7 +92,7 @@ export default function TextilesPageClient({ products }: TextilesPageClientProps
           </Link>
         </TextilesPageIntro>
 
-        <section className="section-primary pt-2 sm:pt-4">
+        <section className="section-primary pt-2 sm:pt-4" data-reveal>
           <div className="page-container max-w-[1200px]">
             <p className="max-w-[58ch] text-[14px] leading-[1.9] text-[#5f574d]">
               These textiles are arranged by form and use, with scarves for drape and daily wear and pocket squares for detail and gifting, alongside colour stories that sit naturally beside Seijaku fragrances.

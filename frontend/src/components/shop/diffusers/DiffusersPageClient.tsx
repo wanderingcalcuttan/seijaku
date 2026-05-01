@@ -79,7 +79,7 @@ export default function DiffusersPageClient({ products }: DiffusersPageClientPro
           </Link>
         </DiffuserPageIntro>
 
-        <section id="diffusers" className="section-primary pt-2 sm:pt-4 scroll-mt-[120px]">
+        <section id="diffusers" className="section-primary pt-2 sm:pt-4 scroll-mt-[120px]" data-reveal>
           <div className="page-container max-w-[1200px]">
             <div className="space-y-1 border-t border-[rgba(79,71,63,0.08)] pt-8 sm:pt-10">
               {sections.map((section, index) => (

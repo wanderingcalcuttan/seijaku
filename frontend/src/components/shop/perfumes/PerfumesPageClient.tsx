@@ -177,7 +177,7 @@ export default function PerfumesPageClient({ page, products }: PerfumesPageClien
           </div>
         </nav>
 
-        <section className="section-primary pt-4 sm:pt-6">
+        <section className="section-primary pt-4 sm:pt-6" data-reveal>
           <div className="page-container max-w-[1200px]">
             <div className="space-y-1 border-t border-[rgba(79,71,63,0.08)]" />
           </div>
