@@ -147,8 +147,11 @@ function deserializeValue(field: ResourceField, value: unknown) {
   }
 
   if (field.type === "json") {
+    // Backend `optionalJsonRecord` is `z.record(z.any()).optional()` — accepts
+    // an object or undefined, but rejects null. Send {} for an empty textarea
+    // so the schema sees a valid record.
     if (!value) {
-      return null;
+      return {};
     }
 
     return JSON.parse(String(value));
