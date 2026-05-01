@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import AdminCard from "@/src/components/admin/AdminCard";
 import { AdminField, adminButtonClassName, adminDangerButtonClassName, adminInputClassName, adminSecondaryButtonClassName, adminTextareaClassName } from "@/src/components/admin/AdminField";
@@ -14,13 +14,92 @@ type FieldOption = {
 export type ResourceField = {
   name: string;
   label: string;
-  type: "text" | "textarea" | "select" | "checkbox" | "number" | "datetime" | "json" | "stringArray" | "email" | "password";
+  type: "text" | "textarea" | "select" | "checkbox" | "number" | "datetime" | "json" | "stringArray" | "email" | "password" | "image";
   options?: FieldOption[];
   placeholder?: string;
   rows?: number;
   required?: boolean;
   hint?: string;
 };
+
+function ImageField({ value, onChange }: { value: string; onChange: (next: string) => void }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const handleFile = async (file: File) => {
+    setUploadError(null);
+    setIsUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("kind", "IMAGE");
+      const res = await fetch("/api/admin/proxy/media/upload", { method: "POST", body: form });
+      const data = (await res.json().catch(() => null)) as { error?: string; item?: { url?: string } } | null;
+      if (!res.ok || !data?.item?.url) {
+        setUploadError(data?.error ?? "Upload failed.");
+        return;
+      }
+      onChange(data.item.url);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      {value ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={value}
+          alt=""
+          className="h-32 w-full rounded-xl border border-[#d7cec1] bg-white object-cover"
+        />
+      ) : null}
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) void handleFile(file);
+          }}
+        />
+        <button
+          type="button"
+          disabled={isUploading}
+          onClick={() => fileInputRef.current?.click()}
+          className={adminSecondaryButtonClassName}
+        >
+          {isUploading ? "Uploading…" : value ? "Replace image" : "Upload image"}
+        </button>
+        {value ? (
+          <button
+            type="button"
+            disabled={isUploading}
+            onClick={() => onChange("")}
+            className={adminSecondaryButtonClassName}
+          >
+            Clear
+          </button>
+        ) : null}
+      </div>
+      <input
+        type="text"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder="…or paste an image URL / path"
+        className={adminInputClassName}
+      />
+      {uploadError ? <p className="text-[12px] text-[#9f4332]">{uploadError}</p> : null}
+    </div>
+  );
+}
 
 type ResourceManagerProps<T extends { id: string }> = {
   items: T[];
@@ -317,6 +396,11 @@ export default function ResourceManager<T extends { id: string }>({
                   onChange={(event) => setDraft((current) => ({ ...current, [field.name]: event.target.value }))}
                   className={adminTextareaClassName}
                   placeholder={field.placeholder}
+                />
+              ) : field.type === "image" ? (
+                <ImageField
+                  value={String(draft[field.name] ?? "")}
+                  onChange={(next) => setDraft((current) => ({ ...current, [field.name]: next }))}
                 />
               ) : (
                 <input
