@@ -221,7 +221,11 @@ export default function ProductEditor({
       setError(null);
       setFieldErrors({});
 
-      let metadata: Record<string, unknown> | null = null;
+      // Empty textarea → omit `metadata` from the payload entirely (treated
+      // as "no change" server-side). Sending an explicit `null` would 400
+      // because the backend's `optionalJsonRecord` schema rejects null —
+      // this used to block all saves on records with NULL metadataJson.
+      let metadata: Record<string, unknown> | undefined;
       if (advanced.metadata.trim()) {
         try {
           metadata = JSON.parse(advanced.metadata) as Record<string, unknown>;
