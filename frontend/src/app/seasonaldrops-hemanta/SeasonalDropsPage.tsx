@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, type MouseEvent } from "react";
 
 import ProductDetailDrawer from "@/src/components/shop/ProductDetailDrawer";
+import type { ShopBridgePageConfig } from "@/src/lib/bridge-page-types";
 import { type ProductView } from "@/src/lib/product-types";
 
 type FormEntry = {
@@ -189,11 +190,58 @@ function ImageBreak({
 
 type SeasonalDropsPageProps = {
   productsBySlug: Record<string, ProductView>;
+  bridge: ShopBridgePageConfig | null;
 };
 
-export default function SeasonalDropsPage({ productsBySlug }: SeasonalDropsPageProps) {
+export default function SeasonalDropsPage({ productsBySlug, bridge }: SeasonalDropsPageProps) {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const selectedProduct = selectedSlug ? productsBySlug[selectedSlug] ?? null : null;
+
+  // Bridge-overridable assets (Decision #31). Each slot falls back to the
+  // existing hardcoded path when the admin hasn't uploaded a replacement.
+  const heroImage =
+    bridge?.heroImage && bridge.heroImage.length > 0
+      ? bridge.heroImage
+      : "/images/Hemanta drop HP banner 1.png";
+  const heroImageAlt =
+    bridge?.heroImageAlt && bridge.heroImageAlt.length > 0
+      ? bridge.heroImageAlt
+      : "Hemanta Seasonal Drop hero banner";
+  const formImageOverrides: Array<string | undefined> = [
+    bridge?.formCard1Image,
+    bridge?.formCard2Image,
+    bridge?.formCard3Image,
+    bridge?.formCard4Image,
+  ];
+  const formImageAlts: Array<string | undefined> = [
+    bridge?.formCard1Alt,
+    bridge?.formCard2Alt,
+    bridge?.formCard3Alt,
+    bridge?.formCard4Alt,
+  ];
+  const characterImages = characterScentMapping.map((entry, i) => ({
+    ...entry,
+    image: formImageOverrides[i] && formImageOverrides[i]!.length > 0 ? formImageOverrides[i]! : entry.image,
+    alt: formImageAlts[i] && formImageAlts[i]!.length > 0 ? formImageAlts[i]! : entry.alt,
+  }));
+  const imageBreak1Src = bridge?.imageBreak1Image && bridge.imageBreak1Image.length > 0
+    ? bridge.imageBreak1Image
+    : "/images/Seasonal Drop img 2.jpg";
+  const imageBreak1Alt = bridge?.imageBreak1Alt && bridge.imageBreak1Alt.length > 0
+    ? bridge.imageBreak1Alt
+    : "Seasonal drop editorial image for Story preceded form";
+  const imageBreak2Src = bridge?.imageBreak2Image && bridge.imageBreak2Image.length > 0
+    ? bridge.imageBreak2Image
+    : "/images/seasonal-drop-character-before-clay.png";
+  const imageBreak2Alt = bridge?.imageBreak2Alt && bridge.imageBreak2Alt.length > 0
+    ? bridge.imageBreak2Alt
+    : "Seasonal drop editorial image for Character before clay";
+  const imageBreak3Src = bridge?.imageBreak3Image && bridge.imageBreak3Image.length > 0
+    ? bridge.imageBreak3Image
+    : "/images/seasonal-drop-listen-before-shaping.jpg";
+  const imageBreak3Alt = bridge?.imageBreak3Alt && bridge.imageBreak3Alt.length > 0
+    ? bridge.imageBreak3Alt
+    : "Seasonal drop editorial image for Listening before shaping";
 
   const scrollToFourForms = (event: MouseEvent<HTMLElement>) => {
     event.preventDefault();
@@ -256,8 +304,8 @@ export default function SeasonalDropsPage({ productsBySlug }: SeasonalDropsPageP
     <main className="seasonaldrops-page min-h-screen bg-[#F3EFE7] pt-[72px] text-[#3a3a3a] sm:pt-[76px]">
       <section className="relative flex min-h-[74vh] max-h-[80vh] items-center justify-center overflow-hidden bg-[#1b1a18]" data-reveal>
         <img
-          src="/images/Hemanta drop HP banner 1.png"
-          alt="Hemanta Seasonal Drop hero banner"
+          src={heroImage}
+          alt={heroImageAlt}
           className="hero-image absolute inset-0 h-full w-full object-cover object-[center_54%]"
         />
         <div
@@ -345,8 +393,8 @@ export default function SeasonalDropsPage({ productsBySlug }: SeasonalDropsPageP
 
       <ImageBreak
         caption="Story preceded form."
-        imageSrc="/images/Seasonal Drop img 2.jpg"
-        alt="Seasonal drop editorial image for Story preceded form"
+        imageSrc={imageBreak1Src}
+        alt={imageBreak1Alt}
         animated
       />
 
@@ -391,8 +439,8 @@ export default function SeasonalDropsPage({ productsBySlug }: SeasonalDropsPageP
 
       <ImageBreak
         caption="Character before clay."
-        imageSrc="/images/seasonal-drop-character-before-clay.png"
-        alt="Seasonal drop editorial image for Character before clay"
+        imageSrc={imageBreak2Src}
+        alt={imageBreak2Alt}
         animated
         tone="muted"
         sketchEffect
@@ -406,7 +454,7 @@ export default function SeasonalDropsPage({ productsBySlug }: SeasonalDropsPageP
           </p>
 
           <div className="mapping-grid">
-            {characterScentMapping.map((entry) => (
+            {characterImages.map((entry) => (
               <article key={entry.name} className={`mapping-tile mapping-${entry.area}`}>
                 <div className="mapping-media">
                   <img
@@ -439,11 +487,19 @@ export default function SeasonalDropsPage({ productsBySlug }: SeasonalDropsPageP
           <div className="forms-list">
             {forms.map((form, index) => {
               const textFirst = index % 2 !== 0;
+              const formImageSrc =
+                formImageOverrides[index] && formImageOverrides[index]!.length > 0
+                  ? formImageOverrides[index]!
+                  : characterImages[index]?.image ?? PLACEHOLDER_3X2;
+              const formImageAlt =
+                formImageAlts[index] && formImageAlts[index]!.length > 0
+                  ? formImageAlts[index]!
+                  : `${form.name} editorial`;
 
               return (
                 <article key={form.name} className="forms-pair grid" data-reveal>
                   <div className={textFirst ? "lg:order-2" : ""}>
-                    <img src={PLACEHOLDER_3X2} alt={`${form.name} editorial placeholder`} className="forms-image" />
+                    <img src={formImageSrc} alt={formImageAlt} className="forms-image" />
                   </div>
 
                   <div className={`forms-text ${textFirst ? "lg:order-1 lg:justify-self-end" : "lg:justify-self-start"}`}>
@@ -489,8 +545,8 @@ export default function SeasonalDropsPage({ productsBySlug }: SeasonalDropsPageP
 
       <ImageBreak
         caption="Listening before shaping."
-        imageSrc="/images/seasonal-drop-listen-before-shaping.jpg"
-        alt="Seasonal drop editorial image for Listening before shaping"
+        imageSrc={imageBreak3Src}
+        alt={imageBreak3Alt}
         animated
         tone="muted"
         sketchEffect

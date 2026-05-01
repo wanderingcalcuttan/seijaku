@@ -100,7 +100,28 @@ function RotatingCardImage({ title, images }: { title: string; images?: string[]
   );
 }
 
-export default function BrowseWorldSection() {
+export type BrowseWorldCardOverrides = {
+  card1Image?: string;
+  card2Image?: string;
+  card3Image?: string;
+  card4Image?: string;
+};
+
+type BrowseWorldSectionProps = {
+  cardOverrides?: BrowseWorldCardOverrides;
+};
+
+export default function BrowseWorldSection({ cardOverrides }: BrowseWorldSectionProps = {}) {
+  // When admin uploads a single hero image for a card via /admin/bridge-pages
+  // (slug "home"), it replaces the rotating fallback list; the card shows a
+  // static image instead of cycling. Decision #31.
+  const overridesByIndex: (string | undefined)[] = [
+    cardOverrides?.card1Image,
+    cardOverrides?.card2Image,
+    cardOverrides?.card3Image,
+    cardOverrides?.card4Image,
+  ];
+
   return (
     <section className="section-secondary bg-[#EAE3D8]">
       <div className="page-container">
@@ -113,18 +134,22 @@ export default function BrowseWorldSection() {
         </div>
 
         <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {browseCards.map((card) => (
-            <article
-              key={card.title}
-              className="rounded-[24px] border border-[#d8cec1] bg-[#faf7f1] px-6 py-6 shadow-[0_10px_28px_rgba(49,57,49,0.035)]"
-            >
-              <div className="flex h-full flex-col">
-                <RotatingCardImage title={card.title} images={card.images} />
-                <h3 className="mt-5 text-[26px] leading-[1.1] text-[#2d2721]">{card.title}</h3>
-                <p className="mt-4 max-w-[24ch] text-[15px] leading-[1.8] text-[#6d645a]">{card.detail}</p>
-              </div>
-            </article>
-          ))}
+          {browseCards.map((card, index) => {
+            const override = overridesByIndex[index];
+            const images = override && override.length > 0 ? [override] : card.images;
+            return (
+              <article
+                key={card.title}
+                className="rounded-[24px] border border-[#d8cec1] bg-[#faf7f1] px-6 py-6 shadow-[0_10px_28px_rgba(49,57,49,0.035)]"
+              >
+                <div className="flex h-full flex-col">
+                  <RotatingCardImage title={card.title} images={images} />
+                  <h3 className="mt-5 text-[26px] leading-[1.1] text-[#2d2721]">{card.title}</h3>
+                  <p className="mt-4 max-w-[24ch] text-[15px] leading-[1.8] text-[#6d645a]">{card.detail}</p>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </div>
     </section>

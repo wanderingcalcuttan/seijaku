@@ -198,4 +198,50 @@ export const seedBridgePages: SeedBridgePage[] = [
       "Seijaku seasonal drops are limited, place-led releases tied to a specific month, mood, or literary source. Each drop is archival — it returns only through seasonal retreats and immersive gatherings.",
     productSlugs: ["hemanta-ispani-diffuser-set", "hemanta-rishi-diffuser-set"],
   },
+  // Editorial bridge pages (Decision #31). These records hold admin-
+  // editable media for non-shop routes: home (/), /our-story, and
+  // /seasonaldrops-hemanta. Public pages fall back to bundled assets
+  // when fields are blank.
+  {
+    slug: "home",
+    navLabel: "Home",
+    heroEyebrow: "Seijaku: Quietly Arranged",
+    heroTitle: "Perfume rituals for modern calm",
+    heroDescription: ["Signature scents paired with handcrafted Bengal forms — made to gift or keep."],
+    heroImage: "/images/Ritual set HP Hero 1.png",
+    heroImageAlt: "Home page hero",
+    heroQuote: "Quietly arranged.",
+    introTitle: "Editorial slots for the home page",
+    introDescription:
+      "This bridge holds the editorial media for the home page hero and the four \"Explore fragrance rituals\" cards. Edit the Home / Card N image fields to replace any bundled defaults.",
+    productSlugs: [],
+  },
+  {
+    slug: "our-story",
+    navLabel: "Our Story",
+    heroEyebrow: "Our Story",
+    heroTitle: "Seijaku began with a quiet conviction",
+    heroDescription: ["The objects we live with shape the quality of our inner lives."],
+    heroImage: "/images/japanese fan hero Our Story.png",
+    heroImageAlt: "Our Story page hero",
+    heroQuote: "Founded in Kolkata. Rooted in craft. Guided by season.",
+    introTitle: "Editorial slots for the Our Story page",
+    introDescription:
+      "This bridge holds the Our Story hero image and the two \"In the Making\" video loops. Set Ritual video 1/2 URL to the looping mp4; the public page autoplays muted.",
+    productSlugs: [],
+  },
+  {
+    slug: "seasonaldrops-hemanta",
+    navLabel: "Hemanta Seasonal Drop",
+    heroEyebrow: "Hemanta",
+    heroTitle: "Seasonal Drop 01",
+    heroDescription: ["100 years of Rabindranath Tagore's Raktakarabi"],
+    heroImage: "/images/Hemanta drop HP banner 1.png",
+    heroImageAlt: "Hemanta Seasonal Drop hero banner",
+    heroQuote: "There is a particular quality of light in Bengal at the onset of Hemanta.",
+    introTitle: "Editorial slots for the Hemanta seasonaldrop page",
+    introDescription:
+      "This bridge holds the Hemanta hero, the four form-character images (Nandini / Raja / Ispani / Rishi), and the three mid-page image breaks.",
+    productSlugs: [],
+  },
 ];

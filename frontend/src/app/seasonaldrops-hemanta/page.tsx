@@ -1,3 +1,4 @@
+import { fetchBridgePage } from "@/src/lib/bridge-page-types";
 import { fetchProductBySlug, type ProductView } from "@/src/lib/product-types";
 
 import SeasonalDropsPage from "./SeasonalDropsPage";
@@ -12,12 +13,15 @@ const HEMANTA_SLUGS = [
 ] as const;
 
 export default async function Page() {
-  const resolved = await Promise.all(HEMANTA_SLUGS.map(fetchProductBySlug));
+  const [bridge, ...resolved] = await Promise.all([
+    fetchBridgePage("seasonaldrops-hemanta"),
+    ...HEMANTA_SLUGS.map(fetchProductBySlug),
+  ]);
   const productsBySlug: Record<string, ProductView> = {};
   HEMANTA_SLUGS.forEach((slug, i) => {
     const view = resolved[i];
     if (view) productsBySlug[slug] = view;
   });
 
-  return <SeasonalDropsPage productsBySlug={productsBySlug} />;
+  return <SeasonalDropsPage productsBySlug={productsBySlug} bridge={bridge ?? null} />;
 }

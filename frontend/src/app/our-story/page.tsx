@@ -1,10 +1,13 @@
 ﻿import Image from "next/image";
 import Link from "next/link";
 
+import { fetchBridgePage } from "@/src/lib/bridge-page-types";
 import { canonicalShopRoutes } from "@/src/lib/shop-routes";
 
 import SplitProcessVideoStrip from "@/src/components/SplitProcessVideoStrip";
 import OurStoryHero from "./OurStoryHero";
+
+export const dynamic = "force-dynamic";
 
 type EditorialSectionProps = {
   children: React.ReactNode;
@@ -67,25 +70,12 @@ const deliberateLines = [
 
 const heldItems = ["Literature", "Material", "Scent", "Season"];
 
-const testimonialVideos = [
-  {
-    quote: "A Seijaku object changes the room without announcing itself.",
-    label: "Video placeholder 01",
-  },
-  {
-    quote: "The ritual felt less like an event and more like a return to attention.",
-    label: "Video placeholder 02",
-  },
-  {
-    quote: "Everything carries a sense of thought, season, and lived use.",
-    label: "Video placeholder 03",
-  },
-];
+export default async function OurStoryPage() {
+  const bridge = await fetchBridgePage("our-story");
 
-export default function OurStoryPage() {
   return (
     <main className="min-h-screen bg-[#F3EFE7] pt-[72px] text-[#3a3a3a] sm:pt-[76px]">
-      <OurStoryHero />
+      <OurStoryHero imageSrc={bridge?.heroImage} />
 
       <EditorialSection className="bg-[#eee7dc] py-16 sm:py-18 lg:py-20" width="max-w-3xl">
         <SectionHeading>Why Seijaku</SectionHeading>
@@ -142,7 +132,12 @@ export default function OurStoryPage() {
         </div>
       </EditorialSection>
 
-      <SplitProcessVideoStrip />
+      <SplitProcessVideoStrip
+        videos={[
+          { url: bridge?.ritualVideo1Url, poster: bridge?.ritualVideo1Poster },
+          { url: bridge?.ritualVideo2Url, poster: bridge?.ritualVideo2Poster },
+        ]}
+      />
 
       <section className="whatWeHold">
         <div className="whatWeHold__inner">
@@ -163,38 +158,7 @@ export default function OurStoryPage() {
         </div>
       </section>
 
-      <section className="bg-[#F3EFE7] py-16 sm:py-18 lg:py-20">
-        <div className="page-container max-w-[1200px]">
-          <div className="max-w-3xl">
-            <SectionHeading>In Their Words</SectionHeading>
-          </div>
-          <div className="mt-10 grid gap-10 md:grid-cols-2 xl:grid-cols-3 xl:gap-12">
-            {testimonialVideos.map((item) => (
-              <article key={item.label} className="group">
-                <div className="relative overflow-hidden rounded-[24px] border border-[#d8cec1] bg-[#fcf8f2] shadow-[0_18px_48px_rgba(45,34,22,0.08)]">
-                  <div className="relative aspect-[4/5] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.9)_0%,rgba(245,238,229,0.9)_46%,rgba(233,224,212,0.95)_100%)]">
-                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.14)_0%,rgba(84,67,49,0.08)_100%)]" />
-                    <div className="absolute left-5 top-5 rounded-full border border-[#d7ccbd] bg-white/70 px-3 py-1 text-[10px] uppercase tracking-[0.24em] text-[#8b7f70] backdrop-blur-sm">
-                      {item.label}
-                    </div>
-                    <div className="absolute inset-0 flex items-center justify-center px-8 text-center">
-                      <p className="max-w-[18ch] font-serif text-[clamp(24px,2.7vw,34px)] leading-[1.28] tracking-[-0.02em] text-[#2c241c]">
-                        &ldquo;{item.quote}&rdquo;
-                      </p>
-                    </div>
-                    <div className="absolute bottom-5 left-5 flex items-center gap-3 text-[#6d6255]">
-                      <span className="flex h-11 w-11 items-center justify-center rounded-full border border-[#cdbfae] bg-[#fffaf4] text-[13px] uppercase tracking-[0.2em]">
-                        Play
-                      </span>
-                      <span className="text-[11px] uppercase tracking-[0.28em] text-[#8b7f70]">Video testimonial</span>
-                    </div>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* "In Their Words" testimonial-videos section hidden per Decision #31. */}
 
       <section className="bg-[#ece5da] py-18 sm:py-20 lg:py-22">
         <div className="page-container">

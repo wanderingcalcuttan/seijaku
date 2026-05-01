@@ -6,20 +6,23 @@ import { RefObject, useRef } from "react";
 
 type HeroBannerProps = {
   heroRef?: RefObject<HTMLElement | null>;
+  imageSrc?: string;
+  imageAlt?: string;
 };
 
 const heroEyebrowColor = "#e2d6c0";
 const heroHeadlineColor = "#d8f0da";
 const heroSubtextColor = "#c8e6cc";
 
-const HERO_BACKGROUND = "/images/Ritual set HP Hero 1.png";
+const HERO_BACKGROUND_FALLBACK = "/images/Ritual set HP Hero 1.png";
 // ID of the first post-hero wrapper on the home page. The Find Your Calm
 // button uses this target; if the id is ever removed the button is a no-op.
 const SCROLL_TARGET_ID = "home-next";
 
-export default function HeroBanner({ heroRef }: HeroBannerProps) {
+export default function HeroBanner({ heroRef, imageSrc, imageAlt }: HeroBannerProps) {
   const localRef = useRef<HTMLElement | null>(null);
   const sectionRef = heroRef ?? localRef;
+  const heroImage = imageSrc && imageSrc.length > 0 ? imageSrc : HERO_BACKGROUND_FALLBACK;
 
   const handleScrollDown = () => {
     if (typeof window === "undefined") {
@@ -41,8 +44,8 @@ export default function HeroBanner({ heroRef }: HeroBannerProps) {
     >
       <div aria-hidden className="absolute inset-0 z-0">
         <Image
-          src={HERO_BACKGROUND}
-          alt=""
+          src={heroImage}
+          alt={imageAlt ?? ""}
           fill
           priority
           sizes="100vw"

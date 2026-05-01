@@ -32,6 +32,35 @@ const fields: ResourceField[] = [
   { name: "seoDescription", label: "SEO description", type: "textarea", rows: 3 },
   { name: "seoFootnote", label: "SEO footnote (body-end paragraph)", type: "textarea", rows: 3 },
   { name: "content", label: "Advanced content JSON", type: "json", rows: 10 },
+  // Editorial-page slots (Decision #31). Field labels are prefixed with the
+  // slug they apply to so admins can scan past the ones that don't matter
+  // for the bridge they're editing.
+  { name: "homeCard1Image", label: "Home / Card 1 image", type: "image", hint: 'Editing slug "home" — Skin card.' },
+  { name: "homeCard1Alt", label: "Home / Card 1 alt text", type: "text" },
+  { name: "homeCard2Image", label: "Home / Card 2 image", type: "image", hint: 'Editing slug "home" — Textiles card.' },
+  { name: "homeCard2Alt", label: "Home / Card 2 alt text", type: "text" },
+  { name: "homeCard3Image", label: "Home / Card 3 image", type: "image", hint: 'Editing slug "home" — Home card.' },
+  { name: "homeCard3Alt", label: "Home / Card 3 alt text", type: "text" },
+  { name: "homeCard4Image", label: "Home / Card 4 image", type: "image", hint: 'Editing slug "home" — Objects card.' },
+  { name: "homeCard4Alt", label: "Home / Card 4 alt text", type: "text" },
+  { name: "ritualVideo1Url", label: "Our Story / Ritual video 1 URL", type: "text", hint: 'Editing slug "our-story" — left video loop.' },
+  { name: "ritualVideo1Poster", label: "Our Story / Ritual video 1 poster", type: "image" },
+  { name: "ritualVideo2Url", label: "Our Story / Ritual video 2 URL", type: "text", hint: 'Editing slug "our-story" — right video loop.' },
+  { name: "ritualVideo2Poster", label: "Our Story / Ritual video 2 poster", type: "image" },
+  { name: "formCard1Image", label: "Hemanta / Form card 1 image", type: "image", hint: 'Editing slug "seasonaldrops-hemanta" — Nandini.' },
+  { name: "formCard1Alt", label: "Hemanta / Form card 1 alt text", type: "text" },
+  { name: "formCard2Image", label: "Hemanta / Form card 2 image", type: "image", hint: 'Editing slug "seasonaldrops-hemanta" — Raja.' },
+  { name: "formCard2Alt", label: "Hemanta / Form card 2 alt text", type: "text" },
+  { name: "formCard3Image", label: "Hemanta / Form card 3 image", type: "image", hint: 'Editing slug "seasonaldrops-hemanta" — Ispani.' },
+  { name: "formCard3Alt", label: "Hemanta / Form card 3 alt text", type: "text" },
+  { name: "formCard4Image", label: "Hemanta / Form card 4 image", type: "image", hint: 'Editing slug "seasonaldrops-hemanta" — Rishi.' },
+  { name: "formCard4Alt", label: "Hemanta / Form card 4 alt text", type: "text" },
+  { name: "imageBreak1Image", label: "Hemanta / Image break 1", type: "image", hint: 'Editing slug "seasonaldrops-hemanta" — first inline break.' },
+  { name: "imageBreak1Alt", label: "Hemanta / Image break 1 alt text", type: "text" },
+  { name: "imageBreak2Image", label: "Hemanta / Image break 2", type: "image", hint: 'Editing slug "seasonaldrops-hemanta" — middle inline break.' },
+  { name: "imageBreak2Alt", label: "Hemanta / Image break 2 alt text", type: "text" },
+  { name: "imageBreak3Image", label: "Hemanta / Image break 3", type: "image", hint: 'Editing slug "seasonaldrops-hemanta" — final inline break.' },
+  { name: "imageBreak3Alt", label: "Hemanta / Image break 3 alt text", type: "text" },
 ];
 
 export default async function BridgePagesPage() {
@@ -77,6 +106,19 @@ export default async function BridgePagesPage() {
           seoDescription: "",
           seoFootnote: "",
           content: {},
+          homeCard1Image: "", homeCard1Alt: "",
+          homeCard2Image: "", homeCard2Alt: "",
+          homeCard3Image: "", homeCard3Alt: "",
+          homeCard4Image: "", homeCard4Alt: "",
+          ritualVideo1Url: "", ritualVideo1Poster: "",
+          ritualVideo2Url: "", ritualVideo2Poster: "",
+          formCard1Image: "", formCard1Alt: "",
+          formCard2Image: "", formCard2Alt: "",
+          formCard3Image: "", formCard3Alt: "",
+          formCard4Image: "", formCard4Alt: "",
+          imageBreak1Image: "", imageBreak1Alt: "",
+          imageBreak2Image: "", imageBreak2Alt: "",
+          imageBreak3Image: "", imageBreak3Alt: "",
         }}
         canDelete={admin.role === "SUPER_ADMIN"}
       />

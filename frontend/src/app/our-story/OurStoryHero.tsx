@@ -1,4 +1,11 @@
-export default function OurStoryHero() {
+type OurStoryHeroProps = {
+  imageSrc?: string;
+};
+
+const FALLBACK_HERO = "/images/japanese fan hero Our Story.png";
+
+export default function OurStoryHero({ imageSrc }: OurStoryHeroProps = {}) {
+  const resolvedSrc = imageSrc && imageSrc.length > 0 ? imageSrc : FALLBACK_HERO;
   return (
     <section
       aria-labelledby="our-story-hero-title"
@@ -7,7 +14,7 @@ export default function OurStoryHero() {
       <div
         aria-hidden="true"
         className="absolute inset-0 bg-cover bg-[position:72%_center] bg-no-repeat"
-        style={{ backgroundImage: 'url("/images/japanese fan hero Our Story.png")' }}
+        style={{ backgroundImage: `url("${resolvedSrc}")` }}
       />
 
       <div

@@ -338,6 +338,38 @@ model ShopBridgePage {
   seoDescription             String?
   seoFootnote                String?
   contentJson                Json?
+  // Home page editorial slots (slug = "home"). One image per "Explore
+  // fragrance rituals" card on the home grid. Decision #31.
+  homeCard1Image             String?
+  homeCard1Alt               String?
+  homeCard2Image             String?
+  homeCard2Alt               String?
+  homeCard3Image             String?
+  homeCard3Alt               String?
+  homeCard4Image             String?
+  homeCard4Alt               String?
+  // Our Story editorial slots (slug = "our-story"). The "Rituals Take
+  // Form" video strip — two video URLs, each with an optional poster.
+  ritualVideo1Url            String?
+  ritualVideo1Poster         String?
+  ritualVideo2Url            String?
+  ritualVideo2Poster         String?
+  // Seasonaldrops-hemanta editorial slots (slug = "seasonaldrops-hemanta").
+  // Four form-character images and three mid-page image breaks.
+  formCard1Image             String?
+  formCard1Alt               String?
+  formCard2Image             String?
+  formCard2Alt               String?
+  formCard3Image             String?
+  formCard3Alt               String?
+  formCard4Image             String?
+  formCard4Alt               String?
+  imageBreak1Image           String?
+  imageBreak1Alt             String?
+  imageBreak2Image           String?
+  imageBreak2Alt             String?
+  imageBreak3Image           String?
+  imageBreak3Alt             String?
   createdAt                  DateTime                @default(now())
   updatedAt                  DateTime                @updatedAt
   products                   ShopBridgePageProduct[]
