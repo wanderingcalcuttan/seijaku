@@ -31,6 +31,9 @@ Every content domain that a visitor sees reads from the backend via `publicBacke
 | `/seasonaldrops-hemanta` Reserve-button drawers | `/catalog/products/:slug` (server parent) | `products` | #24 |
 | `/checkout`, `/collection`, bridge-page drawer lookups | `/catalog/products/:slug` (client lazy-fetch) or in-prop map | `products` | #25 |
 | Home `HowSeijakuWorks` section (3 perfumes + 3 artifacts + ritual video, monthly admin curation) | `/content/story/current` (client lazy-fetch) | `stories`, `products` | #29 |
+| Home hero banner image + `BrowseWorldSection` 4 card images | `/catalog/bridge-pages/home` (client lazy-fetch) | `bridge-pages` | #31 |
+| `/our-story` hero image + "In the Making — Rituals take form" video pair | `/catalog/bridge-pages/our-story` (server) | `bridge-pages` | #31 |
+| `/seasonaldrops-hemanta` hero + 4 form-character images + 3 image breaks | `/catalog/bridge-pages/seasonaldrops-hemanta` (server, parallel with hemanta product fetches) | `bridge-pages` | #31 |
 
 ### Frontend-Owned (structure + editorial copy, not content records)
 
@@ -220,17 +223,30 @@ When you need to change content, decide which effect you want first:
 
 ## Bridge-Page Rendering Rules
 
-Per Decision #30, the four curated `/shop/[slug]` clients render entirely from the `products` prop their server parent already fetches via `publicBackendJson("/catalog/bridge-pages/:slug", ...)`. No hardcoded slug arrays.
+Decision #30 reintroduced curated slug pinning at the rendering layer for `/shop/diffusers`, `/shop/lifestyle`, `/a-seijaku-life`, and the home `JournalPreviewSection` after the brand opted to control which products / articles surface on each editorial page rather than auto-render the full bridge link list. The current rules:
 
-| Surface | Grouping rule | Notes |
+| Surface | Curation rule | Notes |
 |---|---|---|
-| `/shop/perfumes` | `Product.useCase` → 3 sections (Skin / Textile / Spaces). 4th "Uncategorized" section appears only when products have unset/unrecognized `useCase`. | Admins set `useCase` via the dropdown in `/admin/products`. |
-| `/shop/diffusers` | None — flat alternating grid of every linked product. | Per-product copy comes from `title`, `shortDescription`, `longDescription`, first `customizationOption`. |
+| `/shop/perfumes` | Group every linked product by `Product.useCase` → 3 sections (Skin / Textile / Spaces). 4th "Uncategorized" section appears only when products have unset/unrecognized `useCase`. | `useCase` is admin-editable via a 3-value dropdown in `/admin/products`. |
+| `/shop/diffusers` | Hardcoded slug list (`Kolkata-tea-diffuser`, `coffee-ceramic-diffuser-set`, `black-kitty-terracotta-diffuser`) rendered as image-led editorial feature rows with serif index numbers. | Other products on the bridge (wax melts, fragrance oils) stay reachable elsewhere; only this editorial page narrows. Update the const in `DiffusersPageClient.tsx` to add/remove. |
 | `/shop/scarves-and-squares` | Slug suffix `-pocket-square` (with title-token fallback) splits into Scarves / Pocket Squares. | No new schema field needed. |
-| `/shop/lifestyle` | None — flat grid of linked Ritual Box products + the Live Calm Gift Pouch picker (Decision #23). | Picker checkout backing falls through to `products[0]`. |
+| `/shop/lifestyle` | Hardcoded slug lists in three editorial sections — Daytime Pauses, Personal Rituals, Custom Gifting (Live Calm Pouch picker). | Picker dropdowns derive options live from the catalog (Decision #23). Update the constants in `lifestyleSetConfig.ts` to add/remove. |
 | Home `RitualSetsSection` | Two newest `Product.type === "Ritual Box"` records by `releaseDate`. | Single catalog fetch; section hides when none exist. |
+| `/a-seijaku-life` and home `JournalPreviewSection` | Hardcoded slug list of 3 articles (Decision #32). Admin can mark any of the three `featured` to put it in the featured slot. | The constant lives in two files (`a-seijaku-life/page.tsx` and `JournalPreviewSection.tsx`); keep them in sync by hand. |
 
-Editorial copy on the perfumes page (section eyebrows, titles, descriptions, closing quotes) stays in `PerfumesPageClient.tsx` as module-scope constants — that copy is editorial framing, not per-product data, and matches the route-level-editorial split documented above.
+Editorial copy on the perfumes / lifestyle / diffusers pages (section eyebrows, titles, descriptions, closing quotes) stays in the page-client files as module-scope constants — that copy is editorial framing, not per-product data, and matches the route-level-editorial split documented above.
+
+## Editorial Bridge Pages (non-shop routes)
+
+Per Decision #31, three additional `ShopBridgePage` records hold admin-uploadable media for non-shop editorial routes. They don't render at `/shop/<slug>`; they're data-only records consumed by their respective public routes.
+
+| Slug | Public route | Slots admins edit in `/admin/bridge-pages` |
+|---|---|---|
+| `home` | `/` | `heroImage` (HeroBanner background) + `homeCard1Image..homeCard4Image` (one image per "Explore fragrance rituals" card) |
+| `our-story` | `/our-story` | `heroImage` + `ritualVideo1Url` / `ritualVideo1Poster` / `ritualVideo2Url` / `ritualVideo2Poster` (the "In the Making — Rituals take form" two-panel strip) |
+| `seasonaldrops-hemanta` | `/seasonaldrops-hemanta` | `heroImage` + `formCard1Image..formCard4Image` (4 character images) + `imageBreak1Image..imageBreak3Image` (3 mid-page image breaks) |
+
+Each slot falls back to a bundled-asset path when the column is null, so no surface goes blank during partial setup. The 26 columns added to `ShopBridgePage` for these slots are all nullable; existing /shop bridges leave them all NULL.
 
 ## Cache Tags
 

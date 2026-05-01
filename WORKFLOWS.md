@@ -139,6 +139,25 @@ Bootstrap admin credentials come from backend env values:
 
 Treat those as bootstrap-only credentials and rotate/manage admins through the app afterward.
 
+## Editorial Media Upload Workflow (Decision #31)
+
+Admins control the media on `/`, `/our-story`, `/seasonaldrops-hemanta`, and the four `/shop/*` bridge pages from a single admin form:
+
+1. Log into `/admin/login`.
+2. Open `/admin/bridge-pages`. Pick the bridge whose slug matches the route you want to edit:
+   - `home` → home page hero + four "Explore fragrance rituals" card images
+   - `our-story` → hero + the two "In the Making — Rituals take form" video loops + posters
+   - `seasonaldrops-hemanta` → hero + four form-character images + three image breaks
+   - `perfumes` / `diffusers` / `lifestyle` / `scarves-and-squares` / `dokra-ornaments` → shop bridge hero + interlude + intro + post-CTA copy
+3. Each image field has an "Upload image" button that POSTs to the existing `/admin/media/upload` route. Uploads land in the Supabase bucket `seijaku-media-prod`. The returned URL is written into the bridge column.
+4. Save → tag-cache invalidation fires → public page picks up the new media within ~5s.
+
+Notes:
+
+- The form is long. Field labels are slug-prefixed (e.g. `Home / Card 1 image`, `Hemanta / Form card 2 image`) so you can scan past fields that don't apply to the bridge you're editing.
+- All editorial fields are optional. When blank, the public page falls back to the bundled-asset path it shipped with — no surface goes blank during partial setup.
+- Field-level Zod errors surface in the save banner (e.g. `Validation failed — heroTitle: Expected string, received empty`). The empty-string and JSON-vs-null deserialization issues that affected blank optional fields were fixed in PRs #53 and #54.
+
 ## Public Lead Workflow
 
 These public flows now persist to the backend:

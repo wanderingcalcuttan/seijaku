@@ -15,12 +15,15 @@ Repo-root scripts coordinate both workspaces via npm workspaces.
 
 The content migration is **done** (Decision #26). Every content record that surfaces on the public storefront — articles, retreats, programs, program sessions, shop bridge pages, products, collections, site settings, media — is backend-owned. Public pages read through `publicBackendJson(path, { tags })` with tag-based ISR invalidation (Decision #15). Admin edits appear on public within seconds via the `/api/revalidate` + tag fan-out path.
 
+The bridge-page model has been extended (Decision #31) to also carry **editorial media** for three non-shop routes — `/`, `/our-story`, and `/seasonaldrops-hemanta`. These bridges have slugs `home`, `our-story`, and `seasonaldrops-hemanta`; admins edit them in `/admin/bridge-pages` like any other bridge. Each editorial route reads its bridge via `fetchBridgePage(slug)` and falls back to bundled-asset paths when fields are null.
+
 What's still frontend-owned is **structure and editorial copy**, not content records:
 
-- Route-level editorial (home sections, `/our-story`, `/ritual`, the Hemanta seasonal-drop editorial, `/programs` marketing decoration)
+- Route-level editorial copy (home sections, `/our-story`, `/ritual`, the Hemanta seasonal-drop editorial, `/programs` marketing decoration) — copy lives in route files; only **media** for these routes is admin-editable via the editorial bridges.
 - Static navigation and routes maps (`frontend/src/lib/shop-routes.ts`, `frontend/src/lib/navigation.ts`)
 - Static taxonomy, filter-chip labels, release-date lookup (`frontend/src/lib/shop-taxonomy.ts`)
 - Shared display helpers and normalizers (`frontend/src/lib/product-types.ts`, `bridge-page-types.ts`, `retreat-types.ts`, `program-types.ts`, `seijaku-life-types.ts`)
+- **Curated slug pinning** for `/shop/diffusers`, `/shop/lifestyle`, `/a-seijaku-life`, and the home `JournalPreviewSection` (Decisions #30, #32) — the brand controls which products / articles surface on each editorial page via constants in the page-client files. Update those constants in the same change as any rename in admin.
 - Compatibility redirect stubs (`/cart`, `/shop-all`, `/categories/[slug]`, `/lifestyle`)
 
 The old `shopProducts` registry in `shopAllItems.ts` is deleted. Likewise `SyncRegistryButton` and the backend `/admin/products/sync-new` endpoint. If the public site needs a change today, edit the backend via the admin UI (`/admin/*`) — there is no frontend registry left to patch.
@@ -84,6 +87,8 @@ Login: http://localhost:3000/admin/login (or :3001).
 - **Self-hosted fonts** live in `frontend/src/app/fonts/*.woff2`. Don't reintroduce `next/font/google`.
 - **`NEXT_IGNORE_INCORRECT_LOCKFILE=1`** is set in `frontend` dev and build scripts deliberately to avoid Next's lockfile patcher breaking the workspace layout. Don't remove it.
 - **Caching contract (Decision #15).** Public server reads go through `publicBackendJson(path, { revalidate, tags })` in `frontend/src/lib/backend.ts` — always pass explicit `tags: CacheTag[]`. Admin reads go through `adminBackendJson(...)` which pins `no-store`. Admin writes through `/api/admin/proxy/*` auto-invalidate tags via `tagsForAdminWrite(upstreamPath)` in `frontend/src/lib/cache-tags.ts` — add new admin resources to that map in the same change.
+- **`next/image` allowlist** (`frontend/next.config.ts`). The Vercel image optimizer rejects external hosts unless they're in `images.remotePatterns`; admin-uploaded media lives at `rgkkylnelrqavzfwubhi.supabase.co` and is whitelisted there. If the bucket / project ref ever changes (Decision #12 follow-up), update the allowlist in the same change or every uploaded image will return `INVALID_IMAGE_OPTIMIZE_REQUEST` and crash the React tree on hydration.
+- **Admin image uploads** use the generic `image` field type in `ResourceManager` (`frontend/src/components/admin/ResourceManager.tsx`). It POSTs to the existing `/admin/media/upload` route and writes the returned URL into the bridge's string column — backwards compatible with hand-typed `/images/...` paths. Reuse the same field type for any new admin form that needs media upload.
 
 ## When Making Changes
 

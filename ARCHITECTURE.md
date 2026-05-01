@@ -182,6 +182,8 @@ As of Phase 4b.final (Decision #26), `frontend/src/lib/shopAllItems.ts` is delet
 
 The home "How Seijaku Works" section is admin-curated monthly via the `Story` model (`/admin/stories`); public reads via `/content/story/current` with cache-tag invalidation on both `stories` and `products` (Decision #29).
 
+The `ShopBridgePage` model has also been extended to hold admin-uploadable media for three non-shop editorial routes (Decision #31). Records with slugs `home`, `our-story`, and `seasonaldrops-hemanta` carry `heroImage` plus per-page editorial slots (4 home cards, 2 video loops, 4 form-character images, 3 image breaks) consumed by the existing public routes — they don't render at `/shop/<slug>`. The home page does this fetch client-side because `app/(marketing)/page.tsx` is `"use client"` for Framer Motion; `/our-story` and `/seasonaldrops-hemanta` server-fetch via `fetchBridgePage(slug)`.
+
 When a domain migrates to backend-fed reads, the server component fetches via `publicBackendJson(path, { revalidate, tags })`. Results land in Next's Data Cache with a 60-second default `revalidate`, and admin writes invalidate by tag on demand through `/api/revalidate`. Admin reads explicitly pin `no-store`. See `DECISIONS.md` #15 and `CONTENT_MODEL.md` (Cache Tags) for the contract.
 
 ### Public Writes

@@ -632,9 +632,9 @@ Per-bridge rendering rule:
 | Surface | Rule |
 |---|---|
 | `/shop/perfumes` | 3 editorial sections (Skin / Textile / Spaces) keyed on `Product.useCase` (`skin` / `cloth` / `diffusion objects`). Products with unset or unrecognized `useCase` land in a 4th "Uncategorized" fallback section that surfaces the data hygiene issue to admins. |
-| `/shop/diffusers` | Single alternating left/right grid of every linked product. Per-section copy comes from each product's own `title`, `shortDescription`, `longDescription` (atmosphere), and the first `customizationOption` (variant picker). |
+| `/shop/diffusers` | Curated to 3 specific slugs (`Kolkata-tea-diffuser`, `coffee-ceramic-diffuser-set`, `black-kitty-terracotta-diffuser`) rendered as image-led editorial feature rows alternating left/right with serif index numbers (01/02/03). Per-section copy comes from each product's `title`, `shortDescription`, and the first `customizationOption` (variant picker). The bridge's other linked products (wax melts, oils, accessories) stay reachable elsewhere but are intentionally hidden on this editorial page. |
 | `/shop/scarves-and-squares` | Two sections (Scarves / Pocket Squares) split by slug-suffix `-pocket-square` (with a title-token fallback). |
-| `/shop/lifestyle` | Top "Ritual Sets" grid renders every linked product. Below it, the Live Calm Gift Pouch picker (Decision #23) is preserved unchanged; its checkout backing falls through to `products[0]` when no specific slug is configured. |
+| `/shop/lifestyle` | Three curated editorial sections plus a custom-gifting picker. Section 1 "Daytime Pauses" pins `kolkata-tea-calm-box` + `ceramic-coffee-ritual-box`; Section 2 "Personal Rituals" pins the four `*-ritual-*` BREEZE/UNFOLD/LISTEN/ATTUNE slugs; Section 3 "Custom Gifting" pins `live-calm-curated-pouch` paired with the perfume/textile/brooch SINGLE-select dropdowns whose options derive live from the catalog (Decision #23). Editorial closer ("From Object to Practice") with CTAs to `/#daily-ritual-room` and `/seasonaldrops`. |
 | Home `RitualSetsSection` | Two newest `Product.type === "Ritual Box"` products by `releaseDate`. Single fetch of the catalog list; no per-slug round-trips. |
 
 Admin form tightening: `ProductEditor.tsx` now renders `useCase` as a `<select>` with the 3 canonical `ShopUseCase` values (`skin` / `cloth` / `diffusion objects`) plus an empty option. The previous free-text input invited typos (`"Skin"` vs `"skin"`) that would silently land products in the perfumes "Uncategorized" fallback. The dropdown enforces the union at the UI level. Backend validation stays string-typed for now; if direct API consumers emerge, add a Zod enum.
@@ -646,6 +646,64 @@ Scope cuts (intentional):
 - **`homepageFeaturedLifestyleItems` export deleted from `lifestyleSetConfig.ts`.** Sole consumer (`RitualSetsSection`) was migrated to the catalog-based selection rule above.
 
 How to verify locally after a fresh seed: log into `/admin` → create at least one product per bridge type with the correct `Product.type` (Decision #28 auto-links to the right bridge) and a non-null `useCase` for perfumes → visit each `/shop/<slug>` URL; products should appear without further admin action.
+
+### 31. Editorial Bridge Pages For Non-Shop Routes
+
+Status: Active
+
+The `ShopBridgePage` model is reused (rather than introducing a parallel editorial-page table) to provide admin-editable media slots for three non-shop routes: `/`, `/our-story`, and `/seasonaldrops-hemanta`. The slugs `home`, `our-story`, and `seasonaldrops-hemanta` are now valid `ShopBridgePage` records that don't render at `/shop/<slug>` — they're data-only records read by the existing editorial routes via `fetchBridgePage(slug)`.
+
+Schema additions (migration `0007_bridge_page_editorial_slots`): 26 nullable string columns. Migration `0008_seed_editorial_bridges` idempotently `INSERT … ON CONFLICT (slug) DO NOTHING` the three new bridge rows pre-populated with the existing bundled-asset paths so the public pages don't go blank during the rollout window.
+
+Per-bridge editorial slots:
+
+| Slug | Public route | Slots |
+|---|---|---|
+| `home` | `/` | `heroImage` (HeroBanner background) + `homeCard1Image..homeCard4Image` (one image per "Explore fragrance rituals" card; Q1 chose 1-image-per-card over rotation) |
+| `our-story` | `/our-story` | `heroImage` + `ritualVideo1Url` / `ritualVideo1Poster` / `ritualVideo2Url` / `ritualVideo2Poster` (the "In the Making — Rituals take form" two-panel strip; `<video autoPlay muted loop playsInline>` when URL is set, `<img>` when only poster, placeholder otherwise) |
+| `seasonaldrops-hemanta` | `/seasonaldrops-hemanta` | `heroImage` + `formCard1Image..formCard4Image` (Nandini / Raja / Ispani / Rishi character images; one slot drives both the "Character & Scent Mapping" tile and the "Four Forms" feature card) + `imageBreak1Image..imageBreak3Image` (three mid-page editorial breaks) |
+
+Read patterns (varies by parent route shape):
+
+- `/our-story` — server component, does `await fetchBridgePage("our-story")` directly.
+- `/seasonaldrops-hemanta` — server component, fetches bridge in parallel with the four hemanta product slugs via `Promise.all`.
+- `/` — `app/(marketing)/page.tsx` is `"use client"` (Framer Motion scroll/transform), so the home page client lazy-fetches `/api/public/catalog/bridge-pages/home` on mount and prop-drills `heroImage` + `homeCard1..4Image` into `HeroBanner` + `BrowseWorldSection`. On Render Free cold-start (Decision #13), bundled fallback assets render for the first 30–50s while the request waits.
+
+Hidden as part of this work:
+
+- The "In Their Words" testimonial-videos section on `/our-story` is removed.
+
+Two infrastructure prerequisites that landed alongside Decision #30 and unlocked this pattern:
+
+- **`next/image` Supabase host whitelist** (`frontend/next.config.ts`): `images.remotePatterns` allows `rgkkylnelrqavzfwubhi.supabase.co/storage/v1/object/public/seijaku-media-prod/**`. Without this every admin-uploaded image returned `INVALID_IMAGE_OPTIMIZE_REQUEST` from Vercel's image proxy and crashed the React tree on hydration. If the bucket / project ref ever changes (per Decision #12 follow-up to R2/B2/AWS), update this allowlist in the same change.
+- **`ResourceManager` `image` field type** (`frontend/src/components/admin/ResourceManager.tsx`): renders an Upload button + thumbnail + Clear + URL-text-input fallback. Uploads via the existing `POST /admin/media/upload` route and writes the returned URL straight into the bridge's string column. Backwards compatible with the older `/images/...` paths typed by hand. Used by `heroImage`, `interludeImage`, and all 12 image columns added by this decision.
+
+Trade-offs:
+
+- **Curated bridge clients still opt out of `RouteTransitionObserver`** via `data-reveal` (extension of Decision #30 fix; outer wrapper for /shop/perfumes / diffusers / scarves-and-squares grew tall enough that the 16% intersection threshold never fired). The editorial routes themselves don't share that issue because they don't use `section-primary` for the page-wide wrapper.
+- **26 columns is a lot of nullable schema bloat.** Most rows leave most columns NULL. The alternative — a `BridgePageMediaSlot` join table or a JSON `editorialSlots` blob — was rejected for this iteration because the flat columns map directly to the existing `image` field type and admin form, with no custom editor work.
+- **Admin form now has all 26 fields visible on every bridge.** Labels are slug-prefixed (`Home / Card 1 image`, `Hemanta / Form card 2 image`) so admins can scan past the fields that don't apply. If the form length becomes painful, conditional visibility based on the bridge's slug is a safe follow-up.
+
+### 32. `/a-seijaku-life` And Home Journal Preview Are Curated To Three Articles
+
+Status: Active
+
+The `/admin/articles` table holds 6 published articles; the brand wants only three surfaced in public navigation. Both `/a-seijaku-life` and the home page `JournalPreviewSection` filter the `fetchArticles()` result through a hardcoded curated slug map:
+
+- `ritual-objects-for-urban-evenings` (The Calm Ritual: A 2-Min Evening Reset…)
+- `how-to-scent-textiles-right` (How to Scent Textiles Safely and Beautifully…)
+- `inside-dokra-from-heritage-craft-to-wearable-artifact` (Inside Dokra…)
+
+The list lives in two files (`frontend/src/app/a-seijaku-life/page.tsx` and `frontend/src/components/JournalPreviewSection.tsx`). Both are kept in sync by hand. If a third surface ever needs this same curation, factor the constant into a shared module.
+
+Behavior:
+
+- Curation order is preserved.
+- The other three articles in the DB stay `PUBLISHED` — they remain reachable by direct URL and via `/admin/articles`. They're just not surfaced in public discovery.
+- `JournalPreviewSection` was previously linking all three cards to `/a-seijaku-life` (the index, a navigation dead-end). It now links to `/a-seijaku-life/<slug>` and renders real article titles + cover images (with per-slug local fallbacks for articles missing a `primaryImage`).
+- The home preview hides itself when zero articles resolve (e.g. if all three slugs are renamed in admin without updating the constant).
+
+Same pattern as Decision #30 (curated slug pinning at the rendering layer) — appropriate when the brand has explicit editorial curation and admin has no curation UI. Eventually replaceable by a `featured` flag + admin ordering UI on `/admin/articles`; not in this scope.
 
 ## How To Use This File
 

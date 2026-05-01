@@ -20,7 +20,7 @@ Express 4, Prisma 6, PostgreSQL (Neon in prod), Zod, JWT, bcryptjs, multer, morg
 - `src/utils/http.ts` — `asyncHandler`, `HttpError`, `parseBody`, error middleware
 - `src/utils/serializers.ts` — Prisma record → API payload shape (keep admin and public shapes in sync)
 - `prisma/schema.prisma` — enums + models
-- `prisma/migrations/0001_init/` — initial SQL
+- `prisma/migrations/0001_init/` — initial SQL. Latest migrations: `0007_bridge_page_editorial_slots` (adds 26 nullable columns to `ShopBridgePage` for editorial-page media), `0008_seed_editorial_bridges` (idempotent INSERT...ON CONFLICT DO NOTHING that creates the `home` / `our-story` / `seasonaldrops-hemanta` bridge rows). See Decision #31
 - `prisma/seed.ts` — imports current frontend content into the DB so admin starts with realistic data
 
 ## ESM Rules (important)
@@ -55,6 +55,7 @@ Admin (all under `/admin`, all JWT-guarded):
 - `media/*`, `categories/*`, `products/*`, `product-options/*`
 - `POST /admin/products` — create a product. On save, the handler consults `defaultBridgeSlugForProductType(payload.type)` in `src/lib/product-bridge.ts` and best-effort auto-creates a `ShopBridgePageProduct` link to the default bridge page for that `type` (Perfume/Fragrance Oil → `perfumes`, Scarf/Square → `scarves-and-squares`, etc.). Failure of the link step is logged and swallowed — the product save itself is the primary contract. Does NOT run on PATCH (no re-sync when `type` is later edited). See Decision #28.
 - `stories/*` — admin CRUD for the homepage `Story` model that drives the "How Seijaku Works" section (3 perfumes + 3 artifacts + launch date + video URL + ACTIVE/INACTIVE). Cross-slot validation: perfume slots must reference products in the `/shop/perfumes` bridge; artifact slots must NOT. `GET /content/story/current` (public) returns the latest active story whose `launchDate <= now`. See Decision #29.
+- `bridge-pages/*` — also carries the editorial slots for non-shop routes. `bridgePageSchema` accepts 26 additional nullable string fields: `homeCard1Image..homeCard4Image` (+ alt), `ritualVideo1Url` / `ritualVideo1Poster` / `ritualVideo2Url` / `ritualVideo2Poster`, `formCard1Image..formCard4Image` (+ alt), and `imageBreak1Image..imageBreak3Image` (+ alt). Records with slugs `home`, `our-story`, `seasonaldrops-hemanta` are read by the public editorial routes. See Decision #31.
 - `bridge-pages/*`, `articles/*`, `retreats/*`, `programs/*`, `program-sessions/*`, `collections/*`
 - `site-settings`
 - `leads/*` (order requests, newsletter subs, program reservations, retreat inquiries, product notifications)
