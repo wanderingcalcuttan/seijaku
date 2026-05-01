@@ -5,7 +5,7 @@ import { useEffect, useState, type MouseEvent } from "react";
 
 import ProductDetailDrawer from "@/src/components/shop/ProductDetailDrawer";
 import type { ShopBridgePageConfig } from "@/src/lib/bridge-page-types";
-import { type ProductView } from "@/src/lib/product-types";
+import { isNotifyMeProduct, isUnbuyableProduct, type ProductView } from "@/src/lib/product-types";
 
 type FormEntry = {
   name: string;
@@ -15,6 +15,7 @@ type FormEntry = {
   price: string;
   cta: string;
   slug: string;
+  whatArrives: string[];
 };
 
 const PLACEHOLDER_3X2 = "https://placehold.co/1600x1067";
@@ -52,6 +53,21 @@ const makingSteps = [
   },
 ];
 
+// Editorial framing per form (philosophy + scent + "what arrives" disclosure).
+// `price` is a fallback only — the live card prefers Product.priceLabel from
+// the backend so admin edits flow through without a code change. Same for
+// the card's image (Product.primaryImage takes precedence over the bundled
+// editorial asset). Brand should keep `whatArrives` lists current per SKU.
+const SHARED_WHAT_ARRIVES = [
+  "Terracotta diffuser",
+  "Fragrance oil",
+  "Wax melts",
+  "Candles",
+  "Halogen lamp",
+  "Textile narrative",
+  "Archival box",
+];
+
 const forms: FormEntry[] = [
   {
     name: "NANDINI",
@@ -61,6 +77,7 @@ const forms: FormEntry[] = [
     price: "6,499",
     cta: "Reserve Nandini",
     slug: "hemanta-nandini",
+    whatArrives: SHARED_WHAT_ARRIVES,
   },
   {
     name: "RAJA",
@@ -70,6 +87,7 @@ const forms: FormEntry[] = [
     price: "4,499",
     cta: "Reserve Raja",
     slug: "hemanta-raja-diffuser",
+    whatArrives: SHARED_WHAT_ARRIVES,
   },
   {
     name: "ISPANI",
@@ -79,6 +97,7 @@ const forms: FormEntry[] = [
     price: "6,499",
     cta: "Reserve Ispani",
     slug: "hemanta-ispani",
+    whatArrives: SHARED_WHAT_ARRIVES,
   },
   {
     name: "RISHI",
@@ -87,6 +106,7 @@ const forms: FormEntry[] = [
     price: "5,499",
     cta: "Reserve Rishi",
     slug: "hemanta-rishi-diffuser",
+    whatArrives: SHARED_WHAT_ARRIVES,
   },
 ];
 
@@ -484,57 +504,71 @@ export default function SeasonalDropsPage({ productsBySlug, bridge }: SeasonalDr
             </p>
           </div>
 
-          <div className="forms-list">
+          <div className="forms-grid">
             {forms.map((form, index) => {
-              const textFirst = index % 2 !== 0;
-              const formImageSrc =
+              const product = productsBySlug[form.slug];
+              const fallbackImage =
                 formImageOverrides[index] && formImageOverrides[index]!.length > 0
                   ? formImageOverrides[index]!
                   : characterImages[index]?.image ?? PLACEHOLDER_3X2;
-              const formImageAlt =
+              const fallbackAlt =
                 formImageAlts[index] && formImageAlts[index]!.length > 0
                   ? formImageAlts[index]!
                   : `${form.name} editorial`;
 
+              // Prefer DB-managed assets; fall back to bridge override / bundled path.
+              const cardImage = product?.image ?? fallbackImage;
+              const cardImageAlt = product?.imageAlt ?? fallbackAlt;
+              const cardTitle = form.name; // editorial label stays uppercase
+              const cardPrice = product?.priceLabel ?? `INR ${form.price}`;
+
+              // CTA states match the rest of the storefront (ShopProductActions).
+              // - no product (admin hasn't created yet) → "Not yet available", static
+              // - unbuyable (SOLD_OUT/UPCOMING)              → status pill, static
+              // - notify-me (WAITLIST)                       → "Notify Me", opens drawer
+              // - everything else                            → "Reserve <name>", opens drawer
+              const isClickable = Boolean(product) && !isUnbuyableProduct(product!);
+              let ctaLabel = form.cta;
+              if (!product) ctaLabel = "Not yet available";
+              else if (isUnbuyableProduct(product)) ctaLabel = product.status ?? "Sold Out";
+              else if (isNotifyMeProduct(product)) ctaLabel = "Notify Me";
+
               return (
-                <article key={form.name} className="forms-pair grid" data-reveal>
-                  <div className={textFirst ? "lg:order-2" : ""}>
-                    <img src={formImageSrc} alt={formImageAlt} className="forms-image" />
+                <article key={form.name} className="form-card" data-reveal>
+                  <div className="form-card-media">
+                    <img src={cardImage} alt={cardImageAlt} className="form-card-image" loading="lazy" />
                   </div>
 
-                  <div className={`forms-text ${textFirst ? "lg:order-1 lg:justify-self-end" : "lg:justify-self-start"}`}>
-                    <h3 className="mt-0 text-[clamp(28px,2.4vw,40px)] leading-[1.1] tracking-[-0.02em] text-[#1f1c19]">{form.name}</h3>
-                    <p className="mt-4 font-serif text-[20px] leading-[1.38] text-[#2f2a24]">{form.philosophy}</p>
-                    <div className="mt-3 space-y-1 text-[16px] font-light leading-[1.66] text-[#4f4a43]">
-                      <p>{form.scent}</p>
-                      {form.botanical ? <p>{form.botanical}</p> : null}
+                  <div className="form-card-body">
+                    <h3 className="form-card-name">{cardTitle}</h3>
+                    <p className="form-card-philosophy">{form.philosophy}</p>
+                    <p className="form-card-scent">
+                      <span>{form.scent}</span>
+                      {form.botanical ? <span aria-hidden> · </span> : null}
+                      {form.botanical ? <span>{form.botanical}</span> : null}
+                    </p>
+
+                    <details className="form-card-disclosure">
+                      <summary>What Arrives</summary>
+                      <ul>
+                        {form.whatArrives.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </details>
+
+                    <div className="form-card-footer">
+                      <span className="form-card-price">{cardPrice}</span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSlug(form.slug)}
+                        disabled={!isClickable}
+                        className={`form-card-cta ${isClickable ? "form-card-cta-active" : "form-card-cta-disabled"}`}
+                        aria-label={isClickable ? form.cta : `${cardTitle}: ${ctaLabel}`}
+                      >
+                        {ctaLabel} {isClickable ? <span aria-hidden>&rarr;</span> : null}
+                      </button>
                     </div>
-                    <p className="mt-4 text-[18px] font-normal leading-[1.4] text-[#1f1d1a]">&#8377; {form.price}</p>
-
-                    {form.name === "NANDINI" ? (
-                      <details className="mt-4 border-y border-[#d5cab9] py-3.5">
-                        <summary className="cursor-pointer text-[13px] uppercase tracking-[0.12em] text-[#3d3a35] focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-[#7b6d57]">
-                          What Arrives
-                        </summary>
-                        <ul className="mt-3 space-y-1 text-[15px] font-light leading-[1.68] text-[#59524a]">
-                          <li>Terracotta diffuser</li>
-                          <li>Fragrance oil</li>
-                          <li>Wax melts</li>
-                          <li>Candles</li>
-                          <li>Halogen lamp</li>
-                          <li>Textile narrative</li>
-                          <li>Archival box</li>
-                        </ul>
-                      </details>
-                    ) : null}
-
-                    <button
-                      type="button"
-                      onClick={() => setSelectedSlug(form.slug)}
-                      className="mt-5 inline-flex border-b border-[#7c715f] pb-1 text-[13px] tracking-[0.08em] text-[#2d4535] hover:text-[#1f3528] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7b6d57] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F3EFE7]"
-                    >
-                      {form.cta} &rarr;
-                    </button>
                   </div>
                 </article>
               );
@@ -1004,31 +1038,172 @@ export default function SeasonalDropsPage({ productsBySlug, bridge }: SeasonalDr
           text-align: left;
         }
 
-        .forms-list {
-          margin-top: 40px;
+        .forms-grid {
+          margin-top: 48px;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr);
+          gap: 56px 40px;
         }
 
-        .forms-list > * + * {
-          margin-top: 64px;
+        @media (min-width: 1024px) {
+          .forms-grid {
+            grid-template-columns: 1fr 1fr;
+            gap: 72px 56px;
+          }
         }
 
-        .forms-pair {
-          grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.72fr);
-          column-gap: 32px;
-          row-gap: 16px;
-          align-items: center;
+        .form-card {
+          display: flex;
+          flex-direction: column;
+          background: #faf6ec;
+          border: 1px solid rgba(110, 95, 78, 0.16);
+          overflow: hidden;
         }
 
-        .forms-image {
+        .form-card-media {
           width: 100%;
-          display: block;
-          aspect-ratio: 3 / 2;
-          object-fit: cover;
+          aspect-ratio: 4 / 5;
+          background: #ddd1c1;
+          overflow: hidden;
         }
 
-        .forms-text {
-          max-width: 350px;
-          align-self: center;
+        .form-card-image {
+          width: 100%;
+          height: 100%;
+          display: block;
+          object-fit: cover;
+          transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .form-card:hover .form-card-image {
+          transform: scale(1.02);
+        }
+
+        .form-card-body {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+          padding: 28px 28px 24px;
+        }
+
+        @media (min-width: 768px) {
+          .form-card-body {
+            padding: 32px 32px 28px;
+          }
+        }
+
+        .form-card-name {
+          margin: 0;
+          font-size: clamp(26px, 2.2vw, 34px);
+          line-height: 1.1;
+          letter-spacing: -0.02em;
+          color: #1f1c19;
+        }
+
+        .form-card-philosophy {
+          margin: 14px 0 0;
+          font-family: var(--font-serif, Georgia, serif);
+          font-size: 18px;
+          line-height: 1.4;
+          color: #2f2a24;
+        }
+
+        .form-card-scent {
+          margin: 10px 0 0;
+          font-size: 14px;
+          font-weight: 300;
+          line-height: 1.6;
+          color: #5a5249;
+          letter-spacing: 0.01em;
+        }
+
+        .form-card-disclosure {
+          margin-top: 18px;
+          border-top: 1px solid #d5cab9;
+          border-bottom: 1px solid #d5cab9;
+          padding: 12px 0;
+        }
+
+        .form-card-disclosure summary {
+          cursor: pointer;
+          font-size: 11px;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: #3d3a35;
+          list-style: none;
+        }
+
+        .form-card-disclosure summary::-webkit-details-marker {
+          display: none;
+        }
+
+        .form-card-disclosure summary::after {
+          content: "+";
+          float: right;
+          font-size: 14px;
+          color: #7c715f;
+        }
+
+        .form-card-disclosure[open] summary::after {
+          content: "−";
+        }
+
+        .form-card-disclosure ul {
+          margin: 12px 0 0;
+          padding: 0;
+          list-style: none;
+        }
+
+        .form-card-disclosure li {
+          font-size: 14px;
+          font-weight: 300;
+          line-height: 1.7;
+          color: #59524a;
+        }
+
+        .form-card-footer {
+          margin-top: auto;
+          padding-top: 22px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          flex-wrap: wrap;
+        }
+
+        .form-card-price {
+          font-size: 18px;
+          line-height: 1.4;
+          color: #1f1d1a;
+          letter-spacing: 0.01em;
+        }
+
+        .form-card-cta {
+          font-size: 12px;
+          letter-spacing: 0.1em;
+          padding: 10px 20px;
+          border: 1px solid;
+          background: transparent;
+          cursor: pointer;
+          transition: background 200ms, color 200ms, border-color 200ms;
+        }
+
+        .form-card-cta-active {
+          color: #2d4535;
+          border-color: #92806a;
+        }
+
+        .form-card-cta-active:hover {
+          background: #2d4535;
+          color: #f4efe8;
+          border-color: #2d4535;
+        }
+
+        .form-card-cta-disabled {
+          color: #8a7f73;
+          border-color: #c8bdac;
+          cursor: not-allowed;
+          background: rgba(200, 189, 172, 0.18);
         }
 
         .mapping-section {
@@ -1216,10 +1391,6 @@ export default function SeasonalDropsPage({ productsBySlug, bridge }: SeasonalDr
             min-height: 270px;
           }
 
-          .forms-pair {
-            grid-template-columns: minmax(0, 1fr) minmax(300px, 0.82fr);
-            column-gap: 28px;
-          }
         }
 
         @media (max-width: 720px) {
@@ -1232,7 +1403,7 @@ export default function SeasonalDropsPage({ productsBySlug, bridge }: SeasonalDr
           .editorial-wide,
           .image-break-figure,
           .making-inner,
-          .forms-list {
+          .forms-grid {
             margin-left: 0;
             margin-right: 0;
           }
@@ -1347,21 +1518,9 @@ export default function SeasonalDropsPage({ productsBySlug, bridge }: SeasonalDr
             font-size: 16px;
           }
 
-          .forms-list {
+          .forms-grid {
             margin-top: 36px;
-          }
-
-          .forms-list > * + * {
-            margin-top: 56px;
-          }
-
-          .forms-pair {
-            grid-template-columns: 1fr;
-            gap: 14px;
-          }
-
-          .forms-text {
-            max-width: 360px;
+            gap: 40px;
           }
         }
 

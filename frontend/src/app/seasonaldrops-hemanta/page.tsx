@@ -5,6 +5,10 @@ import SeasonalDropsPage from "./SeasonalDropsPage";
 
 export const dynamic = "force-dynamic";
 
+// Canonical Hemanta-collection slugs. These are the four products driving
+// the Reserve cards on /seasonaldrops-hemanta. Renaming any of them must
+// happen in lockstep with the matching `slug` field on the form entries
+// in SeasonalDropsPage.tsx — see Decision #24.
 const HEMANTA_SLUGS = [
   "hemanta-nandini",
   "hemanta-raja-diffuser",
