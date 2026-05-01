@@ -1,33 +1,76 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
-const journalEntries = [
-  {
-    title: "How to scent textiles safely and beautifully",
-    href: "/a-seijaku-life",
-    image: "/images/journal-textiles.jpg",
-    alt: "Scented textiles and fragrance rituals guide",
-  },
-  {
-    title: "The calm ritual: a 2-minute evening reset",
-    href: "/a-seijaku-life",
-    image: "/images/journal-ritual.jpg",
+import type { SeijakuLifeArticle } from "@/src/lib/seijaku-life-types";
+
+// Curated subset surfaced on /a-seijaku-life and on this home preview.
+// Stays in sync with CURATED_ARTICLE_SLUGS in app/a-seijaku-life/page.tsx.
+const CURATED_ARTICLE_SLUGS = [
+  "ritual-objects-for-urban-evenings",
+  "how-to-scent-textiles-right",
+  "inside-dokra-from-heritage-craft-to-wearable-artifact",
+] as const;
+
+// Per-slug fallback covers used when the backend article has no
+// primaryImage. Local /public assets — kept until each article gets a
+// proper cover via /admin/articles.
+const FALLBACK_COVERS: Record<string, { src: string; alt: string }> = {
+  "ritual-objects-for-urban-evenings": {
+    src: "/images/journal-ritual.jpg",
     alt: "Mindful evening fragrance rituals for calming living",
   },
-  {
-    title: "Inside Dokra: from heritage to wearable artifacts",
-    href: "/a-seijaku-life",
-    image: "/images/journal-dokra.jpg",
+  "how-to-scent-textiles-right": {
+    src: "/images/journal-textiles.jpg",
+    alt: "Scented textiles and fragrance rituals guide",
+  },
+  "inside-dokra-from-heritage-craft-to-wearable-artifact": {
+    src: "/images/journal-dokra.jpg",
     alt: "Dokra craft Bengal artisan story and fragrance objects",
   },
-];
+};
+
+type ArticlesResponse = { items: SeijakuLifeArticle[] };
 
 export default function JournalPreviewSection() {
+  const [articles, setArticles] = useState<SeijakuLifeArticle[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/public/content/articles", {
+          headers: { Accept: "application/json" },
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as ArticlesResponse;
+        if (cancelled) return;
+        const bySlug = new Map(data.items.map((a) => [a.slug, a]));
+        const curated = CURATED_ARTICLE_SLUGS.flatMap((slug) => {
+          const article = bySlug.get(slug);
+          return article ? [article] : [];
+        });
+        setArticles(curated);
+      } catch {
+        // Silent — section hides via the empty-state branch below.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (articles.length === 0) {
+    return null;
+  }
+
   return (
     <section className="section-editorial bg-[#F3EFE7] pb-[84px]">
       <div className="page-container">
         <div className="max-w-[820px]">
-          <p className="text-[10px] uppercase tracking-[0.24em] text-[#8f7455]">Fragrance Rituals & Craft Journal</p>
+          <p className="text-[10px] uppercase tracking-[0.24em] text-[#8f7455]">Fragrance Rituals &amp; Craft Journal</p>
           <h2 className="mt-4 text-[#1f1d1a]">Fragrance rituals, mindful living, and artisan craft stories</h2>
           <p className="mt-4 max-w-[46ch] text-[15px] leading-[1.82] text-[#61584f]">
             Guides on scenting textiles, calming rituals, and handcrafted dokra traditions from Bengal.
@@ -35,32 +78,41 @@ export default function JournalPreviewSection() {
         </div>
 
         <div className="mt-8 grid gap-5 md:grid-cols-3">
-          {journalEntries.map((entry) => (
-            <article
-              key={entry.title}
-              className="rounded-[22px] border border-[#d8cec1] bg-[#faf7f1] shadow-[0_10px_28px_rgba(49,57,49,0.035)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_34px_rgba(49,57,49,0.06)]"
-            >
-              <Link href={entry.href} className="group block h-full rounded-[22px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8e806e] focus-visible:ring-offset-4 focus-visible:ring-offset-[#f3efe7]">
-                <div className="relative aspect-[4/3] overflow-hidden rounded-t-[22px] bg-[#e8dfd2]">
-                  <Image
-                    src={entry.image}
-                    alt={entry.alt}
-                    fill
-                    sizes="(min-width: 768px) 33vw, 100vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                  />
-                </div>
-                <div className="px-5 py-6">
-                  <p className="text-[10px] uppercase tracking-[0.22em] text-[#9a7c5b]">Journal</p>
-                  <h3 className="mt-4 text-[25px] leading-[1.18] text-[#2d2721]">{entry.title}</h3>
-                  <span className="mt-8 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-[#516054] transition-colors duration-200 group-hover:text-[#1f2a21]">
-                    <span>Read</span>
-                    <span aria-hidden>&rarr;</span>
-                  </span>
-                </div>
-              </Link>
-            </article>
-          ))}
+          {articles.map((article) => {
+            const fallback = FALLBACK_COVERS[article.slug];
+            const src = article.image ?? fallback?.src ?? "/images/quiet-tea-ritual-box-lifestyle-neutral.png";
+            const alt = article.imageAlt ?? fallback?.alt ?? article.title;
+            const href = `/a-seijaku-life/${article.slug}`;
+            return (
+              <article
+                key={article.slug}
+                className="rounded-[22px] border border-[#d8cec1] bg-[#faf7f1] shadow-[0_10px_28px_rgba(49,57,49,0.035)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_34px_rgba(49,57,49,0.06)]"
+              >
+                <Link
+                  href={href}
+                  className="group block h-full rounded-[22px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8e806e] focus-visible:ring-offset-4 focus-visible:ring-offset-[#f3efe7]"
+                >
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-t-[22px] bg-[#e8dfd2]">
+                    <Image
+                      src={src}
+                      alt={alt}
+                      fill
+                      sizes="(min-width: 768px) 33vw, 100vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                    />
+                  </div>
+                  <div className="px-5 py-6">
+                    <p className="text-[10px] uppercase tracking-[0.22em] text-[#9a7c5b]">{article.category || "Journal"}</p>
+                    <h3 className="mt-4 text-[25px] leading-[1.18] text-[#2d2721]">{article.title}</h3>
+                    <span className="mt-8 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-[#516054] transition-colors duration-200 group-hover:text-[#1f2a21]">
+                      <span>Read</span>
+                      <span aria-hidden>&rarr;</span>
+                    </span>
+                  </div>
+                </Link>
+              </article>
+            );
+          })}
         </div>
 
         <div className="mt-10 flex justify-center">
@@ -73,7 +125,6 @@ export default function JournalPreviewSection() {
           </Link>
         </div>
       </div>
-      {/* TODO: Add placeholder preview assets at /images/journal-textiles.jpg, /images/journal-ritual.jpg, and /images/journal-dokra.jpg, and align these previews with published A Seijaku Life entries as they are added. */}
     </section>
   );
 }

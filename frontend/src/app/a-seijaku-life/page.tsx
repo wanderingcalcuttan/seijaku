@@ -7,8 +7,24 @@ import ArticleIndexClient from "./ArticleIndexClient";
 
 export const dynamic = "force-dynamic";
 
+// Curated subset of /admin/articles surfaced on /a-seijaku-life and on
+// the home page JournalPreviewSection. The DB carries more articles than
+// the brand wants visible; this is the source of truth for the public
+// journal until admin gets a feature/order UI. Rendering order matches
+// the array order.
+const CURATED_ARTICLE_SLUGS = [
+  "ritual-objects-for-urban-evenings",
+  "how-to-scent-textiles-right",
+  "inside-dokra-from-heritage-craft-to-wearable-artifact",
+] as const;
+
 export default async function ASeijakuLifePage() {
-  const articles = await fetchArticles();
+  const allArticles = await fetchArticles();
+  const articlesBySlug = new Map(allArticles.map((a) => [a.slug, a]));
+  const articles = CURATED_ARTICLE_SLUGS.flatMap((slug) => {
+    const article = articlesBySlug.get(slug);
+    return article ? [article] : [];
+  });
   const featuredArticle = articles.find((article) => article.featured) ?? null;
   const restArticles = articles.filter((article) => !article.featured);
   const categories = getArticleCategories(articles);
