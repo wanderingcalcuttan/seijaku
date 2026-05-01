@@ -169,7 +169,11 @@ function deserializeValue(field: ResourceField, value: unknown) {
     return value ? new Date(String(value)).toISOString() : null;
   }
 
-  return value === "" ? null : value;
+  // text-like fields (text / textarea / select / email / password / image)
+  // serialize empty inputs as "" rather than null. The backend Zod schemas
+  // commonly use `z.string()` or `z.string().default("")` which reject null;
+  // an empty string is a valid string and matches HTML form semantics.
+  return value == null ? "" : value;
 }
 
 function buildInitialDraft<T extends { id: string }>(
@@ -244,10 +248,24 @@ export default function ResourceManager<T extends { id: string }>({
           }
         );
 
-        const data = (await response.json().catch(() => null)) as { error?: string; item?: { id?: string } } | null;
+        const data = (await response.json().catch(() => null)) as
+          | { error?: string; item?: { id?: string }; issues?: { fieldErrors?: Record<string, string[]>; formErrors?: string[] } }
+          | null;
 
         if (!response.ok) {
-          setError(data?.error ?? "Unable to save.");
+          const fieldErrors = data?.issues?.fieldErrors;
+          const formErrors = data?.issues?.formErrors;
+          const detail = [
+            ...(fieldErrors
+              ? Object.entries(fieldErrors).map(([k, v]) => `${k}: ${v.join(", ")}`)
+              : []),
+            ...(formErrors ?? []),
+          ].join("; ");
+          setError(
+            detail
+              ? `${data?.error ?? "Unable to save."} — ${detail}`
+              : data?.error ?? "Unable to save.",
+          );
           return;
         }
 
