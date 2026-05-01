@@ -87,10 +87,3 @@ export async function fetchArticle(slug: string): Promise<SeijakuLifeArticle | n
     throw err;
   }
 }
-
-export function getArticleCategories(articles: SeijakuLifeArticle[]): string[] {
-  const distinct = Array.from(new Set(articles.map((a) => a.category))).sort((a, b) =>
-    a.localeCompare(b),
-  );
-  return ["All", ...distinct];
-}

@@ -9,6 +9,17 @@ type SeijakuLifeArticleCardProps = {
   priority?: boolean;
 };
 
+function ImageFallback({ category }: { category: string }) {
+  const initial = (category || "Journal").trim().charAt(0).toUpperCase();
+  return (
+    <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(120%_120%_at_30%_20%,#e7dccb_0%,#cdbca8_55%,#a89880_100%)]">
+      <span className="font-serif text-[clamp(56px,7vw,96px)] leading-none text-[#f4ecdf]/85">
+        {initial}
+      </span>
+    </div>
+  );
+}
+
 export default function SeijakuLifeArticleCard({ article, featured = false, priority = false }: SeijakuLifeArticleCardProps) {
   const href = `/a-seijaku-life/${article.slug}`;
 
@@ -16,33 +27,35 @@ export default function SeijakuLifeArticleCard({ article, featured = false, prio
     return (
       <Link
         href={href}
-        className="group block overflow-hidden rounded-[24px] bg-[#f8f3ea] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#7f715f]"
+        className="group flex h-full flex-col overflow-hidden rounded-[24px] bg-[#f8f3ea] transition-shadow duration-300 hover:shadow-[0_18px_40px_rgba(49,57,49,0.08)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#7f715f]"
       >
-        <div className="grid gap-0 lg:grid-cols-[1.12fr_0.88fr]">
-          <div className="relative aspect-[4/3] overflow-hidden bg-[#d8cfc2]">
-            {article.image ? (
-              <Image
-                src={article.image}
-                alt={article.imageAlt || article.title}
-                fill
-                sizes="(min-width: 1024px) 58vw, 100vw"
-                priority={priority}
-                className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
-              />
-            ) : (
-              <div className="h-full w-full bg-[linear-gradient(135deg,#dcd2c4_0%,#cbbca8_55%,#e2d8ca_100%)]" />
-            )}
-          </div>
+        <div className="relative aspect-[4/3] overflow-hidden bg-[#d8cfc2]">
+          {article.image ? (
+            <Image
+              src={article.image}
+              alt={article.imageAlt || article.title}
+              fill
+              sizes="(min-width: 1024px) 56vw, 100vw"
+              priority={priority}
+              className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.025]"
+            />
+          ) : (
+            <ImageFallback category={article.category} />
+          )}
+        </div>
 
-          <div className="flex items-center px-8 py-9 sm:px-10 sm:py-11 lg:px-12">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.24em] text-[#8f7a65]">{article.category}</p>
-              <h2 className="mt-4 text-[clamp(30px,3.5vw,46px)] leading-[1.1] tracking-[-0.02em] text-[#1f1a16] transition-opacity duration-300 group-hover:opacity-85">
-                {article.title}
-              </h2>
-              <p className="mt-5 max-w-[34ch] text-[15px] leading-[1.82] text-[#5d564d]">{article.excerpt}</p>
-              <p className="mt-8 text-[11px] uppercase tracking-[0.2em] text-[#8a7f73]">{article.date}</p>
-            </div>
+        <div className="flex flex-1 flex-col px-7 py-9 sm:px-9 sm:py-11 lg:px-11">
+          <p className="text-[10px] uppercase tracking-[0.24em] text-[#8f7a65]">{article.category}</p>
+          <h2 className="mt-4 text-[clamp(30px,3.2vw,42px)] leading-[1.1] tracking-[-0.02em] text-[#1f1a16] transition-opacity duration-300 group-hover:opacity-85">
+            {article.title}
+          </h2>
+          <p className="mt-5 max-w-[42ch] text-[15px] leading-[1.82] text-[#5d564d]">{article.excerpt}</p>
+          <div className="mt-auto flex items-center justify-between pt-8">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-[#8a7f73]">{article.date}</p>
+            <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-[#516054] transition-colors duration-200 group-hover:text-[#1f2a21]">
+              <span>Read</span>
+              <span aria-hidden>&rarr;</span>
+            </span>
           </div>
         </div>
       </Link>
@@ -52,29 +65,35 @@ export default function SeijakuLifeArticleCard({ article, featured = false, prio
   return (
     <Link
       href={href}
-      className="group block rounded-[18px] bg-[#f7f2e9] px-6 py-6 transition-colors duration-300 hover:bg-[#f4eee4] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#7f715f] sm:px-7 sm:py-7"
+      className="group flex h-full flex-col overflow-hidden rounded-[20px] bg-[#f7f2e9] transition-colors duration-300 hover:bg-[#f4eee4] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#7f715f]"
     >
-      <div className="relative aspect-[16/9] overflow-hidden rounded-[14px] bg-[#ddd1c1]">
+      <div className="relative aspect-[5/4] overflow-hidden bg-[#ddd1c1]">
         {article.image ? (
           <Image
             src={article.image}
             alt={article.imageAlt || article.title}
             fill
-            sizes="(min-width: 1024px) 34vw, (min-width: 768px) 46vw, 100vw"
+            sizes="(min-width: 1024px) 38vw, (min-width: 768px) 50vw, 100vw"
             className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.025]"
           />
         ) : (
-          <div className="h-full w-full bg-[linear-gradient(140deg,#dcd2c6_0%,#cdbca8_60%,#e8ddd0_100%)]" />
+          <ImageFallback category={article.category} />
         )}
       </div>
 
-      <div className="mt-5">
+      <div className="flex flex-1 flex-col px-6 py-7 sm:px-7">
         <p className="text-[10px] uppercase tracking-[0.22em] text-[#8f7a65]">{article.category}</p>
-        <h3 className="mt-3 text-[clamp(24px,2.7vw,31px)] leading-[1.16] tracking-[-0.018em] text-[#1f1a16] transition-opacity duration-300 group-hover:opacity-85">
+        <h3 className="mt-3 text-[clamp(22px,2.2vw,28px)] leading-[1.18] tracking-[-0.018em] text-[#1f1a16] transition-opacity duration-300 group-hover:opacity-85">
           {article.title}
         </h3>
-        <p className="mt-4 max-w-[35ch] text-[15px] leading-[1.8] text-[#5f5850]">{article.excerpt}</p>
-        <p className="mt-6 text-[11px] uppercase tracking-[0.2em] text-[#8a7f73]">{article.date}</p>
+        <p className="mt-3 line-clamp-3 max-w-[40ch] text-[14.5px] leading-[1.78] text-[#5f5850]">{article.excerpt}</p>
+        <div className="mt-auto flex items-center justify-between pt-6">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-[#8a7f73]">{article.date}</p>
+          <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-[#516054] transition-colors duration-200 group-hover:text-[#1f2a21]">
+            <span>Read</span>
+            <span aria-hidden>&rarr;</span>
+          </span>
+        </div>
       </div>
     </Link>
   );
