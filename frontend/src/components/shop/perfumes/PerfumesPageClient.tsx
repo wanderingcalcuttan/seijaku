@@ -9,7 +9,7 @@ import { canonicalShopRoutes } from "@/src/lib/shop-routes";
 import { type ProductView } from "@/src/lib/product-types";
 import type { ShopBridgePageConfig } from "@/src/lib/bridge-page-types";
 
-import PerfumeCategorySection, { type PerfumeSubGroup } from "./PerfumeCategorySection";
+import PerfumeCategorySection from "./PerfumeCategorySection";
 import PerfumePageIntro from "./PerfumePageIntro";
 
 type PerfumesPageClientProps = {
@@ -17,7 +17,7 @@ type PerfumesPageClientProps = {
   products: ProductView[];
 };
 
-type PerfumeSectionId = "skin" | "textiles" | "objects";
+type PerfumeSectionId = "skin" | "textiles" | "objects" | "other";
 
 const sectionLinks: { id: PerfumeSectionId; label: string }[] = [
   { id: "skin", label: "Skin" },
@@ -25,38 +25,32 @@ const sectionLinks: { id: PerfumeSectionId; label: string }[] = [
   { id: "objects", label: "Objects" },
 ];
 
-const skinSlugs = [
-  "spirit-01-breath-of-pines",
-  "body-01-summer-held-close",
-  "mind-01-the-morning-desk",
-  "trilogy-discovery-kit",
-];
+type GroupedPerfumes = {
+  skin: ProductView[];
+  textiles: ProductView[];
+  objects: ProductView[];
+  other: ProductView[];
+};
 
-const textileSlugs = [
-  "jasmine-neroli-textile-oil",
-  "lotus-jasmine-textile-oil",
-  "hinoki-cedar-textile-oil",
-  "rose-vetiver-textile-oil",
-  "tea-blossom-rice-textile-oil",
-];
-
-const spacesGroupDefinitions: { title: string; description: string; slugs: string[] }[] = [
-  {
-    title: "Floral & Fruity",
-    description: "Soft atmospheres for rest.",
-    slugs: ["neroli-bloom-diffusion-vessel", "plum-orchard-room-stone"],
-  },
-  {
-    title: "Tea & Steam",
-    description: "Quiet warmth and pause.",
-    slugs: ["tea-steam-stone-diffuser", "kyusu-warmth-reed-vessel"],
-  },
-  {
-    title: "Living & Sensory",
-    description: "Rice, citrus, spice, and comfort.",
-    slugs: ["rice-citrus-bowl-diffuser", "cardamom-hearth-vessel"],
-  },
-];
+function groupByUseCase(products: ProductView[]): GroupedPerfumes {
+  const buckets: GroupedPerfumes = { skin: [], textiles: [], objects: [], other: [] };
+  for (const product of products) {
+    switch (product.useCase) {
+      case "skin":
+        buckets.skin.push(product);
+        break;
+      case "cloth":
+        buckets.textiles.push(product);
+        break;
+      case "diffusion objects":
+        buckets.objects.push(product);
+        break;
+      default:
+        buckets.other.push(product);
+    }
+  }
+  return buckets;
+}
 
 export default function PerfumesPageClient({ page, products }: PerfumesPageClientProps) {
   const pathname = usePathname();
@@ -72,35 +66,7 @@ export default function PerfumesPageClient({ page, products }: PerfumesPageClien
 
   const selectedProduct = selectedSlug ? productsBySlug.get(selectedSlug) ?? null : null;
 
-  const skinItems = useMemo(
-    () =>
-      skinSlugs
-        .map((slug) => productsBySlug.get(slug))
-        .filter((item): item is ProductView => Boolean(item)),
-    [productsBySlug],
-  );
-
-  const textileItems = useMemo(
-    () =>
-      textileSlugs
-        .map((slug) => productsBySlug.get(slug))
-        .filter((item): item is ProductView => Boolean(item)),
-    [productsBySlug],
-  );
-
-  const spacesSubGroups = useMemo<PerfumeSubGroup[]>(
-    () =>
-      spacesGroupDefinitions
-        .map((group) => ({
-          title: group.title,
-          description: group.description,
-          products: group.slugs
-            .map((slug) => productsBySlug.get(slug))
-            .filter((item): item is ProductView => Boolean(item)),
-        }))
-        .filter((group) => group.products.length > 0),
-    [productsBySlug],
-  );
+  const grouped = useMemo(() => groupByUseCase(products), [products]);
 
   const updateQuery = (slug?: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -120,7 +86,7 @@ export default function PerfumesPageClient({ page, products }: PerfumesPageClien
       return undefined;
     }
 
-    const sectionIds: PerfumeSectionId[] = ["skin", "textiles", "objects"];
+    const sectionIds: PerfumeSectionId[] = ["skin", "textiles", "objects", "other"];
     const elements = sectionIds
       .map((id) => document.getElementById(id))
       .filter((element): element is HTMLElement => Boolean(element));
@@ -223,7 +189,7 @@ export default function PerfumesPageClient({ page, products }: PerfumesPageClien
             description="Breath. Body. Mind. Compositions to be worn, not displayed."
             categoryLabel="Skin"
             closingQuote="This is an evolving series. Future compositions will extend each state — Spirit 02, Body 02, Mind 02."
-            products={skinItems}
+            products={grouped.skin}
             onViewDetails={updateQuery}
           />
 
@@ -234,7 +200,7 @@ export default function PerfumesPageClient({ page, products }: PerfumesPageClien
             description="Oil-based blends that settle into fabric and move with you."
             categoryLabel="Cloth"
             closingQuote="Scent does not announce. It settles."
-            products={textileItems}
+            products={grouped.textiles}
             onViewDetails={updateQuery}
           />
 
@@ -245,9 +211,21 @@ export default function PerfumesPageClient({ page, products }: PerfumesPageClien
             description="Placed, not sprayed. Experienced, not announced."
             categoryLabel="Spaces"
             closingQuote="Space keeps what scent leaves behind."
-            subGroups={spacesSubGroups}
+            products={grouped.objects}
             onViewDetails={updateQuery}
           />
+
+          {grouped.other.length > 0 ? (
+            <PerfumeCategorySection
+              id="other"
+              eyebrow="UNCATEGORIZED"
+              title="Set a use case to group these products"
+              description="These products are missing a use case. Set Skin, Cloth, or Diffusion Objects in /admin/products to move them into the right section."
+              categoryLabel="Other"
+              products={grouped.other}
+              onViewDetails={updateQuery}
+            />
+          ) : null}
         </section>
 
         {page.postCtaTitle ? (

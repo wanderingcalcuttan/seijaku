@@ -619,6 +619,34 @@ Trade-offs:
 
 Onboarding note: a fresh local seed (post-Decision-#27) creates no products. Workflow to see the homepage section locally: log into `/admin` → `/admin/products/new` → create at least 3 perfumes (auto-routed to /shop/perfumes via Decision #28) and 3 non-perfume products → `/admin/stories/new` → fill the 6 slots + launch date in the past + video URL + ACTIVE → save. Visit `/`.
 
+### 30. Curated Bridge Clients Render From Props (Phase 4b Leftover Fix)
+
+Status: Active
+
+`/shop/perfumes`, `/shop/diffusers`, `/shop/scarves-and-squares`, and `/shop/lifestyle` now render entirely from the `products` prop their server parent already fetches via `publicBackendJson("/catalog/bridge-pages/:slug", { tags: ["bridge-pages", "products"] })`. The home page's `RitualSetsSection` (Featured Sets) now reads from `/api/public/catalog/products` and surfaces the two newest `Product.type === "Ritual Box"` records (sorted by `releaseDate desc`).
+
+Root cause of the bug this resolved: the four bridge clients and the home Featured Sets section were Phase 4b leftovers — they rendered against hardcoded slug arrays that the backend seed (Decision #27) deliberately doesn't create. On a fresh CMS install, every admin-created product was silently dropped because its slug didn't match the hand-pinned strings the clients expected.
+
+Per-bridge rendering rule:
+
+| Surface | Rule |
+|---|---|
+| `/shop/perfumes` | 3 editorial sections (Skin / Textile / Spaces) keyed on `Product.useCase` (`skin` / `cloth` / `diffusion objects`). Products with unset or unrecognized `useCase` land in a 4th "Uncategorized" fallback section that surfaces the data hygiene issue to admins. |
+| `/shop/diffusers` | Single alternating left/right grid of every linked product. Per-section copy comes from each product's own `title`, `shortDescription`, `longDescription` (atmosphere), and the first `customizationOption` (variant picker). |
+| `/shop/scarves-and-squares` | Two sections (Scarves / Pocket Squares) split by slug-suffix `-pocket-square` (with a title-token fallback). |
+| `/shop/lifestyle` | Top "Ritual Sets" grid renders every linked product. Below it, the Live Calm Gift Pouch picker (Decision #23) is preserved unchanged; its checkout backing falls through to `products[0]` when no specific slug is configured. |
+| Home `RitualSetsSection` | Two newest `Product.type === "Ritual Box"` products by `releaseDate`. Single fetch of the catalog list; no per-slug round-trips. |
+
+Admin form tightening: `ProductEditor.tsx` now renders `useCase` as a `<select>` with the 3 canonical `ShopUseCase` values (`skin` / `cloth` / `diffusion objects`) plus an empty option. The previous free-text input invited typos (`"Skin"` vs `"skin"`) that would silently land products in the perfumes "Uncategorized" fallback. The dropdown enforces the union at the UI level. Backend validation stays string-typed for now; if direct API consumers emerge, add a Zod enum.
+
+Scope cuts (intentional):
+
+- **Per-card editorial copy on Diffusers, Textiles, Lifestyle.** The brand's curated copy ("Tea-Themed Diffusers", "Suggested pairing: Breath of Pines Perfume", "Kolkata Chai Calm Box", etc.) lived only in the frontend client files. Restoring per-card editorial copy needs either (a) a per-`ShopBridgePageProduct` `editorialNote` column, or (b) admin-editable richer description fields on `Product`. Both are real changes; both are out of scope for this fix.
+- **Live Calm Gift Pouch backing slug.** Was hardcoded to `"dawn-reset-box"` in the registry era. Now backed by `products[0]` from the lifestyle bridge — pragmatic stand-in until the Gifting flow is rethought.
+- **`homepageFeaturedLifestyleItems` export deleted from `lifestyleSetConfig.ts`.** Sole consumer (`RitualSetsSection`) was migrated to the catalog-based selection rule above.
+
+How to verify locally after a fresh seed: log into `/admin` → create at least one product per bridge type with the correct `Product.type` (Decision #28 auto-links to the right bridge) and a non-null `useCase` for perfumes → visit each `/shop/<slug>` URL; products should appear without further admin action.
+
 ## How To Use This File
 
 - Add a new entry when a structural or cross-cutting product decision is made.

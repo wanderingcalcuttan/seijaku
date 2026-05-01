@@ -15,72 +15,6 @@ type DiffusersPageClientProps = {
   products: ProductView[];
 };
 
-const sectionContent: Omit<DiffuserCategorySectionData, "product">[] = [
-  {
-    id: "tea-themed-diffusers",
-    title: "Tea-Themed Diffusers",
-    categoryLabel: "Tea-Themed Diffusers",
-    description: "Tea-inspired forms for desks, reading corners, and smaller rooms.",
-    variantLabel: "Choose fragrance oil",
-    options: [
-      "Lavender Green Fragrance Oil 15 ml",
-      "Spearmint Fragrance Oil 15 ml",
-      "Ginger Lime Fragrance Oil 15 ml",
-      "Jasmine Fragrance Oil 15 ml",
-      "Chamomile Fragrance Oil 15 ml",
-    ],
-    atmosphere: "Rooted in the memory of the clay bhaanr, this form brings warmth and a gentler domestic rhythm.",
-  },
-  {
-    id: "coffee-themed-diffusers",
-    title: "Coffee-Themed Diffusers",
-    categoryLabel: "Coffee-Themed Diffusers",
-    description: "Coffee-led diffuser forms for worktables, studio pauses, and slower afternoons.",
-    variantLabel: "Choose wax melts",
-    options: [
-      "Coffee Break Wax Melts 50 gm",
-      "Cool Caramel Wax Melts 50 gm",
-      "Choco Dar Wax Melts 50 gm",
-    ],
-    atmosphere: "A warmer ritual object shaped around pause, focus, and the softened pace of a break.",
-  },
-  {
-    id: "cat-diffusers",
-    title: "Cat Diffusers",
-    categoryLabel: "Cat Diffusers",
-    description: "Terracotta cat forms that bring warmth and character to compact home spaces.",
-    variantLabel: "Choose fragrance oil",
-    options: [
-      "Basmati Fragrance Oil 15 ml",
-      "Gondhoraj Lime Fragrance Oil 15 ml",
-      "Garam Masala Fragrance Oil 15 ml",
-    ],
-    atmosphere: "Playful in silhouette yet restrained in finish, these pieces keep the room light and considered.",
-  },
-  {
-    id: "bird-nest-diffusers",
-    title: "Bird Nest Diffusers",
-    categoryLabel: "Bird Nest Diffusers",
-    description: "Nest-inspired diffuser forms for restful corners and more reflective moments.",
-    variantLabel: "Choose fragrance oil",
-    options: [
-      "Eucalyptus Fragrance Oil 15 ml",
-      "Beli Flower Fragrance Oil 15 ml",
-      "Jasmine Fragrance Oil 15 ml",
-      "Rose Fragrance Oil 15 ml",
-      "Sandalwood Fragrance Oil 15 ml",
-    ],
-    atmosphere: "Outdoor softness, quieter textures, and a calmer mood for spaces that ask for less noise.",
-  },
-];
-
-const productOrder = [
-  "stone-oil-diffuser",
-  "brass-tea-light-diffuser",
-  "reed-diffuser-cedar-smoke",
-  "clay-vessel-diffuser",
-] as const;
-
 export default function DiffusersPageClient({ products }: DiffusersPageClientProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -92,23 +26,22 @@ export default function DiffusersPageClient({ products }: DiffusersPageClientPro
 
   const selectedProduct = selectedSlug ? diffuserProductsBySlug.get(selectedSlug) ?? null : null;
 
-  const sections = useMemo(
+  const sections = useMemo<DiffuserCategorySectionData[]>(
     () =>
-      sectionContent
-        .map((section, index) => {
-          const product = diffuserProductsBySlug.get(productOrder[index]);
-
-          if (!product) {
-            return null;
-          }
-
-          return {
-            ...section,
-            product,
-          } satisfies DiffuserCategorySectionData;
-        })
-        .filter((section): section is DiffuserCategorySectionData => Boolean(section)),
-    [diffuserProductsBySlug]
+      products.map((product) => {
+        const firstOption = product.customizationOptions?.[0];
+        return {
+          id: product.slug,
+          title: product.title,
+          categoryLabel: product.type,
+          product,
+          description: product.shortDescription ?? "",
+          variantLabel: firstOption?.label,
+          options: firstOption?.values,
+          atmosphere: product.longDescription,
+        };
+      }),
+    [products],
   );
 
   const updateQuery = (slug?: string) => {
@@ -133,7 +66,7 @@ export default function DiffusersPageClient({ products }: DiffusersPageClientPro
           intro="Crafted for desks, reading nooks, entryways, and intimate rooms, Seijaku diffusers bring scent into the home with quiet presence. Each form is paired with refillable fragrance oils or wax melts for a slower, more intentional home ritual."
         >
           <Link
-            href="#tea-themed-diffusers"
+            href="#diffusers"
             className="inline-flex items-center justify-center rounded-full bg-[#294536] px-6 py-3 text-[11px] font-medium uppercase tracking-[0.18em] text-[#f4efe8] transition-colors duration-200 hover:bg-[#21382c]"
           >
             Explore Diffusers
@@ -146,7 +79,7 @@ export default function DiffusersPageClient({ products }: DiffusersPageClientPro
           </Link>
         </DiffuserPageIntro>
 
-        <section className="section-primary pt-2 sm:pt-4">
+        <section id="diffusers" className="section-primary pt-2 sm:pt-4 scroll-mt-[120px]">
           <div className="page-container max-w-[1200px]">
             <div className="space-y-1 border-t border-[rgba(79,71,63,0.08)] pt-8 sm:pt-10">
               {sections.map((section, index) => (

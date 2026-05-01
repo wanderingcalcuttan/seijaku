@@ -1,99 +1,77 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import ProductDetailDrawer from "@/src/components/shop/ProductDetailDrawer";
 import LifestyleSetCard, { type LifestyleFieldValue } from "@/src/components/shop/lifestyle/LifestyleSetCard";
-import { homepageFeaturedLifestyleItems } from "@/src/components/shop/lifestyle/lifestyleSetConfig";
 import { canonicalShopRoutes } from "@/src/lib/shop-routes";
 import {
-  normalizeBackendProduct,
+  normalizeBackendProducts,
   type BackendProduct,
   type ProductView,
 } from "@/src/lib/product-types";
 
+const FEATURED_LIMIT = 2;
+
 export default function RitualSetsSection() {
   const [selectedValues, setSelectedValues] = useState<Record<string, Record<string, LifestyleFieldValue>>>({});
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
-  const [productsBySlug, setProductsBySlug] = useState<Record<string, ProductView>>({});
+  const [featured, setFeatured] = useState<ProductView[]>([]);
 
-  const slugs = useMemo(
-    () => homepageFeaturedLifestyleItems.map((entry) => entry.backingSlug),
-    [],
-  );
-
-  // Fetch each backing slug on mount from the public catalog proxy. Per-slug
-  // requests keep payload minimal for a 2-card section. Silent on failure —
-  // the section's empty-state branch (`cards.length === 0 → return null`)
-  // hides it gracefully.
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const entries = await Promise.all(
-        slugs.map(async (slug) => {
-          try {
-            const res = await fetch(`/api/public/catalog/products/${encodeURIComponent(slug)}`, {
-              headers: { Accept: "application/json" },
-            });
-            if (!res.ok) return null;
-            const json = (await res.json()) as BackendProduct;
-            const view = normalizeBackendProduct(json);
-            return view ? ([slug, view] as const) : null;
-          } catch {
-            return null;
-          }
-        }),
-      );
-      if (cancelled) return;
-      const map: Record<string, ProductView> = {};
-      for (const entry of entries) {
-        if (entry) map[entry[0]] = entry[1];
+      try {
+        const res = await fetch("/api/public/catalog/products", {
+          headers: { Accept: "application/json" },
+        });
+        if (!res.ok) return;
+        const json = (await res.json()) as { items: BackendProduct[] };
+        const all = normalizeBackendProducts(json.items);
+        const ritualBoxes = all
+          .filter((p) => p.type === "Ritual Box")
+          .sort((a, b) => (b.releaseDate ?? "").localeCompare(a.releaseDate ?? ""))
+          .slice(0, FEATURED_LIMIT);
+        if (!cancelled) setFeatured(ritualBoxes);
+      } catch {
+        // Silent on failure — section hides via the empty-state branch below.
       }
-      setProductsBySlug(map);
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [slugs]);
+  }, []);
 
-  const selectedProduct = selectedSlug ? productsBySlug[selectedSlug] ?? null : null;
+  const selectedProduct = selectedSlug
+    ? featured.find((p) => p.slug === selectedSlug) ?? null
+    : null;
 
-  const cards = homepageFeaturedLifestyleItems
-    .map((entry) => {
-      const item = productsBySlug[entry.backingSlug];
-      if (!item) return null;
-
-      return (
-        <LifestyleSetCard
-          key={entry.id}
-          item={item}
-          displayTitle={entry.title}
-          groupLabel={entry.groupLabel}
-          includes={entry.includes}
-          fields={entry.fields}
-          selectedValues={selectedValues[entry.id] ?? {}}
-          onSelectValue={(fieldId, value) =>
-            setSelectedValues((current) => ({
-              ...current,
-              [entry.id]: {
-                ...(current[entry.id] ?? {}),
-                [fieldId]: value,
-              },
-            }))
-          }
-          onViewDetails={() => setSelectedSlug(item.slug)}
-          imageSrc={entry.imageSrc}
-          imageAlt={entry.imageAlt}
-        />
-      );
-    })
-    .filter(Boolean);
-
-  if (cards.length === 0) {
+  if (featured.length === 0) {
     return null;
   }
+
+  const cards = featured.map((item) => (
+    <LifestyleSetCard
+      key={item.slug}
+      item={item}
+      displayTitle={item.title}
+      groupLabel={item.type}
+      includes={[]}
+      selectedValues={selectedValues[item.slug] ?? {}}
+      onSelectValue={(fieldId, value) =>
+        setSelectedValues((current) => ({
+          ...current,
+          [item.slug]: {
+            ...(current[item.slug] ?? {}),
+            [fieldId]: value,
+          },
+        }))
+      }
+      onViewDetails={() => setSelectedSlug(item.slug)}
+    />
+  ));
 
   return (
     <>

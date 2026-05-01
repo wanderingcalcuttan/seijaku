@@ -15,24 +15,21 @@ type TextilesPageClientProps = {
   products: ProductView[];
 };
 
-const scarfSlugs = [
-  "bengal-japan-modal-silk-scarf",
-  "pine-forest-modal-silk-scarf",
-  "kolkata-summer-modal-silk-scarf",
-  "coffee-clear-modal-silk-scarf",
-] as const;
+function isPocketSquare(product: ProductView): boolean {
+  const slugMatch = product.slug.toLowerCase().includes("pocket-square");
+  const titleMatch = product.title.toLowerCase().includes("pocket square");
+  return slugMatch || titleMatch;
+}
 
-const pocketSquareSlugs = [
-  "bengal-japan-modal-silk-pocket-square",
-  "pine-forest-modal-silk-pocket-square",
-  "kolkata-summer-modal-silk-pocket-square",
-  "coffee-clear-modal-silk-pocket-square",
-] as const;
-
-const colourOptions = ["Forest Green", "Red Earth"];
-const breathOfPinesHref = `${canonicalShopRoutes.perfumes}?item=spirit-01-breath-of-pines`;
-const summerHeldCloseHref = `${canonicalShopRoutes.perfumes}?item=body-01-summer-held-close`;
-const morningDeskHref = `${canonicalShopRoutes.perfumes}?item=mind-01-the-morning-desk`;
+function buildDisplayItem(product: ProductView): TextileDisplayItem {
+  const firstOption = product.customizationOptions?.[0];
+  return {
+    product,
+    description: product.shortDescription ?? "",
+    selectorLabel: firstOption?.label,
+    selectorOptions: firstOption?.values,
+  };
+}
 
 export default function TextilesPageClient({ products }: TextilesPageClientProps) {
   const pathname = usePathname();
@@ -45,108 +42,19 @@ export default function TextilesPageClient({ products }: TextilesPageClientProps
 
   const selectedProduct = selectedSlug ? productsBySlug.get(selectedSlug) ?? null : null;
 
-  const scarves = useMemo<TextileDisplayItem[]>(() => {
-    const items: TextileDisplayItem[] = [];
-
-    for (const slug of scarfSlugs) {
-      const product = productsBySlug.get(slug);
-      if (!product) continue;
-
-      if (slug === "bengal-japan-modal-silk-scarf") {
-        items.push({
-          product,
-          description:
-            "A modal silk scarf composed in forest green and red earth tones, expressing a quiet dialogue between Bengal craft sensibility and Japanese restraint.",
-          selectorLabel: "Choose colour",
-          selectorOptions: colourOptions,
-        });
-        continue;
+  const { scarves, pocketSquares } = useMemo(() => {
+    const scarfItems: TextileDisplayItem[] = [];
+    const pocketSquareItems: TextileDisplayItem[] = [];
+    for (const product of products) {
+      const item = buildDisplayItem(product);
+      if (isPocketSquare(product)) {
+        pocketSquareItems.push(item);
+      } else {
+        scarfItems.push(item);
       }
-
-      if (slug === "pine-forest-modal-silk-scarf") {
-        items.push({
-          product,
-          description: "A softened modal silk scarf inspired by pine shade, quiet air, and contemplative movement.",
-          pairingLabel: "Suggested pairing: Breath of Pines Perfume",
-          pairingHref: breathOfPinesHref,
-        });
-        continue;
-      }
-
-      if (slug === "kolkata-summer-modal-silk-scarf") {
-        items.push({
-          product,
-          description:
-            "A modal silk scarf shaped by warm light, city softness, and the gentle brightness of an Indian summer.",
-          pairingLabel: "Suggested pairing: Summer, Held Close Perfume",
-          pairingHref: summerHeldCloseHref,
-        });
-        continue;
-      }
-
-      items.push({
-        product,
-        description:
-          "A calm, modern modal silk scarf with a grounded palette suited to desks, early hours, and quiet momentum.",
-        pairingLabel: "Suggested pairing: The Morning Desk Perfume",
-        pairingHref: morningDeskHref,
-      });
     }
-
-    return items;
-  }, [productsBySlug]);
-
-  const pocketSquares = useMemo<TextileDisplayItem[]>(() => {
-    const items: TextileDisplayItem[] = [];
-
-    for (const slug of pocketSquareSlugs) {
-      const product = productsBySlug.get(slug);
-      if (!product) continue;
-
-      if (slug === "bengal-japan-modal-silk-pocket-square") {
-        items.push({
-          product,
-          description:
-            "A modal silk pocket square in forest green and red earth, designed as a compact expression of cross-cultural textile quietness.",
-          selectorLabel: "Choose colour",
-          selectorOptions: colourOptions,
-        });
-        continue;
-      }
-
-      if (slug === "pine-forest-modal-silk-pocket-square") {
-        items.push({
-          product,
-          description:
-            "A modal silk pocket square carrying a cool, wooded calm for formalwear, gifting, and everyday detail.",
-          pairingLabel: "Suggested pairing: Breath of Pines Perfume",
-          pairingHref: breathOfPinesHref,
-        });
-        continue;
-      }
-
-      if (slug === "kolkata-summer-modal-silk-pocket-square") {
-        items.push({
-          product,
-          description:
-            "A lighter, sun-touched modal silk pocket square inspired by summer air, movement, and lived warmth.",
-          pairingLabel: "Suggested pairing: Summer, Held Close Perfume",
-          pairingHref: summerHeldCloseHref,
-        });
-        continue;
-      }
-
-      items.push({
-        product,
-        description:
-          "A grounded, elegant modal silk pocket square suited to work rituals, gifting, and subtle evening dressing.",
-        pairingLabel: "Suggested pairing: The Morning Desk Perfume",
-        pairingHref: morningDeskHref,
-      });
-    }
-
-    return items;
-  }, [productsBySlug]);
+    return { scarves: scarfItems, pocketSquares: pocketSquareItems };
+  }, [products]);
 
   const updateQuery = (slug?: string) => {
     const params = new URLSearchParams(searchParams.toString());

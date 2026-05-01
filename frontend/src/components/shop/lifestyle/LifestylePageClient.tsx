@@ -71,16 +71,38 @@ export default function LifestylePageClient({ products }: LifestylePageClientPro
           </h2>
 
           <div className="space-y-24 sm:space-y-28">
-            {lifestyleSections.map((section) => {
-              const cards = section.items
-                .map((entry) => {
-                  const item = productsBySlug.get(entry.backingSlug);
-                  if (!item) return null;
+            {products.length > 0 ? (
+              <section className="pt-2 sm:pt-4">
+                <div className="mb-10 max-w-[460px] sm:mb-12">
+                  <h3 className="text-[clamp(24px,2.8vw,31px)] leading-[1.12] tracking-[-0.02em] text-[#1b1714]">
+                    Ritual Sets
+                  </h3>
+                </div>
+                <div className="grid gap-12 md:grid-cols-2 2xl:grid-cols-3">
+                  {products.map((product) => (
+                    <div key={product.slug} className="scroll-mt-[108px]">
+                      <LifestyleSetCard
+                        item={product}
+                        displayTitle={product.title}
+                        groupLabel={product.type}
+                        includes={[]}
+                        selectedValues={{}}
+                        onSelectValue={() => undefined}
+                        onViewDetails={() => updateQuery(product.slug)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
 
-                  return (
+            {products.length > 0
+              ? lifestyleSections.map((section) => {
+                  const giftingBacking = products[0];
+                  const cards = section.items.map((entry) => (
                     <div id={entry.id} key={entry.id} className="scroll-mt-[108px]">
                       <LifestyleSetCard
-                        item={item}
+                        item={giftingBacking}
                         displayTitle={entry.title}
                         groupLabel={entry.groupLabel}
                         includes={entry.includes}
@@ -95,54 +117,37 @@ export default function LifestylePageClient({ products }: LifestylePageClientPro
                             },
                           }))
                         }
-                        onViewDetails={() => updateQuery(item.slug)}
-                        imageSrc={entry.imageSrc}
-                        imageAlt={entry.imageAlt}
+                        onViewDetails={() => updateQuery(giftingBacking.slug)}
                       />
                     </div>
+                  ));
+
+                  return (
+                    <section key={section.title} className="pt-2 sm:pt-4">
+                      <div className="mb-10 max-w-[460px] sm:mb-12">
+                        <h3 className="text-[clamp(24px,2.8vw,31px)] leading-[1.12] tracking-[-0.02em] text-[#1b1714]">
+                          {section.title}
+                        </h3>
+                      </div>
+                      <div className="grid gap-12 lg:grid-cols-[minmax(0,1.08fr)_minmax(300px,0.92fr)] lg:items-stretch">
+                        <div>{cards[0]}</div>
+                        <aside className="flex h-full flex-col justify-center rounded-[28px] bg-[linear-gradient(180deg,rgba(248,243,236,0.98)_0%,rgba(241,234,224,0.96)_100%)] px-7 py-10 shadow-sm sm:px-9 lg:px-10">
+                          <p className="text-[10px] uppercase tracking-[0.26em] text-[#8b775f]">Custom gifting</p>
+                          <h3 className="mt-5 max-w-[13ch] text-[clamp(28px,3.4vw,40px)] leading-[1.08] tracking-[-0.025em] text-[#1b1714]">
+                            A composed gift, assembled with care
+                          </h3>
+                          <p className="mt-6 max-w-[34ch] text-[15px] leading-[1.9] text-[#5f574d]">
+                            Choose a perfume, a textile, and a dokra form to shape a gift that feels personal, useful, and quietly distinctive.
+                          </p>
+                          <p className="mt-5 max-w-[32ch] text-[13px] leading-[1.85] text-[#756b60]">
+                            Ideal for intimate gifting, festive gestures, and thoughtful keepsakes.
+                          </p>
+                        </aside>
+                      </div>
+                    </section>
                   );
                 })
-                .filter(Boolean);
-
-              if (cards.length === 0) {
-                return null;
-              }
-
-              const isPersonalRituals = section.title === "Personal Rituals";
-              const isGifting = section.title === "Gifting";
-
-              return (
-                <section key={section.title} className="pt-2 sm:pt-4">
-                  <div className="mb-10 max-w-[460px] sm:mb-12">
-                    <h3 className="text-[clamp(24px,2.8vw,31px)] leading-[1.12] tracking-[-0.02em] text-[#1b1714]">
-                      {section.title}
-                    </h3>
-                  </div>
-
-                  {isPersonalRituals ? (
-                    <div className="grid gap-12 md:grid-cols-2 2xl:grid-cols-3">{cards}</div>
-                  ) : isGifting ? (
-                    <div className="grid gap-12 lg:grid-cols-[minmax(0,1.08fr)_minmax(300px,0.92fr)] lg:items-stretch">
-                      <div>{cards[0]}</div>
-                      <aside className="flex h-full flex-col justify-center rounded-[28px] bg-[linear-gradient(180deg,rgba(248,243,236,0.98)_0%,rgba(241,234,224,0.96)_100%)] px-7 py-10 shadow-sm sm:px-9 lg:px-10">
-                        <p className="text-[10px] uppercase tracking-[0.26em] text-[#8b775f]">Custom gifting</p>
-                        <h3 className="mt-5 max-w-[13ch] text-[clamp(28px,3.4vw,40px)] leading-[1.08] tracking-[-0.025em] text-[#1b1714]">
-                          A composed gift, assembled with care
-                        </h3>
-                        <p className="mt-6 max-w-[34ch] text-[15px] leading-[1.9] text-[#5f574d]">
-                          Choose a perfume, a textile, and a dokra form to shape a gift that feels personal, useful, and quietly distinctive.
-                        </p>
-                        <p className="mt-5 max-w-[32ch] text-[13px] leading-[1.85] text-[#756b60]">
-                          Ideal for intimate gifting, festive gestures, and thoughtful keepsakes.
-                        </p>
-                      </aside>
-                    </div>
-                  ) : (
-                    <div className="grid gap-12 lg:grid-cols-2">{cards}</div>
-                  )}
-                </section>
-              );
-            })}
+              : null}
           </div>
         </section>
 

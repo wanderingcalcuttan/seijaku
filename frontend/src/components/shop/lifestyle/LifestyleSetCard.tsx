@@ -119,17 +119,19 @@ export default function LifestyleSetCard({
         <div className="flex flex-1 flex-col items-start">
           <p className="text-[9px] uppercase tracking-[0.24em] text-[#8b775f]">{groupLabel}</p>
           <h3 className="mt-5 text-[29px] leading-[1.08] tracking-[-0.025em] text-[#1b1714]">{displayTitle}</h3>
-          <div className="mt-7 w-full">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-[#7a7064]">Includes</p>
-            <ul className="mt-4 space-y-2.5 text-[14px] leading-[1.95] text-[#5f574d]">
-              {includes.map((entry) => (
-                <li key={entry} className="flex gap-3">
-                  <span className="mt-[0.78em] h-1.5 w-1.5 shrink-0 rounded-full bg-[#7f6d5a]" aria-hidden="true" />
-                  <span>{entry}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {includes.length > 0 ? (
+            <div className="mt-7 w-full">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-[#7a7064]">Includes</p>
+              <ul className="mt-4 space-y-2.5 text-[14px] leading-[1.95] text-[#5f574d]">
+                {includes.map((entry) => (
+                  <li key={entry} className="flex gap-3">
+                    <span className="mt-[0.78em] h-1.5 w-1.5 shrink-0 rounded-full bg-[#7f6d5a]" aria-hidden="true" />
+                    <span>{entry}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
 
           {hasFields ? (
             <div className="mt-8 w-full space-y-5">

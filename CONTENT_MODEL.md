@@ -218,6 +218,20 @@ When you need to change content, decide which effect you want first:
 2. If the change is about admin CRUD, API behavior, leads, schema, or future migration, update the backend model and admin flow.
 3. If you are moving a domain from frontend-owned content to backend-owned content, update both the code and these docs in the same change.
 
+## Bridge-Page Rendering Rules
+
+Per Decision #30, the four curated `/shop/[slug]` clients render entirely from the `products` prop their server parent already fetches via `publicBackendJson("/catalog/bridge-pages/:slug", ...)`. No hardcoded slug arrays.
+
+| Surface | Grouping rule | Notes |
+|---|---|---|
+| `/shop/perfumes` | `Product.useCase` → 3 sections (Skin / Textile / Spaces). 4th "Uncategorized" section appears only when products have unset/unrecognized `useCase`. | Admins set `useCase` via the dropdown in `/admin/products`. |
+| `/shop/diffusers` | None — flat alternating grid of every linked product. | Per-product copy comes from `title`, `shortDescription`, `longDescription`, first `customizationOption`. |
+| `/shop/scarves-and-squares` | Slug suffix `-pocket-square` (with title-token fallback) splits into Scarves / Pocket Squares. | No new schema field needed. |
+| `/shop/lifestyle` | None — flat grid of linked Ritual Box products + the Live Calm Gift Pouch picker (Decision #23). | Picker checkout backing falls through to `products[0]`. |
+| Home `RitualSetsSection` | Two newest `Product.type === "Ritual Box"` records by `releaseDate`. | Single catalog fetch; section hides when none exist. |
+
+Editorial copy on the perfumes page (section eyebrows, titles, descriptions, closing quotes) stays in `PerfumesPageClient.tsx` as module-scope constants — that copy is editorial framing, not per-product data, and matches the route-level-editorial split documented above.
+
 ## Cache Tags
 
 When a public page starts reading from the backend (via `publicBackendJson` in `frontend/src/lib/backend.ts`), it must declare an explicit `tags: CacheTag[]` list. The admin BFF proxy invalidates those tags on successful writes. Tags are defined in `frontend/src/lib/cache-tags.ts`:

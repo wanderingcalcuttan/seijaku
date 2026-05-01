@@ -612,12 +612,21 @@ export default function ProductEditor({
                   className={adminInputClassName}
                 />
               </AdminField>
-              <AdminField label="Use case" error={fieldErrors.useCase}>
-                <input
+              <AdminField
+                label="Use case"
+                error={fieldErrors.useCase}
+                hint="Used to group perfumes on /shop/perfumes."
+              >
+                <select
                   value={core.useCase}
                   onChange={(e) => setCore((c) => ({ ...c, useCase: e.target.value }))}
                   className={adminInputClassName}
-                />
+                >
+                  <option value="">—</option>
+                  <option value="skin">skin</option>
+                  <option value="cloth">cloth</option>
+                  <option value="diffusion objects">diffusion objects</option>
+                </select>
               </AdminField>
               <AdminField label="Release date">
                 <input
