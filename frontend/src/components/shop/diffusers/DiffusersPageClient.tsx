@@ -1,15 +1,16 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import ProductDetailDrawer from "@/src/components/shop/ProductDetailDrawer";
+import ShopProductActions from "@/src/components/shop/ShopProductActions";
 import type { ShopBridgePageConfig } from "@/src/lib/bridge-page-types";
 import { canonicalShopRoutes } from "@/src/lib/shop-routes";
 import { type ProductView } from "@/src/lib/product-types";
 
-import DiffuserCategorySection, { type DiffuserCategorySectionData } from "./DiffuserCategorySection";
 import DiffuserPageIntro from "./DiffuserPageIntro";
 
 type DiffusersPageClientProps = {
@@ -17,11 +18,6 @@ type DiffusersPageClientProps = {
   products: ProductView[];
 };
 
-// Curated diffuser products surfaced on /shop/diffusers. The diffusers
-// bridge page can carry additional linked products (wax melts, fragrance
-// oils, accessories) that don't belong on this editorial page; this list
-// is the source of truth for what renders. If a slug stops resolving, the
-// card silently drops and the rest of the page still renders.
 const DIFFUSERS_SLUGS = [
   "Kolkata-tea-diffuser",
   "coffee-ceramic-diffuser-set",
@@ -35,40 +31,27 @@ export default function DiffusersPageClient({ page, products }: DiffusersPageCli
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const selectedSlug = searchParams.get("item");
 
-  const diffuserProductsBySlug = useMemo(() => new Map(products.map((product) => [product.slug, product])), [products]);
+  const productsBySlug = useMemo(
+    () => new Map(products.map((p) => [p.slug, p])),
+    [products],
+  );
+  const selectedProduct = selectedSlug ? productsBySlug.get(selectedSlug) ?? null : null;
 
-  const selectedProduct = selectedSlug ? diffuserProductsBySlug.get(selectedSlug) ?? null : null;
-
-  const sections = useMemo<DiffuserCategorySectionData[]>(
+  const curated = useMemo(
     () =>
-      DIFFUSERS_SLUGS.flatMap((slug) => {
-        const product = diffuserProductsBySlug.get(slug);
-        if (!product) return [];
-        const firstOption = product.customizationOptions?.[0];
-        return [
-          {
-            id: product.slug,
-            title: product.title,
-            categoryLabel: product.type,
-            product,
-            description: product.shortDescription ?? "",
-            variantLabel: firstOption?.label,
-            options: firstOption?.values,
-          },
-        ];
-      }),
-    [diffuserProductsBySlug],
+      DIFFUSERS_SLUGS.map((slug) => productsBySlug.get(slug)).filter(
+        (p): p is ProductView => Boolean(p),
+      ),
+    [productsBySlug],
   );
 
   const updateQuery = (slug?: string) => {
     const params = new URLSearchParams(searchParams.toString());
-
     if (slug) {
       params.set("item", slug);
     } else {
       params.delete("item");
     }
-
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   };
@@ -99,24 +82,31 @@ export default function DiffusersPageClient({ page, products }: DiffusersPageCli
           </Link>
         </DiffuserPageIntro>
 
-        <section id="diffusers" className="section-primary pt-2 sm:pt-4 scroll-mt-[120px]" data-reveal>
+        <section
+          id="diffusers"
+          className="section-primary scroll-mt-[120px] pt-2 sm:pt-4"
+          data-reveal
+        >
           <div className="page-container max-w-[1200px]">
-            <div className="space-y-1 border-t border-[rgba(79,71,63,0.08)] pt-8 sm:pt-10">
-              {sections.map((section, index) => (
-                <div key={section.id} className={index > 0 ? "border-t border-[rgba(79,71,63,0.06)]" : ""}>
-                  <DiffuserCategorySection
-                    section={section}
-                    reverse={index % 2 === 1}
-                    selectedOption={selectedVariants[section.product.slug] ?? ""}
-                    onSelectOption={(value) =>
-                      setSelectedVariants((current) => ({
-                        ...current,
-                        [section.product.slug]: value,
-                      }))
-                    }
-                    onViewDetails={() => updateQuery(section.product.slug)}
-                  />
-                </div>
+            <div className="border-t border-[rgba(79,71,63,0.08)] pt-12 sm:pt-16">
+              <p className="text-[10px] uppercase tracking-[0.34em] text-[#8a745e]">Three forms</p>
+              <h2 className="mt-3 max-w-[26ch] font-serif text-[clamp(26px,2.8vw,34px)] leading-[1.18] tracking-[-0.02em] text-[#1b1714]">
+                Each diffuser has a different relationship with the room.
+              </h2>
+            </div>
+
+            <div className="mt-12 sm:mt-16">
+              {curated.map((product, index) => (
+                <DiffuserFeatureRow
+                  key={product.slug}
+                  index={index}
+                  product={product}
+                  selectedOption={selectedVariants[product.slug] ?? ""}
+                  onSelectOption={(value) =>
+                    setSelectedVariants((current) => ({ ...current, [product.slug]: value }))
+                  }
+                  onViewDetails={() => updateQuery(product.slug)}
+                />
               ))}
             </div>
           </div>
@@ -137,7 +127,108 @@ export default function DiffusersPageClient({ page, products }: DiffusersPageCli
         </section>
       </main>
 
-      <ProductDetailDrawer item={selectedProduct} isOpen={Boolean(selectedProduct)} onClose={() => updateQuery()} />
+      <ProductDetailDrawer
+        item={selectedProduct}
+        isOpen={Boolean(selectedProduct)}
+        onClose={() => updateQuery()}
+      />
     </>
+  );
+}
+
+type DiffuserFeatureRowProps = {
+  index: number;
+  product: ProductView;
+  selectedOption: string;
+  onSelectOption: (value: string) => void;
+  onViewDetails: () => void;
+};
+
+function DiffuserFeatureRow({
+  index,
+  product,
+  selectedOption,
+  onSelectOption,
+  onViewDetails,
+}: DiffuserFeatureRowProps) {
+  const reverse = index % 2 === 1;
+  const firstOption = product.customizationOptions?.[0];
+  const variantLabel = firstOption?.label;
+  const options = firstOption?.values ?? [];
+  const hasOptions = Boolean(variantLabel && options.length > 0);
+  const indexLabel = String(index + 1).padStart(2, "0");
+  const selectId = `${product.slug}-variant`;
+
+  return (
+    <article
+      className={`grid items-center gap-10 border-t border-[rgba(79,71,63,0.06)] py-16 first:border-t-0 first:pt-2 sm:gap-14 sm:py-20 lg:grid-cols-[minmax(0,1.18fr)_minmax(0,0.82fr)] lg:gap-16 ${
+        reverse ? "lg:[&>:first-child]:order-2" : ""
+      }`}
+    >
+      <div className="relative">
+        <div className="relative aspect-[5/4] overflow-hidden rounded-[26px] bg-[#e7dfd4] shadow-[0_18px_38px_rgba(41,34,27,0.06)]">
+          <Image
+            src={product.image}
+            alt={product.imageAlt ?? product.title}
+            fill
+            sizes="(min-width: 1024px) 56vw, 100vw"
+            className="object-cover object-center"
+          />
+        </div>
+      </div>
+
+      <div className={reverse ? "lg:pr-2" : "lg:pl-2"}>
+        <p className="font-serif text-[44px] leading-none text-[#8a745e] sm:text-[56px]">{indexLabel}</p>
+        <p className="mt-5 text-[10px] uppercase tracking-[0.32em] text-[#8a745e]">{product.type}</p>
+        <h3 className="mt-3 max-w-[18ch] font-serif text-[clamp(28px,3vw,40px)] leading-[1.08] tracking-[-0.02em] text-[#1b1714]">
+          {product.title}
+        </h3>
+        {product.shortDescription ? (
+          <p className="mt-5 max-w-[42ch] text-[15px] leading-[1.85] text-[#60584f]">
+            {product.shortDescription}
+          </p>
+        ) : null}
+        <p className="mt-6 text-[14px] tracking-[0.04em] text-[#312b25]">{product.priceLabel}</p>
+
+        {hasOptions ? (
+          <div className="mt-6 max-w-[360px]">
+            <label
+              htmlFor={selectId}
+              className="mb-2 block text-[10px] uppercase tracking-[0.24em] text-[#837260]"
+            >
+              {variantLabel}
+            </label>
+            <select
+              id={selectId}
+              value={selectedOption}
+              onChange={(event) => onSelectOption(event.target.value)}
+              className="w-full rounded-[16px] border border-[rgba(86,76,64,0.14)] bg-[#fbf8f3] px-4 py-3 text-[14px] text-[#3f3831] outline-none transition-colors focus:border-[#2e4a36] focus:ring-2 focus:ring-[#2e4a36]/15"
+            >
+              <option value="">Select an option</option>
+              {options.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
+
+        <ShopProductActions
+          className="mt-7"
+          item={product}
+          onViewDetails={onViewDetails}
+          isBuyDisabled={hasOptions ? !selectedOption : false}
+          selection={
+            hasOptions
+              ? {
+                  label: selectedOption,
+                  options: { [variantLabel!]: selectedOption },
+                }
+              : undefined
+          }
+        />
+      </div>
+    </article>
   );
 }
