@@ -15,6 +15,17 @@ type DiffusersPageClientProps = {
   products: ProductView[];
 };
 
+// Curated diffuser products surfaced on /shop/diffusers. The diffusers
+// bridge page can carry additional linked products (wax melts, fragrance
+// oils, accessories) that don't belong on this editorial page; this list
+// is the source of truth for what renders. If a slug stops resolving, the
+// card silently drops and the rest of the page still renders.
+const DIFFUSERS_SLUGS = [
+  "Kolkata-tea-diffuser",
+  "coffee-ceramic-diffuser-set",
+  "black-kitty-terracotta-diffuser",
+] as const;
+
 export default function DiffusersPageClient({ products }: DiffusersPageClientProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -28,20 +39,24 @@ export default function DiffusersPageClient({ products }: DiffusersPageClientPro
 
   const sections = useMemo<DiffuserCategorySectionData[]>(
     () =>
-      products.map((product) => {
+      DIFFUSERS_SLUGS.flatMap((slug) => {
+        const product = diffuserProductsBySlug.get(slug);
+        if (!product) return [];
         const firstOption = product.customizationOptions?.[0];
-        return {
-          id: product.slug,
-          title: product.title,
-          categoryLabel: product.type,
-          product,
-          description: product.shortDescription ?? "",
-          variantLabel: firstOption?.label,
-          options: firstOption?.values,
-          atmosphere: product.longDescription,
-        };
+        return [
+          {
+            id: product.slug,
+            title: product.title,
+            categoryLabel: product.type,
+            product,
+            description: product.shortDescription ?? "",
+            variantLabel: firstOption?.label,
+            options: firstOption?.values,
+            atmosphere: product.longDescription,
+          },
+        ];
       }),
-    [products],
+    [diffuserProductsBySlug],
   );
 
   const updateQuery = (slug?: string) => {
