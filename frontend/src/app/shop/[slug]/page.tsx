@@ -79,7 +79,7 @@ export default async function ShopSlugPage({ params }: ShopSlugPageProps) {
   if (slug === "diffusers") {
     return (
       <Suspense fallback={null}>
-        <DiffusersPageClient products={products} />
+        <DiffusersPageClient page={page} products={products} />
       </Suspense>
     );
   }

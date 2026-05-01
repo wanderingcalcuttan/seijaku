@@ -6,10 +6,28 @@ type DiffuserPageIntroProps = {
   eyebrow: string;
   title: string;
   intro: string;
+  imageSrc?: string;
+  imageAlt?: string;
+  imagePosition?: string;
+  quote?: string;
   children?: ReactNode;
 };
 
-export default function DiffuserPageIntro({ eyebrow, title, intro, children }: DiffuserPageIntroProps) {
+const FALLBACK_IMAGE = "/images/quiet-tea-ritual-box-lifestyle-neutral.png";
+
+export default function DiffuserPageIntro({
+  eyebrow,
+  title,
+  intro,
+  imageSrc,
+  imageAlt,
+  imagePosition,
+  quote,
+  children,
+}: DiffuserPageIntroProps) {
+  const resolvedSrc = imageSrc && imageSrc.length > 0 ? imageSrc : FALLBACK_IMAGE;
+  const resolvedAlt = imageAlt && imageAlt.length > 0 ? imageAlt : title;
+
   return (
     <section className="section-primary pb-8 pt-20 sm:pb-10 sm:pt-24">
       <div className="page-container max-w-[1200px]">
@@ -26,17 +44,19 @@ export default function DiffuserPageIntro({ eyebrow, title, intro, children }: D
           <div className="relative overflow-hidden rounded-[24px] border border-[rgba(86,76,64,0.1)] bg-[#e9e0d3] p-3 shadow-[0_14px_28px_rgba(41,34,27,0.05)]">
             <div className="relative aspect-[4/3.25] overflow-hidden rounded-[18px]">
               <Image
-                src="/images/quiet-tea-ritual-box-lifestyle-neutral.png"
-                alt="Seijaku diffuser objects arranged in a quiet editorial home fragrance still life."
+                src={resolvedSrc}
+                alt={resolvedAlt}
                 fill
                 priority
                 sizes="(min-width: 1024px) 34vw, 100vw"
-                className="object-cover object-center"
+                className={`object-cover ${imagePosition && imagePosition.length > 0 ? imagePosition : "object-center"}`}
               />
             </div>
-            <div className="pointer-events-none absolute inset-x-7 bottom-7 rounded-[16px] border border-white/30 bg-[linear-gradient(180deg,rgba(255,255,255,0.28),rgba(255,255,255,0.08))] p-4 backdrop-blur-[1.5px]">
-              <p className="max-w-[18ch] font-serif text-[24px] leading-[1.08] text-white sm:text-[26px]">Scent, placed with restraint.</p>
-            </div>
+            {quote && quote.length > 0 ? (
+              <div className="pointer-events-none absolute inset-x-7 bottom-7 rounded-[16px] border border-white/30 bg-[linear-gradient(180deg,rgba(255,255,255,0.28),rgba(255,255,255,0.08))] p-4 backdrop-blur-[1.5px]">
+                <p className="max-w-[18ch] font-serif text-[24px] leading-[1.08] text-white sm:text-[26px]">{quote}</p>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

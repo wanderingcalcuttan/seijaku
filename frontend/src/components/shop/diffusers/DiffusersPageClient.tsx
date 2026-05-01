@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import ProductDetailDrawer from "@/src/components/shop/ProductDetailDrawer";
+import type { ShopBridgePageConfig } from "@/src/lib/bridge-page-types";
 import { canonicalShopRoutes } from "@/src/lib/shop-routes";
 import { type ProductView } from "@/src/lib/product-types";
 
@@ -12,6 +13,7 @@ import DiffuserCategorySection, { type DiffuserCategorySectionData } from "./Dif
 import DiffuserPageIntro from "./DiffuserPageIntro";
 
 type DiffusersPageClientProps = {
+  page: ShopBridgePageConfig;
   products: ProductView[];
 };
 
@@ -26,7 +28,7 @@ const DIFFUSERS_SLUGS = [
   "black-kitty-terracotta-diffuser",
 ] as const;
 
-export default function DiffusersPageClient({ products }: DiffusersPageClientProps) {
+export default function DiffusersPageClient({ page, products }: DiffusersPageClientProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -52,7 +54,6 @@ export default function DiffusersPageClient({ products }: DiffusersPageClientPro
             description: product.shortDescription ?? "",
             variantLabel: firstOption?.label,
             options: firstOption?.values,
-            atmosphere: product.longDescription,
           },
         ];
       }),
@@ -76,9 +77,13 @@ export default function DiffusersPageClient({ products }: DiffusersPageClientPro
     <>
       <main className="min-h-screen bg-[#f3efe7] pt-[72px] text-[#3a3a3a] sm:pt-[76px]">
         <DiffuserPageIntro
-          eyebrow="HOME FRAGRANCES"
-          title="Diffusers for quiet corners and slower rituals"
-          intro="Crafted for desks, reading nooks, entryways, and intimate rooms, Seijaku diffusers bring scent into the home with quiet presence. Each form is paired with refillable fragrance oils or wax melts for a slower, more intentional home ritual."
+          eyebrow={page.heroEyebrow}
+          title={page.heroTitle}
+          intro={page.heroDescription.join(" ")}
+          imageSrc={page.heroImage}
+          imageAlt={page.heroImageAlt}
+          imagePosition={page.heroImagePosition}
+          quote={page.heroQuote}
         >
           <Link
             href="#diffusers"

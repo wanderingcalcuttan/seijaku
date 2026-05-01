@@ -10,7 +10,6 @@ export type DiffuserCategorySectionData = {
   description: string;
   variantLabel?: string;
   options?: string[];
-  atmosphere?: string;
 };
 
 type DiffuserCategorySectionProps = {
@@ -37,11 +36,6 @@ export default function DiffuserCategorySection({
             {section.title}
           </h2>
           <p className="mt-4 max-w-[40ch] text-[15px] leading-[1.9] text-[#60584f]">{section.description}</p>
-          {section.atmosphere ? (
-            <p className="mt-5 max-w-[38ch] border-l border-[rgba(46,74,54,0.16)] pl-4 text-[13px] leading-[1.82] text-[#6a6257]">
-              {section.atmosphere}
-            </p>
-          ) : null}
         </div>
 
         <div className={reverse ? "lg:order-1" : ""}>
