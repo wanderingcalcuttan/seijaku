@@ -18,10 +18,22 @@ export type LifestyleCardConfig = {
   imageAlt?: string;
 };
 
-export type LifestyleSectionConfig = {
-  title: string;
-  items: LifestyleCardConfig[];
-};
+// Curated slug lists for the editorial sections on /shop/lifestyle.
+// If a slug stops resolving (product deleted / renamed in admin), the
+// section silently drops that card; the section as a whole still renders.
+export const DAYTIME_PAUSES_SLUGS = [
+  "kolkata-tea-calm-box",
+  "ceramic-coffee-ritual-box",
+] as const;
+
+export const PERSONAL_RITUALS_SLUGS = [
+  "personal-ritual-set-00",
+  "unfold-ritual-gift-set",
+  "listen-ritual-gift-set",
+  "attune-personal-gift-set",
+] as const;
+
+export const CUSTOM_GIFTING_SLUG = "live-calm-curated-pouch";
 
 function buyableTitlesByBridge(products: ProductView[], bridge: ShopBridgeSlug): string[] {
   return products
@@ -30,12 +42,15 @@ function buyableTitlesByBridge(products: ProductView[], bridge: ShopBridgeSlug):
     .sort((a, b) => a.localeCompare(b));
 }
 
-export function buildLifestyleSections(products: ProductView[]): LifestyleSectionConfig[] {
-  const liveCalmGiftPouch: LifestyleCardConfig = {
-    id: "live-calm-gift-pouch",
-    backingSlug: "",
+// The Custom Gifting picker. Three SINGLE selects whose options are the
+// titles of buyable products in each bridge — keeps the picker truthful as
+// the catalog evolves without a code change.
+export function buildLiveCalmPouchCard(products: ProductView[]): LifestyleCardConfig {
+  return {
+    id: "live-calm-curated-pouch",
+    backingSlug: CUSTOM_GIFTING_SLUG,
     title: "Live Calm Gift Pouch",
-    groupLabel: "Gifting",
+    groupLabel: "Custom Gifting",
     includes: ["Choose your perfume", "Choose your textile", "Choose your brooch"],
     fields: [
       {
@@ -55,11 +70,4 @@ export function buildLifestyleSections(products: ProductView[]): LifestyleSectio
       },
     ],
   };
-
-  return [
-    {
-      title: "Gifting",
-      items: [liveCalmGiftPouch],
-    },
-  ];
 }
