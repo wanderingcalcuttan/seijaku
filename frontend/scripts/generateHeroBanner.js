@@ -62,7 +62,7 @@ async function buildBanner() {
       { input: leftImage.buffer, left: leftOffsetX, top: leftTop },
       { input: rightImage.buffer, left: slotWidth + gap + rightOffsetX, top: rightTop },
     ])
-    .png({ compressionLevel: 9, adaptiveFiltering: true, force: true })
+    .png({ palette: true, quality: 80, compressionLevel: 9, adaptiveFiltering: true, force: true })
     .toFile(outputPath);
 
   console.log(`Hero banner generated at ${outputPath}`);

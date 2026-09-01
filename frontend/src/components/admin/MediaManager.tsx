@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import AdminCard from "@/src/components/admin/AdminCard";
@@ -9,11 +9,14 @@ import type { MediaAsset } from "@/src/lib/admin-types";
 
 type MediaManagerProps = {
   items: MediaAsset[];
+  totalPages: number;
+  currentPage: number;
   canDelete: boolean;
 };
 
-export default function MediaManager({ items, canDelete }: MediaManagerProps) {
+export default function MediaManager({ items, totalPages, currentPage, canDelete }: MediaManagerProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [altText, setAltText] = useState("");
   const [kind, setKind] = useState<MediaAsset["kind"]>("IMAGE");
@@ -98,6 +101,52 @@ export default function MediaManager({ items, canDelete }: MediaManagerProps) {
     });
   };
 
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible + 2) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+
+      if (currentPage > 3) {
+        pages.push("...");
+      }
+
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+
+      let adjustedStart = start;
+      let adjustedEnd = end;
+      if (currentPage <= 3) {
+        adjustedEnd = 4;
+      } else if (currentPage >= totalPages - 2) {
+        adjustedStart = totalPages - 3;
+      }
+
+      for (let i = adjustedStart; i <= adjustedEnd; i++) {
+        pages.push(i);
+      }
+
+      if (currentPage < totalPages - 2) {
+        pages.push("...");
+      }
+
+      pages.push(totalPages);
+    }
+    return pages;
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(newPage));
+    router.push(`/admin/media?${params.toString()}`);
+  };
+
   return (
     <div className="space-y-6">
       <AdminCard>
@@ -136,6 +185,58 @@ export default function MediaManager({ items, canDelete }: MediaManagerProps) {
           <EditableMediaCard key={asset.id} asset={asset} onSave={updateAsset} onDelete={deleteAsset} canDelete={canDelete} />
         ))}
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-2 border-t border-[#e2d7c7] pt-6">
+          <button
+            type="button"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d7cec1] bg-white text-[12px] text-[#3a3129] transition hover:bg-[#f0e6d8] hover:text-[#2e4a36] disabled:pointer-events-none disabled:opacity-40"
+            aria-label="Previous page"
+          >
+            ←
+          </button>
+
+          {getPageNumbers().map((page, index) => {
+            if (page === "...") {
+              return (
+                <span key={`dots-${index}`} className="px-2 text-[13px] font-medium text-[#8a8075]">
+                  ...
+                </span>
+              );
+            }
+
+            const pageNum = page as number;
+            const isActive = pageNum === currentPage;
+
+            return (
+              <button
+                key={`page-${pageNum}`}
+                type="button"
+                onClick={() => handlePageChange(pageNum)}
+                className={`inline-flex h-9 w-9 items-center justify-center rounded-full border text-[12px] font-medium uppercase tracking-[0.1em] transition ${
+                  isActive
+                    ? "border-[#2e4a36] bg-[#2e4a36] text-[#f4efe8]"
+                    : "border-[#d7cec1] bg-white text-[#3a3129] hover:bg-[#f0e6d8] hover:text-[#2e4a36]"
+                }`}
+              >
+                {pageNum}
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d7cec1] bg-white text-[12px] text-[#3a3129] transition hover:bg-[#f0e6d8] hover:text-[#2e4a36] disabled:pointer-events-none disabled:opacity-40"
+            aria-label="Next page"
+          >
+            →
+          </button>
+        </div>
+      )}
     </div>
   );
 }

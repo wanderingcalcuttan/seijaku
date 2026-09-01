@@ -25,11 +25,9 @@ app.use("/payments/webhook", express.raw({ type: "application/json", limit: "1mb
 app.use(express.json({ limit: "1mb" }));
 app.use(morgan("dev"));
 
-if (env.STORAGE_DRIVER === "local") {
-  const uploadDir = path.resolve(process.cwd(), env.LOCAL_UPLOAD_DIR);
-  fs.mkdirSync(uploadDir, { recursive: true });
-  app.use("/uploads", express.static(uploadDir));
-}
+const uploadDir = path.resolve(process.cwd(), env.LOCAL_UPLOAD_DIR);
+fs.mkdirSync(uploadDir, { recursive: true });
+app.use("/uploads", express.static(uploadDir));
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true });

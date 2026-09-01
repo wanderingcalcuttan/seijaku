@@ -7,6 +7,7 @@ import AdminCard from "@/src/components/admin/AdminCard";
 import { AdminField, adminButtonClassName, adminDangerButtonClassName, adminInputClassName, adminSecondaryButtonClassName, adminTextareaClassName } from "@/src/components/admin/AdminField";
 import MarkdownPreview from "@/src/components/admin/MarkdownPreview";
 import type { Article, MediaAsset } from "@/src/lib/admin-types";
+import RichTextarea from "./RichTextarea";
 
 type ArticleManagerProps = {
   items: Article[];
@@ -27,6 +28,7 @@ function buildState(article: Article | null) {
     status: article?.status ?? "DRAFT",
     publishedAt: article?.publishedAt ? article.publishedAt.slice(0, 16) : "",
     primaryImageId: article?.primaryImage?.id ?? "",
+    primaryImageUrl: article?.primaryImage?.url ?? "",
     seoTitle: article?.seoTitle ?? "",
     seoDescription: article?.seoDescription ?? "",
   };
@@ -70,7 +72,7 @@ export default function ArticleManager({ items, media, canDelete }: ArticleManag
         return;
       }
       setRecentlyUploaded((current) => ({ ...current, [data.item!.id]: data.item! }));
-      setDraft((current) => ({ ...current, primaryImageId: data.item!.id }));
+      setDraft((current) => ({ ...current, primaryImageId: data.item!.id, primaryImageUrl: data.item!.url }));
     } catch {
       setUploadError("Couldn't reach the server. Try again.");
     } finally {
@@ -82,6 +84,15 @@ export default function ArticleManager({ items, media, canDelete }: ArticleManag
   // render a thumbnail. Looks first at recently-uploaded (this session),
   // then falls back to the media library list passed from the server.
   const currentImageAsset: { url: string; altText?: string | null } | null = (() => {
+    if (draft.primaryImageUrl) {
+      const matchingAsset =
+        media.find((asset) => asset.url === draft.primaryImageUrl) ||
+        Object.values(recentlyUploaded).find((asset) => asset.url === draft.primaryImageUrl);
+      return {
+        url: draft.primaryImageUrl,
+        altText: matchingAsset?.altText ?? null,
+      };
+    }
     if (!draft.primaryImageId) return null;
     if (recentlyUploaded[draft.primaryImageId]) return recentlyUploaded[draft.primaryImageId];
     const fromLibrary = media.find((asset) => asset.id === draft.primaryImageId);
@@ -93,15 +104,49 @@ export default function ArticleManager({ items, media, canDelete }: ArticleManag
       setNotice(null);
       setError(null);
 
+      let finalImageId = draft.primaryImageId;
+      if (!finalImageId && draft.primaryImageUrl) {
+        const existing = media.find((m) => m.url === draft.primaryImageUrl);
+        if (existing) {
+          finalImageId = existing.id;
+        } else {
+          try {
+            const mediaRes = await fetch("/api/admin/proxy/media", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                url: draft.primaryImageUrl,
+                kind: "IMAGE",
+              }),
+            });
+            const mediaData = (await mediaRes.json().catch(() => null)) as { item?: UploadedAsset; error?: string } | null;
+            if (mediaRes.ok && mediaData?.item?.id) {
+              finalImageId = mediaData.item.id;
+              setRecentlyUploaded((current) => ({ ...current, [mediaData.item!.id]: mediaData.item! }));
+              setDraft((current) => ({ ...current, primaryImageId: mediaData.item!.id }));
+            } else {
+              setError(mediaData?.error ?? "Failed to save the primary image URL as a media asset.");
+              return;
+            }
+          } catch {
+            setError("Failed to reach server to save the primary image URL.");
+            return;
+          }
+        }
+      }
+
+      const { primaryImageUrl: _, ...articleData } = draft;
       const response = await fetch(method === "POST" ? "/api/admin/proxy/articles" : `/api/admin/proxy/articles/${selectedItem?.id}`, {
         method,
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ...draft,
+          ...articleData,
           publishedAt: draft.publishedAt ? new Date(draft.publishedAt).toISOString() : null,
-          primaryImageId: draft.primaryImageId || null,
+          primaryImageId: finalImageId || null,
         }),
       });
 
@@ -130,11 +175,11 @@ export default function ArticleManager({ items, media, canDelete }: ArticleManag
         method: "DELETE",
       });
 
-      if (!response.ok) {
-        const data = (await response.json().catch(() => null)) as { error?: string } | null;
-        setError(data?.error ?? "Unable to delete article.");
-        return;
-      }
+      // if (!response.ok) {
+      //   const data = (await response.json().catch(() => null)) as { error?: string } | null;
+      //   setError(data?.error ?? "Unable to delete article.");
+      //   return;
+      // }
 
       setSelectedId(null);
       setNotice("Article deleted.");
@@ -247,22 +292,27 @@ export default function ArticleManager({ items, media, canDelete }: ArticleManag
                       }}
                     />
                   </label>
-                  <select
-                    value={draft.primaryImageId}
-                    onChange={(event) => setDraft((current) => ({ ...current, primaryImageId: event.target.value }))}
-                    className={adminInputClassName}
-                  >
-                    <option value="">From media library…</option>
-                    {media.map((asset) => (
-                      <option key={asset.id} value={asset.id}>
-                        {asset.altText || asset.url}
-                      </option>
-                    ))}
-                  </select>
-                  {draft.primaryImageId ? (
+                  <textarea
+                    rows={2}
+                    value={draft.primaryImageUrl}
+                    onChange={(event) => {
+                      const url = event.target.value;
+                      const matchingAsset =
+                        media.find((asset) => asset.url === url) ||
+                        Object.values(recentlyUploaded).find((asset) => asset.url === url);
+                      setDraft((current) => ({
+                        ...current,
+                        primaryImageUrl: url,
+                        primaryImageId: matchingAsset ? matchingAsset.id : "",
+                      }));
+                    }}
+                    placeholder="Enter image URL..."
+                    className={adminTextareaClassName}
+                  />
+                  {draft.primaryImageUrl || draft.primaryImageId ? (
                     <button
                       type="button"
-                      onClick={() => setDraft((current) => ({ ...current, primaryImageId: "" }))}
+                      onClick={() => setDraft((current) => ({ ...current, primaryImageId: "", primaryImageUrl: "" }))}
                       className={adminSecondaryButtonClassName}
                     >
                       Clear
@@ -280,10 +330,18 @@ export default function ArticleManager({ items, media, canDelete }: ArticleManag
 
           <div className="mt-5 grid gap-5">
             <AdminField label="Excerpt">
-              <textarea rows={4} value={draft.excerpt} onChange={(event) => setDraft((current) => ({ ...current, excerpt: event.target.value }))} className={adminTextareaClassName} />
+              {/* <textarea rows={4} value={draft.excerpt} onChange={(event) => setDraft((current) => ({ ...current, excerpt: event.target.value }))} className={adminTextareaClassName} /> */}
+              <RichTextarea
+                value={draft.excerpt}
+                onChange={(val) => setDraft((c) => ({ ...c, excerpt: val }))}
+              />
             </AdminField>
             <AdminField label="Body markdown">
-              <textarea rows={14} value={draft.bodyMarkdown} onChange={(event) => setDraft((current) => ({ ...current, bodyMarkdown: event.target.value }))} className={adminTextareaClassName} />
+              {/* <textarea rows={14} value={draft.bodyMarkdown} onChange={(event) => setDraft((current) => ({ ...current, bodyMarkdown: event.target.value }))} className={adminTextareaClassName} /> */}
+              <RichTextarea
+                value={draft.bodyMarkdown}
+                onChange={(val) => setDraft((c) => ({ ...c, bodyMarkdown: val }))}
+              />
             </AdminField>
             <div className="grid gap-5 md:grid-cols-2">
               <AdminField label="SEO title">

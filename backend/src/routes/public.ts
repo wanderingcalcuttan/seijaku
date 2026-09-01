@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { sendAdminNotification } from "../lib/notifier.js";
 import { prisma } from "../lib/prisma.js";
+import { calculateShippingRate } from "../lib/shiprocket.js";
 import {
   serializeArticle,
   serializeBridgePage,
@@ -67,6 +68,14 @@ const reservationSchema = z.object({
   partySize: z.number().int().min(1).optional(),
   notes: z.string().optional(),
   sessionId: z.string().optional(),
+});
+
+const shippingCalculationSchema = z.object({
+  pincode: z.string().regex(/^[0-9]{6}$/, "Invalid pincode"),
+  weightKg: z.number().positive("Weight must be positive"),
+  lengthCm: z.number().min(0, "Length cannot be negative"),
+  breadthCm: z.number().min(0, "Breadth cannot be negative"),
+  heightCm: z.number().min(0, "Height cannot be negative"),
 });
 
 const productInclude = {
@@ -519,5 +528,34 @@ publicRouter.post(
     });
 
     res.status(201).json({ item: inquiry });
+  })
+);
+
+publicRouter.post(
+  "/shipping/calculate",
+  asyncHandler(async (req, res) => {
+    const payload = parseBody(shippingCalculationSchema, req.body);
+
+    try {
+      const result = await calculateShippingRate({
+        pincode: payload.pincode,
+        weightKg: payload.weightKg,
+        lengthCm: payload.lengthCm,
+        breadthCm: payload.breadthCm,
+        heightCm: payload.heightCm,
+      });
+
+      res.json({
+        shippingCost: result.rate,
+        estimatedDeliveryDays: result.estimatedDeliveryDays,
+      });
+    } catch (error) {
+      // If Shiprocket fails, return a default shipping cost
+      console.warn("[shipping] calculation failed", error);
+      res.json({
+        shippingCost: 100,
+        estimatedDeliveryDays: "5-7",
+      }); // default fallback
+    }
   })
 );

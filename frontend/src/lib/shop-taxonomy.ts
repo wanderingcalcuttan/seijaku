@@ -10,6 +10,9 @@ export type ShopItemType =
   | "Fragrance Oil"
   | "Wax Melt"
   | "Scarf / Square"
+  | "Scarf"
+  | "Square"
+  | "Pocket Square"
   | "Diffuser"
   | "Dokra Ornament"
   | "Program"
@@ -39,19 +42,24 @@ export const sortOptions = [
 ] as const;
 
 export type ShopTypeFilterOption =
-  | "Fragrances"
-  | "Body"
+  // | "Fragrances"
+  // | "Body"
+  // | "Diffusers"
+  // | "Objects"
+  // | "Textiles"
+  // | "Gift Sets"
+  // | "For Yourself"
+  // | "For a Loved One"
+  // | "Dokra Ornaments"
+  // | "Home Objects: Diffusers"
+  // | "Scarves & Squares"
+  // | "Programs"
+  // | "Retreats"
   | "Diffusers"
-  | "Objects"
+  | "Dokra Ornaments"
   | "Textiles"
   | "Gift Sets"
-  | "For Yourself"
-  | "For a Loved One"
-  | "Dokra Ornaments"
-  | "Home Objects: Diffusers"
-  | "Scarves & Squares"
-  | "Programs"
-  | "Retreats";
+  | "Perfumes and Fragrances";
 
 export type ShopMaterialFilterOption =
   | "Oil-based Perfumes"
@@ -62,19 +70,24 @@ export type ShopMaterialFilterOption =
   | "Printed textiles";
 
 const shopTypeFilterOptions: ShopTypeFilterOption[] = [
-  "Fragrances",
-  "Body",
+  // "Fragrances",
+  // "Body",
+  // "Diffusers",
+  // "Objects",
+  // "Textiles",
+  // "Gift Sets",
+  // "For Yourself",
+  // "For a Loved One",
+  // "Dokra Ornaments",
+  // "Home Objects: Diffusers",
+  // "Scarves & Squares",
+  // "Programs",
+  // "Retreats",
   "Diffusers",
-  "Objects",
+  "Dokra Ornaments",
   "Textiles",
   "Gift Sets",
-  "For Yourself",
-  "For a Loved One",
-  "Dokra Ornaments",
-  "Home Objects: Diffusers",
-  "Scarves & Squares",
-  "Programs",
-  "Retreats",
+  "Perfumes and Fragrances",
 ];
 
 const shopMaterialFilterOptions: ShopMaterialFilterOption[] = [
@@ -101,6 +114,9 @@ export function defaultBridgeSlugForProductType(type: string): string | null {
     case "Fragrance Oil":
       return "perfumes";
     case "Scarf / Square":
+    case "Scarf":
+    case "Square":
+    case "Pocket Square":
       return "scarves-and-squares";
     case "Diffuser":
     case "Wax Melt":
@@ -125,14 +141,26 @@ export function matchesShopTypeFilter(
   selectedType: ShopTypeFilterOption | "All",
 ): boolean {
   if (selectedType === "All") return true;
-  if (selectedType === "Fragrances") return item.type === "Perfume" || item.type === "Diffuser";
-  if (selectedType === "Body") return item.type === "Perfume";
-  if (selectedType === "Diffusers" || selectedType === "Home Objects: Diffusers") return item.type === "Diffuser";
-  if (selectedType === "Objects" || selectedType === "Dokra Ornaments") return item.type === "Dokra Ornament";
-  if (selectedType === "Textiles" || selectedType === "Scarves & Squares") return item.type === "Scarf / Square";
-  if (selectedType === "Gift Sets" || selectedType === "For Yourself" || selectedType === "For a Loved One") return item.type === "Ritual Box";
-  if (selectedType === "Programs") return item.type === "Program";
-  if (selectedType === "Retreats") return item.type === "Retreat";
+  // if (selectedType === "Fragrances") return item.type === "Perfume" || item.type === "Diffuser";
+  // if (selectedType === "Body") return item.type === "Perfume";
+  // if (selectedType === "Diffusers" || selectedType === "Home Objects: Diffusers") return item.type === "Diffuser";
+  // if (selectedType === "Objects" || selectedType === "Dokra Ornaments") return item.type === "Dokra Ornament";
+  // if (selectedType === "Textiles" || selectedType === "Scarves & Squares") {
+  //   return (
+  //     item.type === "Scarf / Square" ||
+  //     item.type === "Scarf" ||
+  //     item.type === "Square" ||
+  //     item.type === "Pocket Square"
+  //   );
+  // }
+  // if (selectedType === "Gift Sets" || selectedType === "For Yourself" || selectedType === "For a Loved One") return item.type === "Ritual Box";
+  // if (selectedType === "Programs") return item.type === "Program";
+  // if (selectedType === "Retreats") return item.type === "Retreat";
+  if (selectedType === "Diffusers") return item.type === "Diffuser";
+  if (selectedType === "Dokra Ornaments") return item.type === "Dokra Ornament";
+  if (selectedType === "Textiles") return item.type === "Scarf / Square" || item.type === "Scarf" || item.type === "Square" || item.type === "Pocket Square";
+  if (selectedType === "Gift Sets") return item.type === "Ritual Box";
+  if (selectedType === "Perfumes and Fragrances") return item.type === "Perfume" || item.type === "Diffuser";
   return false;
 }
 
@@ -147,4 +175,34 @@ export function matchesShopMaterialFilter(
   if (selectedMaterial === "Handwoven textiles" || selectedMaterial === "Printed textiles") return item.material === "Handwoven Textiles";
   return false;
 }
+
+export type ShopPriceFilterOption =
+  | "Under ₹500"
+  | "Under ₹1,000"
+  | "Under ₹2,500"
+  | "Premium Gifts";
+
+const shopPriceFilterOptions: ShopPriceFilterOption[] = [
+  "Under ₹500",
+  "Under ₹1,000",
+  "Under ₹2,500",
+  "Premium Gifts",
+];
+
+export function getShopPrices(): ShopPriceFilterOption[] {
+  return shopPriceFilterOptions;
+}
+
+export function matchesShopPriceFilter(
+  item: { price: number },
+  selectedPrice: ShopPriceFilterOption | "All",
+): boolean {
+  if (selectedPrice === "All") return true;
+  if (selectedPrice === "Under ₹500") return item.price < 500;
+  if (selectedPrice === "Under ₹1,000") return item.price < 1000;
+  if (selectedPrice === "Under ₹2,500") return item.price < 2500;
+  if (selectedPrice === "Premium Gifts") return item.price >= 2500;
+  return false;
+}
+
 

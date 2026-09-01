@@ -1,14 +1,41 @@
 import type { NextConfig } from "next";
 
+const remotePatterns: any[] = [];
+
+// Helper to extract hostname, protocol, and port from a URL string
+function addRemotePattern(urlStr: string | undefined) {
+  if (!urlStr) return;
+  try {
+    const url = new URL(urlStr);
+    remotePatterns.push({
+      protocol: url.protocol.replace(":", ""),
+      hostname: url.hostname,
+      port: url.port || undefined,
+      pathname: "/uploads/**",
+    });
+  } catch (err) {
+    // Ignore invalid URLs
+  }
+}
+
+// Add local and production backend hosts to whitelist
+addRemotePattern(process.env.BACKEND_INTERNAL_URL);
+addRemotePattern(process.env.NEXT_PUBLIC_API_URL);
+addRemotePattern(process.env.SITE_URL);
+addRemotePattern("http://localhost:4001");
+
 const nextConfig: NextConfig = {
   images: {
-    remotePatterns: [
+    remotePatterns,
+    unoptimized: true,
+  },
+  async rewrites() {
+    return [
       {
-        protocol: "https",
-        hostname: "rgkkylnelrqavzfwubhi.supabase.co",
-        pathname: "/storage/v1/object/public/seijaku-media-prod/**",
+        source: "/uploads/:path*",
+        destination: `${process.env.BACKEND_INTERNAL_URL || "http://localhost:4001"}/uploads/:path*`,
       },
-    ],
+    ];
   },
   async redirects() {
     return [

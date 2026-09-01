@@ -7,6 +7,7 @@ import type {
   ShopSortOption,
   ShopTypeFilterOption,
   ShopUseCase,
+  ShopPriceFilterOption,
 } from "@/src/lib/shop-taxonomy";
 
 import ShopFilterSection from "./ShopFilterSection";
@@ -20,11 +21,14 @@ export type ShopFilterRailProps = {
   onMaterialChange: (value: ShopMaterialFilterOption | "All") => void;
   selectedUseCase: ShopUseCase | "All";
   onUseCaseChange: (value: ShopUseCase | "All") => void;
+  selectedPrice: ShopPriceFilterOption | "All";
+  onPriceChange: (value: ShopPriceFilterOption | "All") => void;
   sortBy: ShopSortOption;
   onSortChange: (value: ShopSortOption) => void;
   types: ShopTypeFilterOption[];
   materials: ShopMaterialFilterOption[];
   useCases: ShopUseCase[];
+  prices: ShopPriceFilterOption[];
   sortOptions: readonly ShopSortOption[];
   onReset: () => void;
   hasActiveFilters: boolean;
@@ -41,11 +45,14 @@ export default function ShopFilterRail({
   onMaterialChange,
   selectedUseCase,
   onUseCaseChange,
+  selectedPrice,
+  onPriceChange,
   sortBy,
   onSortChange,
   types,
   materials,
   useCases,
+  prices,
   sortOptions,
   onReset,
   hasActiveFilters,
@@ -98,27 +105,11 @@ export default function ShopFilterRail({
         </label>
 
         <ShopFilterSection
-          title="By Type"
-          idPrefix="shop-filter-type"
-          options={types}
-          value={selectedType}
-          onChange={onTypeChange}
-        />
-
-        <ShopFilterSection
-          title="By Material"
-          idPrefix="shop-filter-material"
-          options={materials}
-          value={selectedMaterial}
-          onChange={onMaterialChange}
-        />
-
-        <ShopFilterSection
-          title="By Use Case"
-          idPrefix="shop-filter-use-case"
-          options={useCases}
-          value={selectedUseCase}
-          onChange={onUseCaseChange}
+          title="Shop by Price"
+          idPrefix="shop-filter-price"
+          options={prices}
+          value={selectedPrice}
+          onChange={onPriceChange}
         />
 
         <ShopFilterSection
@@ -133,6 +124,30 @@ export default function ShopFilterRail({
           }}
           includeAll={false}
         />
+
+        <ShopFilterSection
+          title="By Type"
+          idPrefix="shop-filter-type"
+          options={types}
+          value={selectedType}
+          onChange={onTypeChange}
+        />
+
+        {/* <ShopFilterSection
+          title="By Material"
+          idPrefix="shop-filter-material"
+          options={materials}
+          value={selectedMaterial}
+          onChange={onMaterialChange}
+        /> */}
+
+        {/* <ShopFilterSection
+          title="By Use Case"
+          idPrefix="shop-filter-use-case"
+          options={useCases}
+          value={selectedUseCase}
+          onChange={onUseCaseChange}
+        /> */}
       </div>
 
       <div className={`${isDrawer ? "border-t border-black/5 px-5 py-4 sm:px-6" : "mt-7 border-t border-[rgba(76,67,57,0.08)] pt-5"}`}>

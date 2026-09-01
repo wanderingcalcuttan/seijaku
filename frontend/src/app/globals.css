@@ -91,7 +91,7 @@ html {
     font-weight: 300;
     font-size: 15px;
     line-height: 1.78;
-    max-width: 68ch;
+    /* max-width: 68ch; */
   }
 }
 

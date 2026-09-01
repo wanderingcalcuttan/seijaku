@@ -48,8 +48,8 @@ export default async function SeijakuLifeArticlePage({ params }: SeijakuLifeArti
   return (
     <main className="min-h-screen bg-[#f3efe7] pt-[72px] text-[#3a3329] sm:pt-[76px]">
       {/* HERO IMAGE */}
-      <section className="section-primary pb-8 pt-12 sm:pt-16">
-        <div className="page-container max-w-[960px]">
+      {/* <section className="section-primary pt-12 sm:pt-16"> */}
+        <div className="page-container max-w-[960px] pt-12">
           {article.image ? (
             <figure>
               <div className="relative aspect-[3/2] overflow-hidden rounded-[28px] border border-[rgba(86,76,64,0.08)] bg-[#e9e0d3] shadow-[0_18px_40px_rgba(41,34,27,0.06)]">
@@ -72,11 +72,11 @@ export default async function SeijakuLifeArticlePage({ params }: SeijakuLifeArti
             <div className="aspect-[3/2] rounded-[28px] border border-[rgba(86,76,64,0.08)] bg-[linear-gradient(180deg,rgba(250,247,241,0.95)_0%,rgba(238,228,213,0.95)_100%)] shadow-[0_18px_40px_rgba(41,34,27,0.04)]" />
           )}
         </div>
-      </section>
+      {/* </section> */}
 
       {/* HEADER */}
-      <section className="section-primary pb-4 pt-2">
-        <div className="page-container max-w-[820px]">
+      {/* <section className="section-primary pb-4 pt-2"> */}
+        <div className="page-container max-w-[820px] pt-2">
           <p className="text-[10px] uppercase tracking-[0.32em] text-[#9a785d]">{article.category}</p>
           <h1 className="mt-5 max-w-[20ch] font-serif text-[clamp(36px,5vw,56px)] leading-[1.06] tracking-[-0.025em] text-[#1d1a17]">
             {article.title}
@@ -93,21 +93,21 @@ export default async function SeijakuLifeArticlePage({ params }: SeijakuLifeArti
             ) : null}
           </div>
         </div>
-      </section>
+      {/* </section> */}
 
       {/* DEK */}
-      <section className="section-primary pt-2">
-        <div className="page-container max-w-[820px]">
+      {/* <section className="section-primary pt-2"> */}
+        <div className="page-container max-w-[820px] pt-2">
           <p className="max-w-[60ch] font-serif text-[clamp(20px,2.2vw,24px)] leading-[1.5] text-[#5b5246]">
             {article.excerpt}
           </p>
           <div className="mt-12 h-px w-16 bg-[#9a785d]" />
         </div>
-      </section>
+      {/* </section> */}
 
       {/* BODY */}
-      <section className="section-primary pb-16 pt-10 sm:pb-20">
-        <div className="page-container max-w-[820px]">
+      {/* <section className="section-primary pb-16 pt-10 sm:pb-20"> */}
+        <div className="page-container max-w-[820px] pt-10">
           {article.bodyMarkdown && article.bodyMarkdown.trim().length > 0 ? (
             <ArticleBody markdown={article.bodyMarkdown} />
           ) : (
@@ -116,12 +116,12 @@ export default async function SeijakuLifeArticlePage({ params }: SeijakuLifeArti
             </p>
           )}
         </div>
-      </section>
+      {/* </section> */}
 
       {/* RELATED */}
       {related.length > 0 ? (
-        <section className="section-primary pb-24 pt-4">
-          <div className="page-container max-w-[1100px]">
+        // <section className="section-primary pb-24 pt-4">
+          <div className="page-container max-w-[1100px] pt-4">
             <div className="border-t border-[rgba(86,76,64,0.12)] pt-12">
               <p className="text-[10px] uppercase tracking-[0.32em] text-[#9a785d]">More from Seijaku Life</p>
               <div className="mt-8 grid gap-8 md:grid-cols-2 md:gap-10">
@@ -154,7 +154,7 @@ export default async function SeijakuLifeArticlePage({ params }: SeijakuLifeArti
               </div>
             </div>
           </div>
-        </section>
+        // </section>
       ) : null}
     </main>
   );

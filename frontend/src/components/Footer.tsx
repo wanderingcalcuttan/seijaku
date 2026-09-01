@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 import { canonicalShopRoutes } from "@/src/lib/shop-routes";
 import FooterNewsletterForm from "@/src/components/FooterNewsletterForm";
@@ -17,13 +17,15 @@ const journalLinks = [
   { label: "Our Story", href: "/our-story" },
   { label: "Seijaku Weeklies", href: "#footer-email" },
   { label: "A Seijaku Life", href: "/a-seijaku-life" },
-  { label: "Seijaku on YouTube", href: "https://www.youtube.com/" },
+  { label: "Seijaku on YouTube", href: "https://www.youtube.com/@SeijakuWellness" },
 ];
 
 const infoLinks = [
-  { label: "Terms & Agreements", href: "#" },
-  { label: "Shipping & Delivery", href: "#" },
-  { label: "FAQs", href: "#" },
+  { label: "Terms & Conditions", href: "/terms-and-agreements" },
+  { label: "Shipping, Returns & Exchanges", href: "/shipping-and-delivery" },
+  { label: "Privacy Policy", href: "/privacy-policy" },
+  { label: "FAQs", href: "/faqs" },
+  { label: "Get in Touch", href: "/contact" },
 ];
 
 const followGroups = [
@@ -63,7 +65,7 @@ function FooterLink({ href, label }: { href: string; label: string }) {
 
 export default function Footer() {
   return (
-    <footer className="mt-[120px] w-full border-t border-black/5 bg-[#e8e2d7] pb-14 pt-24 text-[#1f1d1a] sm:pb-16 sm:pt-28 lg:pt-32">
+    <footer className="mt-[60px] w-full border-t border-black/5 bg-[#e8e2d7] pb-14 pt-24 text-[#1f1d1a] sm:pb-16 sm:pt-28 lg:pt-32">
       <div className="page-container max-w-[1180px]">
         <section>
           <p className="text-[12px] font-medium uppercase tracking-[0.28em] text-[#2b2823]">Seijaku Weeklies</p>

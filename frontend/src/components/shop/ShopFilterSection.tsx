@@ -41,11 +41,14 @@ export default function ShopFilterSection<T extends string>({
   }
 
   return (
-    <section aria-labelledby={headingId}>
-      <p id={headingId} className="text-[10px] uppercase tracking-[0.28em] text-[#7b7064]">
-        {title}
-      </p>
-      <div role="radiogroup" aria-labelledby={headingId} className="mt-3 flex flex-wrap gap-2">
+    <section aria-labelledby={headingId} className="flex flex-col gap-3.5">
+      <div className="flex items-center justify-between">
+        <h3 id={headingId} className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#5a5148]">
+          {title}
+        </h3>
+        <div className="h-px flex-1 bg-[rgba(111,100,86,0.1)] ml-4" />
+      </div>
+      <div role="radiogroup" aria-labelledby={headingId} className="flex flex-wrap gap-2">
         {entries.map((entry) => (
           <button
             key={entry.key}
@@ -53,13 +56,16 @@ export default function ShopFilterSection<T extends string>({
             role="radio"
             aria-checked={entry.selected}
             onClick={entry.select}
-            className={`rounded-full border px-3.5 py-2 text-[10px] uppercase tracking-[0.16em] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8c7b68] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f3efe7] ${
+            className={`relative flex items-center justify-center rounded-[12px] border px-4 py-2 text-[10px] font-medium uppercase tracking-[0.16em] transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8c7b68] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f3efe7] ${
               entry.selected
-                ? "border-[#2e4a36] bg-[#2e4a36] text-[#f4efe8]"
-                : "border-[rgba(111,100,86,0.14)] bg-[rgba(251,247,240,0.96)] text-[#5a5148] hover:border-[rgba(96,86,74,0.22)] hover:bg-[#f8f2e9]"
+                ? "border-[#2e4a36] bg-[#2e4a36] text-[#f4efe8] shadow-[0_4px_12px_rgba(46,74,54,0.14)]"
+                : "border-[rgba(111,100,86,0.12)] bg-[#faf8f5]/80 text-[#5a5148] backdrop-blur-[4px] hover:border-[rgba(96,86,74,0.26)] hover:bg-white hover:shadow-[0_4px_10px_rgba(96,86,74,0.03)]"
             }`}
           >
-            {entry.label}
+            {entry.selected && (
+              <span className="mr-2 h-1.5 w-1.5 rounded-full bg-[#f4efe8] animate-pulse" />
+            )}
+            <span>{entry.label}</span>
           </button>
         ))}
       </div>

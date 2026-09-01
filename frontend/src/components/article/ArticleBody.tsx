@@ -10,7 +10,7 @@ import remarkGfm from "remark-gfm";
 // escaped, not rendered. We do NOT enable rehype-raw. Admin content is
 // editor-trusted but XSS containment stays.
 const PROSE_CLASSES = [
-  "max-w-[68ch]",
+  // "max-w-[68ch]",
   "text-[16px] leading-[1.85] text-[#3a3329]",
   // Paragraphs
   "[&_p]:mt-6 [&_p]:first:mt-0",

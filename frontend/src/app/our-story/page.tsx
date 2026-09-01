@@ -1,4 +1,4 @@
-﻿import Image from "next/image";
+import Image from "next/image";
 import Link from "next/link";
 
 import { fetchBridgePage } from "@/src/lib/bridge-page-types";
@@ -134,8 +134,26 @@ export default async function OurStoryPage() {
 
       <SplitProcessVideoStrip
         videos={[
-          { url: bridge?.ritualVideo1Url, poster: bridge?.ritualVideo1Poster },
-          { url: bridge?.ritualVideo2Url, poster: bridge?.ritualVideo2Poster },
+          {
+            url: bridge?.ritualVideo1Url || "/videos/d05402bc32e2e662419f3da24b84c6c8f27ad5c8a51d86ae6faec5f8de813c8c3e8978ed634cb302020c87c22e39d7c2.MP4",
+            poster: bridge?.ritualVideo1Poster,
+            link: "https://www.instagram.com/reel/DaAu0v9Tytw/?igsh=MnJuODY4dzZpeTlh",
+          },
+          {
+            url: bridge?.ritualVideo2Url || "/videos/852a9c051397d85dcede2913109c1a2bfac5e4bed3b6b206b648ab19c7efccecfa3f4f6f532ab6b2db5142009d067660.MP4",
+            poster: bridge?.ritualVideo2Poster,
+            link: "https://www.instagram.com/reel/DakwPICTWYU/?igsh=MWswdWs3ODBwbXRtZg==",
+          },
+          {
+            url: bridge?.ritualVideo1Url || "/videos/029ab9ce94181a8f15262c950d43ff177a81826e2047122c3ab8c410eafa5808632b8bb893d3e9a4899a2a593d241528.MP4",
+            poster: bridge?.ritualVideo1Poster,
+            link: "https://www.instagram.com/reel/Da2xzYmzffr/?igsh=MXc4c3djc2NoZnlpNw==",
+          },
+          {
+            url: bridge?.ritualVideo2Url || "/videos/5752c253721b8a0b6d1480b7ad6cfdbe5e531f493e2779e28b2d1cb5cdefe95346970dcfebcd30e2f04641f08b6e200c.MP4",
+            poster: bridge?.ritualVideo2Poster,
+            link: "https://www.instagram.com/reel/DbI1GPHTpL1/?igsh=d3d0cWd6ZTh5MjB4",
+          },
         ]}
       />
 

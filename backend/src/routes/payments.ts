@@ -11,6 +11,7 @@ import {
 } from "../lib/razorpay.js";
 import { pushOrderToShiprocket } from "../lib/shiprocket-dispatch.js";
 import { asyncHandler, HttpError, parseBody } from "../utils/http.js";
+import { calculateShippingRate } from "../lib/shiprocket.js";
 
 export const paymentsRouter = Router();
 
@@ -65,13 +66,26 @@ paymentsRouter.post(
       throw new HttpError(400, "product_not_found");
     }
     const bySlug = new Map(products.map((product) => [product.slug, product]));
+    
+    const heightCm = products[0]?.heightCm ?? 0;
+    const weightGrams = products[0]?.weightGrams ?? 0;
+    const lengthCm = products[0]?.lengthCm ?? 0;
+    const breadthCm = products[0]?.breadthCm ?? 0;
+    
+    const result = await calculateShippingRate({
+      pincode: payload.shippingPincode,
+      weightKg: weightGrams / 1000, // Convert grams to kg
+      lengthCm: lengthCm,
+      breadthCm: breadthCm,
+      heightCm: heightCm,
+    });
 
     // Product.priceAmount is whole rupees (Decision #20). Razorpay wants
     // paise (× 100). Compute server-side and reject zero/negative totals.
     const totalAmountPaise = payload.items.reduce((sum, line) => {
       const product = bySlug.get(line.productSlug)!;
       const quantity = line.quantity ?? 1;
-      return sum + product.priceAmount * 100 * quantity;
+      return sum + (product.priceAmount + result.rate) * 100 * quantity;
     }, 0);
     if (totalAmountPaise <= 0) {
       throw new HttpError(400, "invalid_total");

@@ -5,13 +5,14 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import type { SeijakuLifeArticle } from "@/src/lib/seijaku-life-types";
+import { log } from "console";
 
 // Curated subset surfaced on /a-seijaku-life and on this home preview.
 // Stays in sync with CURATED_ARTICLE_SLUGS in app/a-seijaku-life/page.tsx.
 const CURATED_ARTICLE_SLUGS = [
-  "ritual-objects-for-urban-evenings",
-  "how-to-scent-textiles-right",
-  "inside-dokra-from-heritage-craft-to-wearable-artifact",
+  // "ritual-objects-for-urban-evenings",
+  // "how-to-scent-textiles-right",
+  // "inside-dokra-from-heritage-craft-to-wearable-artifact",
 ] as const;
 
 const NEUTRAL_FALLBACK_SRC = "/images/quiet-tea-ritual-box-lifestyle-neutral.png";
@@ -37,23 +38,32 @@ export default function JournalPreviewSection() {
         });
         if (!res.ok) return;
         const data = (await res.json()) as ArticlesResponse;
+        
         if (cancelled) return;
-        const bySlug = new Map(data.items.map((a) => [a.slug, a]));
-        const curated = CURATED_ARTICLE_SLUGS.flatMap((slug) => {
-          const raw = bySlug.get(slug);
-          if (!raw) return [];
-          const view: SeijakuLifeArticle = {
-            slug: raw.slug,
-            title: raw.title,
-            category: raw.category,
-            date: "",
-            excerpt: "",
-            bodyMarkdown: null,
-            image: raw.primaryImage?.url ?? undefined,
-            imageAlt: raw.primaryImage?.altText ?? undefined,
-          };
-          return [view];
+
+        const MAX_ARTICLES = 3; // Set to undefined or remove slice() if you want all
+        const toView = (raw: typeof data.items[number]): SeijakuLifeArticle => ({
+          slug: raw.slug,
+          title: raw.title,
+          category: raw.category,
+          date: "",
+          excerpt: "",
+          bodyMarkdown: null,
+          image: raw.primaryImage?.url ?? undefined,
+          imageAlt: raw.primaryImage?.altText ?? undefined,
         });
+
+        const bySlug = new Map(data.items.map((a) => [a.slug, a]));
+
+        const curated = CURATED_ARTICLE_SLUGS.length === 0
+            ? (MAX_ARTICLES == null
+                ? data.items
+                : data.items.slice(0, MAX_ARTICLES)
+              ).map(toView)
+            : CURATED_ARTICLE_SLUGS.flatMap((slug) => {
+                const raw = bySlug.get(slug);
+                return raw ? [toView(raw)] : [];
+              });
         setArticles(curated);
       } catch {
         // Silent — section hides via the empty-state branch below.

@@ -30,8 +30,8 @@ export default function TextilesPageIntro({
   const resolvedAlt = imageAlt && imageAlt.length > 0 ? imageAlt : FALLBACK_ALT;
   const positionClass = imagePosition && imagePosition.length > 0 ? imagePosition : "object-center";
   return (
-    <section className="section-primary pb-10 pt-20 sm:pb-12 sm:pt-24">
-      <div className="page-container max-w-[1200px]">
+    // <section className="section-primary pb-10 pt-20 sm:pb-12 sm:pt-24">
+      <div className="page-container max-w-[1200px] pb-10 pt-20 sm:pb-12 sm:pt-24">
         <div className="grid gap-8 rounded-[30px] border border-[rgba(86,76,64,0.08)] bg-[linear-gradient(180deg,rgba(250,247,241,0.86)_0%,rgba(244,239,231,0.94)_100%)] p-6 shadow-[0_16px_36px_rgba(41,34,27,0.04)] sm:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-center lg:gap-12 lg:p-10">
           <div className="max-w-[540px]">
             <p className="text-[10px] uppercase tracking-[0.34em] text-[#8a745e]">{eyebrow}</p>
@@ -66,6 +66,6 @@ export default function TextilesPageIntro({
           </div>
         </div>
       </div>
-    </section>
+    // </section>
   );
 }

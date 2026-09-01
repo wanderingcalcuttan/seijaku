@@ -5,13 +5,529 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  // `prisma migrate deploy` uses Postgres advisory locks, which don't work
-  // over PgBouncer-pooled connections (Neon's default `DATABASE_URL`). Set
-  // `DATABASE_URL_UNPOOLED` to Neon's direct host (drop `-pooler` from the
-  // pooled hostname) so migrations run against an unpooled connection.
-  // Optional at runtime — Prisma falls back to `url` when `directUrl` is
-  // unset, so this stays backwards-compatible.
   directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+model Admin {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  passwordHash String
+  role         AdminRole   @default(EDITOR)
+  status       AdminStatus @default(ACTIVE)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Customer {
+  id                   String                @id @default(cuid())
+  email                String                @unique
+  name                 String?
+  phone                String?
+  status               CustomerStatus        @default(ACTIVE)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  orderRequests        OrderRequest[]
+  productNotifications ProductNotification[]
+  programReservations  ProgramReservation[]
+  retreatInquiries     RetreatInquiry[]
+  ritualEntries        RitualEntry[]
+  wishlistItems        WishlistItem[]
+}
+
+model MediaAsset {
+  id               String         @id @default(cuid())
+  url              String         @unique
+  altText          String?
+  kind             MediaKind      @default(IMAGE)
+  width            Int?
+  height           Int?
+  createdAt        DateTime       @default(now())
+  articleImages    Article[]      @relation("ArticlePrimaryImage")
+  primaryProducts  Product[]      @relation("PrimaryProductImage")
+  productMedia     ProductMedia[]
+  retreatImages    Retreat[]      @relation("RetreatPrimaryImage")
+  siteSettingsLogo SiteSetting[]  @relation("SiteLogoImage")
+}
+
+model ProductCategory {
+  id          String                      @id @default(cuid())
+  slug        String                      @unique
+  name        String
+  kind        CategoryKind
+  createdAt   DateTime                    @default(now())
+  updatedAt   DateTime                    @updatedAt
+  memberships ProductCategoryMembership[]
+}
+
+model Product {
+  id               String                      @id @default(cuid())
+  slug             String                      @unique
+  title            String
+  shortDescription String?
+  longDescription  String?
+  type             String
+  material         String?
+  useCase          String?
+  priceAmount      Int
+  currency         String                      @default("INR")
+  status           ProductStatus               @default(IN_STOCK)
+  releaseDate      DateTime?
+  seoTitle         String?
+  seoDescription   String?
+  imageAlt         String?
+  ctaLabel         String?
+  metadataJson     Json?
+  primaryImageId   String?
+  createdAt        DateTime                    @default(now())
+  updatedAt        DateTime                    @updatedAt
+  publishedAt      DateTime?
+  workflowStatus   ProductWorkflowStatus       @default(DRAFT)
+  weightGrams      Int?
+  lengthCm         Int?
+  breadthCm        Int?
+  heightCm         Int?
+  hsnCode          String?
+  collections      CollectionProductLink[]
+  orderItems       OrderRequestItem[]
+  primaryImage     MediaAsset?                 @relation("PrimaryProductImage", fields: [primaryImageId], references: [id])
+  categories       ProductCategoryMembership[]
+  media            ProductMedia[]
+  notifications    ProductNotification[]
+  options          ProductOption[]
+  tagLinks         ProductTagLink[]
+  bridgePages      ShopBridgePageProduct[]
+  storyArtifact1   Story[]                     @relation("StoryArtifact1")
+  storyArtifact2   Story[]                     @relation("StoryArtifact2")
+  storyArtifact3   Story[]                     @relation("StoryArtifact3")
+  storyPerfume1    Story[]                     @relation("StoryPerfume1")
+  storyPerfume2    Story[]                     @relation("StoryPerfume2")
+  storyPerfume3    Story[]                     @relation("StoryPerfume3")
+  wishlistItems    WishlistItem[]
+}
+
+model ProductMedia {
+  id           String           @id @default(cuid())
+  productId    String
+  mediaAssetId String
+  sortOrder    Int              @default(0)
+  mediaType    ProductMediaType @default(GALLERY)
+  mediaAsset   MediaAsset       @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
+  product      Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, mediaAssetId, mediaType, sortOrder])
+}
+
+model ProductCategoryMembership {
+  id         String          @id @default(cuid())
+  productId  String
+  categoryId String
+  sortOrder  Int             @default(0)
+  category   ProductCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  product    Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, categoryId])
+}
+
+model ProductTag {
+  id        String           @id @default(cuid())
+  name      String
+  slug      String           @unique
+  kind      TagKind
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  links     ProductTagLink[]
+}
+
+model ProductTagLink {
+  id        String     @id @default(cuid())
+  productId String
+  tagId     String
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tag       ProductTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, tagId])
+}
+
+model ProductOption {
+  id            String               @id @default(cuid())
+  productId     String
+  code          String
+  label         String
+  selectionMode SelectionMode        @default(SINGLE)
+  required      Boolean              @default(false)
+  sortOrder     Int                  @default(0)
+  metadataJson  Json?
+  product       Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  values        ProductOptionValue[]
+
+  @@unique([productId, code])
+}
+
+model ProductOptionValue {
+  id               String        @id @default(cuid())
+  productOptionId  String
+  value            String
+  label            String
+  priceDeltaAmount Int           @default(0)
+  sortOrder        Int           @default(0)
+  isActive         Boolean       @default(true)
+  productOption    ProductOption @relation(fields: [productOptionId], references: [id], onDelete: Cascade)
+
+  @@unique([productOptionId, value])
+}
+
+model Collection {
+  id          String                  @id @default(cuid())
+  slug        String                  @unique
+  name        String
+  description String?
+  kind        CollectionKind
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+  products    CollectionProductLink[]
+}
+
+model CollectionProductLink {
+  id           String     @id @default(cuid())
+  collectionId String
+  productId    String
+  sortOrder    Int        @default(0)
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, productId])
+}
+
+model ShopBridgePage {
+  id                        String                  @id @default(cuid())
+  slug                      String                  @unique
+  navLabel                  String
+  heroEyebrow               String
+  heroTitle                 String
+  heroDescriptionJson       Json
+  heroQuote                 String
+  introEyebrow              String?
+  introTitle                String
+  introDescription          String
+  postCtaTitle              String?
+  postCtaDescription        String?
+  postCtaPrimaryLabel       String?
+  postCtaPrimaryHref        String?
+  postCtaSecondaryLabel     String?
+  postCtaSecondaryHref      String?
+  seoTitle                  String?
+  seoDescription            String?
+  contentJson               Json?
+  createdAt                 DateTime                @default(now())
+  updatedAt                 DateTime                @updatedAt
+  heroImage                 String                  @default("")
+  heroImageAlt              String                  @default("")
+  heroImagePosition         String?
+  interludeImage            String?
+  interludeImageAlt         String?
+  productSectionEyebrow     String?
+  productSectionTitle       String?
+  productSectionDescription String?
+  seoFootnote               String?
+  homeCard1Image            String?
+  homeCard1Alt              String?
+  homeCard2Image            String?
+  homeCard2Alt              String?
+  homeCard3Image            String?
+  homeCard3Alt              String?
+  homeCard4Image            String?
+  homeCard4Alt              String?
+  ritualVideo1Url           String?
+  ritualVideo1Poster        String?
+  ritualVideo2Url           String?
+  ritualVideo2Poster        String?
+  formCard1Image            String?
+  formCard1Alt              String?
+  formCard2Image            String?
+  formCard2Alt              String?
+  formCard3Image            String?
+  formCard3Alt              String?
+  formCard4Image            String?
+  formCard4Alt              String?
+  imageBreak1Image          String?
+  imageBreak1Alt            String?
+  imageBreak2Image          String?
+  imageBreak2Alt            String?
+  imageBreak3Image          String?
+  imageBreak3Alt            String?
+  products                  ShopBridgePageProduct[]
+}
+
+model ShopBridgePageProduct {
+  id           String         @id @default(cuid())
+  bridgePageId String
+  productId    String
+  sortOrder    Int            @default(0)
+  bridgePage   ShopBridgePage @relation(fields: [bridgePageId], references: [id], onDelete: Cascade)
+  product      Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([bridgePageId, productId])
+}
+
+model Article {
+  id             String        @id @default(cuid())
+  slug           String        @unique
+  title          String
+  category       String
+  excerpt        String
+  bodyMarkdown   String?
+  featured       Boolean       @default(false)
+  status         ArticleStatus @default(PUBLISHED)
+  publishedAt    DateTime?
+  primaryImageId String?
+  seoTitle       String?
+  seoDescription String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  primaryImage   MediaAsset?   @relation("ArticlePrimaryImage", fields: [primaryImageId], references: [id])
+}
+
+model Retreat {
+  id                String           @id @default(cuid())
+  slug              String           @unique
+  name              String
+  shortDescription  String
+  detailDescription String
+  location          String
+  season            String
+  format            String
+  groupSize         String
+  status            RetreatStatus    @default(UPCOMING)
+  primaryImageId    String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  primaryImage      MediaAsset?      @relation("RetreatPrimaryImage", fields: [primaryImageId], references: [id])
+  inquiries         RetreatInquiry[]
+}
+
+model Program {
+  id                String               @id @default(cuid())
+  slug              String               @unique
+  name              String
+  shortDescription  String
+  detailDescription String?
+  durationLabel     String?
+  groupSizeLabel    String?
+  status            ProgramStatus        @default(UPCOMING)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  reservations      ProgramReservation[]
+  sessions          ProgramSession[]
+}
+
+model ProgramSession {
+  id             String               @id @default(cuid())
+  programId      String
+  startsAt       DateTime
+  endsAt         DateTime
+  timezone       String
+  city           String
+  venueName      String?
+  capacity       Int
+  spotsRemaining Int
+  status         ProgramSessionStatus @default(UPCOMING)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  reservations   ProgramReservation[]
+  program        Program              @relation(fields: [programId], references: [id], onDelete: Cascade)
+}
+
+model SeasonalDrop {
+  id          String             @id @default(cuid())
+  slug        String             @unique
+  name        String
+  description String?
+  status      SeasonalDropStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+model SiteSetting {
+  id                String      @id @default(cuid())
+  key               String      @unique @default("default")
+  footerEmail       String?
+  footerPhone       String?
+  addressLinesJson  Json?
+  newsletterHeading String?
+  newsletterBody    String?
+  miscJson          Json?
+  logoImageId       String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  logoImage         MediaAsset? @relation("SiteLogoImage", fields: [logoImageId], references: [id])
+}
+
+model ShippingSetting {
+  id                 String    @id @default(cuid())
+  key                String    @unique @default("default")
+  pickupLocationName String?
+  defaultWeightGrams Int       @default(300)
+  defaultLengthCm    Int       @default(15)
+  defaultBreadthCm   Int       @default(10)
+  defaultHeightCm    Int       @default(8)
+  autoPushEnabled    Boolean   @default(true)
+  lastTestedAt       DateTime?
+  lastTestStatus     String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model OrderRequest {
+  id                   String             @id @default(cuid())
+  customerId           String?
+  email                String
+  name                 String
+  phone                String?
+  source               String?
+  status               LeadStatus         @default(NEW)
+  notes                String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  paymentStatus        PaymentStatus      @default(CREATED)
+  razorpayOrderId      String?            @unique
+  razorpayPaymentId    String?
+  razorpaySignature    String?
+  totalAmount          Int                @default(0)
+  currency             String             @default("INR")
+  shippingLine1        String?
+  shippingLine2        String?
+  shippingCity         String?
+  shippingState        String?
+  shippingPincode      String?
+  shippingCountry      String?            @default("IN")
+  shiprocketOrderId    String?            @unique
+  shiprocketShipmentId String?
+  awbCode              String?
+  courierName          String?
+  trackingUrl          String?
+  shipmentStatus       ShipmentStatus     @default(NOT_CREATED)
+  shipmentError        String?
+  shipmentPushedAt     DateTime?
+  customer             Customer?          @relation(fields: [customerId], references: [id])
+  items                OrderRequestItem[]
+
+  @@index([shipmentStatus])
+}
+
+model OrderRequestItem {
+  id                  String       @id @default(cuid())
+  orderRequestId      String
+  productId           String
+  quantity            Int          @default(1)
+  unitPriceAmount     Int
+  selectedOptionsJson Json?
+  variantSummary      String?
+  orderRequest        OrderRequest @relation(fields: [orderRequestId], references: [id], onDelete: Cascade)
+  product             Product      @relation(fields: [productId], references: [id])
+}
+
+model NewsletterSubscription {
+  id           String           @id @default(cuid())
+  email        String           @unique
+  source       String?
+  status       NewsletterStatus @default(SUBSCRIBED)
+  subscribedAt DateTime         @default(now())
+}
+
+model ProgramReservation {
+  id               String          @id @default(cuid())
+  programId        String
+  programSessionId String?
+  customerId       String?
+  name             String
+  email            String
+  phone            String?
+  participantCount Int             @default(1)
+  notes            String?
+  status           LeadStatus      @default(NEW)
+  createdAt        DateTime        @default(now())
+  customer         Customer?       @relation(fields: [customerId], references: [id])
+  program          Program         @relation(fields: [programId], references: [id])
+  programSession   ProgramSession? @relation(fields: [programSessionId], references: [id])
+}
+
+model RetreatInquiry {
+  id         String     @id @default(cuid())
+  retreatId  String
+  customerId String?
+  name       String
+  email      String
+  phone      String?
+  partySize  Int        @default(1)
+  notes      String?
+  status     LeadStatus @default(NEW)
+  createdAt  DateTime   @default(now())
+  customer   Customer?  @relation(fields: [customerId], references: [id])
+  retreat    Retreat    @relation(fields: [retreatId], references: [id])
+}
+
+model WishlistItem {
+  id         String   @id @default(cuid())
+  customerId String
+  productId  String
+  createdAt  DateTime @default(now())
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, productId])
+}
+
+model ProductNotification {
+  id         String     @id @default(cuid())
+  productId  String
+  customerId String?
+  email      String
+  source     String?
+  status     LeadStatus @default(NEW)
+  notes      String?
+  createdAt  DateTime   @default(now())
+  notifiedAt DateTime?
+  customer   Customer?  @relation(fields: [customerId], references: [id])
+  product    Product    @relation(fields: [productId], references: [id])
+
+  @@unique([productId, email])
+  @@index([productId])
+  @@index([email])
+}
+
+model RitualEntry {
+  id             String   @id @default(cuid())
+  customerId     String
+  ritualType     String
+  reflection     String?
+  completedOn    DateTime
+  streakSnapshot Int?
+  createdAt      DateTime @default(now())
+  customer       Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model Story {
+  id          String      @id @default(cuid())
+  perfume1Id  String
+  perfume2Id  String
+  perfume3Id  String
+  artifact1Id String
+  artifact2Id String
+  artifact3Id String
+  launchDate  DateTime
+  videoUrl    String
+  status      StoryStatus @default(INACTIVE)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  artifact1   Product     @relation("StoryArtifact1", fields: [artifact1Id], references: [id])
+  artifact2   Product     @relation("StoryArtifact2", fields: [artifact2Id], references: [id])
+  artifact3   Product     @relation("StoryArtifact3", fields: [artifact3Id], references: [id])
+  perfume1    Product     @relation("StoryPerfume1", fields: [perfume1Id], references: [id])
+  perfume2    Product     @relation("StoryPerfume2", fields: [perfume2Id], references: [id])
+  perfume3    Product     @relation("StoryPerfume3", fields: [perfume3Id], references: [id])
+
+  @@index([status, launchDate])
 }
 
 enum AdminRole {
@@ -148,552 +664,4 @@ enum ShipmentStatus {
 enum NewsletterStatus {
   SUBSCRIBED
   UNSUBSCRIBED
-}
-
-model Admin {
-  id           String      @id @default(cuid())
-  email        String      @unique
-  passwordHash String
-  role         AdminRole   @default(EDITOR)
-  status       AdminStatus @default(ACTIVE)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-}
-
-model Customer {
-  id                   String                @id @default(cuid())
-  email                String                @unique
-  name                 String?
-  phone                String?
-  status               CustomerStatus        @default(ACTIVE)
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  orderRequests        OrderRequest[]
-  programReservations  ProgramReservation[]
-  retreatInquiries     RetreatInquiry[]
-  wishlistItems        WishlistItem[]
-  ritualEntries        RitualEntry[]
-  productNotifications ProductNotification[]
-}
-
-model MediaAsset {
-  id               String         @id @default(cuid())
-  url              String         @unique
-  altText          String?
-  kind             MediaKind      @default(IMAGE)
-  width            Int?
-  height           Int?
-  createdAt        DateTime       @default(now())
-  primaryProducts  Product[]      @relation("PrimaryProductImage")
-  productMedia     ProductMedia[]
-  articleImages    Article[]      @relation("ArticlePrimaryImage")
-  retreatImages    Retreat[]      @relation("RetreatPrimaryImage")
-  siteSettingsLogo SiteSetting[]  @relation("SiteLogoImage")
-}
-
-model ProductCategory {
-  id          String                      @id @default(cuid())
-  slug        String                      @unique
-  name        String
-  kind        CategoryKind
-  createdAt   DateTime                    @default(now())
-  updatedAt   DateTime                    @updatedAt
-  memberships ProductCategoryMembership[]
-}
-
-model Product {
-  id               String                      @id @default(cuid())
-  slug             String                      @unique
-  title            String
-  shortDescription String?
-  longDescription  String?
-  type             String
-  material         String
-  useCase          String?
-  priceAmount      Int
-  currency         String                      @default("INR")
-  status           ProductStatus               @default(IN_STOCK)
-  workflowStatus   ProductWorkflowStatus       @default(DRAFT)
-  releaseDate      DateTime?
-  seoTitle         String?
-  seoDescription   String?
-  imageAlt         String?
-  ctaLabel         String?
-  metadataJson     Json?
-  primaryImageId   String?
-  // Physical dimensions for Shiprocket order creation. Nullable; the
-  // runtime falls back to ShippingSetting defaults when these are null.
-  weightGrams      Int?
-  lengthCm         Int?
-  breadthCm        Int?
-  heightCm         Int?
-  hsnCode          String?
-  createdAt        DateTime                    @default(now())
-  updatedAt        DateTime                    @updatedAt
-  publishedAt      DateTime?
-  primaryImage     MediaAsset?                 @relation("PrimaryProductImage", fields: [primaryImageId], references: [id], onDelete: SetNull)
-  media            ProductMedia[]
-  categories       ProductCategoryMembership[]
-  tagLinks         ProductTagLink[]
-  options          ProductOption[]
-  collections      CollectionProductLink[]
-  bridgePages      ShopBridgePageProduct[]
-  orderItems       OrderRequestItem[]
-  wishlistItems    WishlistItem[]
-  notifications    ProductNotification[]
-  storyPerfume1    Story[]                     @relation("StoryPerfume1")
-  storyPerfume2    Story[]                     @relation("StoryPerfume2")
-  storyPerfume3    Story[]                     @relation("StoryPerfume3")
-  storyArtifact1   Story[]                     @relation("StoryArtifact1")
-  storyArtifact2   Story[]                     @relation("StoryArtifact2")
-  storyArtifact3   Story[]                     @relation("StoryArtifact3")
-}
-
-model ProductMedia {
-  id           String           @id @default(cuid())
-  productId    String
-  mediaAssetId String
-  sortOrder    Int              @default(0)
-  mediaType    ProductMediaType @default(GALLERY)
-  product      Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
-  mediaAsset   MediaAsset       @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
-
-  @@unique([productId, mediaAssetId, mediaType, sortOrder])
-}
-
-model ProductCategoryMembership {
-  id         String          @id @default(cuid())
-  productId  String
-  categoryId String
-  sortOrder  Int             @default(0)
-  product    Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
-  category   ProductCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
-  @@unique([productId, categoryId])
-}
-
-model ProductTag {
-  id        String           @id @default(cuid())
-  name      String
-  slug      String           @unique
-  kind      TagKind
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-  links     ProductTagLink[]
-}
-
-model ProductTagLink {
-  id        String     @id @default(cuid())
-  productId String
-  tagId     String
-  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  tag       ProductTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
-
-  @@unique([productId, tagId])
-}
-
-model ProductOption {
-  id            String               @id @default(cuid())
-  productId     String
-  code          String
-  label         String
-  selectionMode SelectionMode        @default(SINGLE)
-  required      Boolean              @default(false)
-  sortOrder     Int                  @default(0)
-  metadataJson  Json?
-  product       Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
-  values        ProductOptionValue[]
-
-  @@unique([productId, code])
-}
-
-model ProductOptionValue {
-  id               String        @id @default(cuid())
-  productOptionId  String
-  value            String
-  label            String
-  priceDeltaAmount Int           @default(0)
-  sortOrder        Int           @default(0)
-  isActive         Boolean       @default(true)
-  productOption    ProductOption @relation(fields: [productOptionId], references: [id], onDelete: Cascade)
-
-  @@unique([productOptionId, value])
-}
-
-model Collection {
-  id          String                  @id @default(cuid())
-  slug        String                  @unique
-  name        String
-  description String?
-  kind        CollectionKind
-  createdAt   DateTime                @default(now())
-  updatedAt   DateTime                @updatedAt
-  products    CollectionProductLink[]
-}
-
-model CollectionProductLink {
-  id           String     @id @default(cuid())
-  collectionId String
-  productId    String
-  sortOrder    Int        @default(0)
-  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@unique([collectionId, productId])
-}
-
-model ShopBridgePage {
-  id                        String                  @id @default(cuid())
-  slug                      String                  @unique
-  navLabel                  String
-  heroEyebrow               String
-  heroTitle                 String
-  heroDescriptionJson       Json
-  heroImage                 String                  @default("")
-  heroImageAlt              String                  @default("")
-  heroImagePosition         String?
-  heroQuote                 String
-  introEyebrow              String?
-  introTitle                String
-  introDescription          String
-  interludeImage            String?
-  interludeImageAlt         String?
-  productSectionEyebrow     String?
-  productSectionTitle       String?
-  productSectionDescription String?
-  postCtaTitle              String?
-  postCtaDescription        String?
-  postCtaPrimaryLabel       String?
-  postCtaPrimaryHref        String?
-  postCtaSecondaryLabel     String?
-  postCtaSecondaryHref      String?
-  seoTitle                  String?
-  seoDescription            String?
-  seoFootnote               String?
-  contentJson               Json?
-  // Home page editorial slots (slug = "home"). One image per "Explore
-  // fragrance rituals" card on the home grid. Decision #31.
-  homeCard1Image            String?
-  homeCard1Alt              String?
-  homeCard2Image            String?
-  homeCard2Alt              String?
-  homeCard3Image            String?
-  homeCard3Alt              String?
-  homeCard4Image            String?
-  homeCard4Alt              String?
-  // Our Story editorial slots (slug = "our-story"). The "Rituals Take
-  // Form" video strip — two video URLs, each with an optional poster.
-  ritualVideo1Url           String?
-  ritualVideo1Poster        String?
-  ritualVideo2Url           String?
-  ritualVideo2Poster        String?
-  // Seasonaldrops-hemanta editorial slots (slug = "seasonaldrops-hemanta").
-  // Four form-character images and three mid-page image breaks.
-  formCard1Image            String?
-  formCard1Alt              String?
-  formCard2Image            String?
-  formCard2Alt              String?
-  formCard3Image            String?
-  formCard3Alt              String?
-  formCard4Image            String?
-  formCard4Alt              String?
-  imageBreak1Image          String?
-  imageBreak1Alt            String?
-  imageBreak2Image          String?
-  imageBreak2Alt            String?
-  imageBreak3Image          String?
-  imageBreak3Alt            String?
-  createdAt                 DateTime                @default(now())
-  updatedAt                 DateTime                @updatedAt
-  products                  ShopBridgePageProduct[]
-}
-
-model ShopBridgePageProduct {
-  id           String         @id @default(cuid())
-  bridgePageId String
-  productId    String
-  sortOrder    Int            @default(0)
-  bridgePage   ShopBridgePage @relation(fields: [bridgePageId], references: [id], onDelete: Cascade)
-  product      Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@unique([bridgePageId, productId])
-}
-
-model Article {
-  id             String        @id @default(cuid())
-  slug           String        @unique
-  title          String
-  category       String
-  excerpt        String
-  bodyMarkdown   String?
-  featured       Boolean       @default(false)
-  status         ArticleStatus @default(PUBLISHED)
-  publishedAt    DateTime?
-  primaryImageId String?
-  seoTitle       String?
-  seoDescription String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  primaryImage   MediaAsset?   @relation("ArticlePrimaryImage", fields: [primaryImageId], references: [id], onDelete: SetNull)
-}
-
-model Retreat {
-  id                String           @id @default(cuid())
-  slug              String           @unique
-  name              String
-  shortDescription  String
-  detailDescription String
-  location          String
-  season            String
-  format            String
-  groupSize         String
-  status            RetreatStatus    @default(UPCOMING)
-  primaryImageId    String?
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  primaryImage      MediaAsset?      @relation("RetreatPrimaryImage", fields: [primaryImageId], references: [id], onDelete: SetNull)
-  inquiries         RetreatInquiry[]
-}
-
-model Program {
-  id                String               @id @default(cuid())
-  slug              String               @unique
-  name              String
-  shortDescription  String
-  detailDescription String?
-  durationLabel     String?
-  groupSizeLabel    String?
-  status            ProgramStatus        @default(UPCOMING)
-  createdAt         DateTime             @default(now())
-  updatedAt         DateTime             @updatedAt
-  sessions          ProgramSession[]
-  reservations      ProgramReservation[]
-}
-
-model ProgramSession {
-  id             String               @id @default(cuid())
-  programId      String
-  startsAt       DateTime
-  endsAt         DateTime
-  timezone       String
-  city           String
-  venueName      String?
-  capacity       Int
-  spotsRemaining Int
-  status         ProgramSessionStatus @default(UPCOMING)
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-  program        Program              @relation(fields: [programId], references: [id], onDelete: Cascade)
-  reservations   ProgramReservation[]
-}
-
-model SeasonalDrop {
-  id          String             @id @default(cuid())
-  slug        String             @unique
-  name        String
-  description String?
-  status      SeasonalDropStatus @default(DRAFT)
-  publishedAt DateTime?
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-}
-
-model SiteSetting {
-  id                String      @id @default(cuid())
-  key               String      @unique @default("default")
-  footerEmail       String?
-  footerPhone       String?
-  addressLinesJson  Json?
-  newsletterHeading String?
-  newsletterBody    String?
-  miscJson          Json?
-  logoImageId       String?
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  logoImage         MediaAsset? @relation("SiteLogoImage", fields: [logoImageId], references: [id], onDelete: SetNull)
-}
-
-// Singleton settings for Shiprocket integration. Edited via /admin/shipping.
-// The pickup location must match a name configured in the Shiprocket
-// dashboard (Settings → Company → Pickup Addresses) — admin sees a
-// dropdown populated from Shiprocket's API, but the value persisted here
-// is just the text label.
-model ShippingSetting {
-  id                 String    @id @default(cuid())
-  key                String    @unique @default("default")
-  pickupLocationName String?
-  defaultWeightGrams Int       @default(300)
-  defaultLengthCm    Int       @default(15)
-  defaultBreadthCm   Int       @default(10)
-  defaultHeightCm    Int       @default(8)
-  autoPushEnabled    Boolean   @default(true)
-  // Set when admin clicks "Test connection" — stores the timestamp and a
-  // short status string ("ok" or an error code) so the page can render
-  // an at-a-glance health indicator across refreshes.
-  lastTestedAt       DateTime?
-  lastTestStatus     String?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-}
-
-model OrderRequest {
-  id                   String             @id @default(cuid())
-  customerId           String?
-  email                String
-  name                 String
-  phone                String?
-  source               String?
-  status               LeadStatus         @default(NEW)
-  notes                String?
-  // Razorpay payment fields. `paymentStatus` is orthogonal to `status`
-  // (which tracks ops fulfillment lifecycle). `totalAmount` is in paise
-  // (Razorpay's native unit), regardless of the per-item rupee values.
-  paymentStatus        PaymentStatus      @default(CREATED)
-  razorpayOrderId      String?            @unique
-  razorpayPaymentId    String?
-  razorpaySignature    String?
-  totalAmount          Int                @default(0)
-  currency             String             @default("INR")
-  // Shipping address. Nullable so pre-Razorpay legacy rows survive; new
-  // checkouts validate these client-side and server-side.
-  shippingLine1        String?
-  shippingLine2        String?
-  shippingCity         String?
-  shippingState        String?
-  shippingPincode      String?
-  shippingCountry      String?            @default("IN")
-  // Shiprocket integration state (Decision #34). All nullable until the
-  // order has been pushed; `shipmentStatus` is the workflow indicator.
-  shiprocketOrderId    String?            @unique
-  shiprocketShipmentId String?
-  awbCode              String?
-  courierName          String?
-  trackingUrl          String?
-  shipmentStatus       ShipmentStatus     @default(NOT_CREATED)
-  shipmentError        String?
-  shipmentPushedAt     DateTime?
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
-  customer             Customer?          @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  items                OrderRequestItem[]
-
-  @@index([shipmentStatus])
-}
-
-model OrderRequestItem {
-  id                  String       @id @default(cuid())
-  orderRequestId      String
-  productId           String
-  quantity            Int          @default(1)
-  unitPriceAmount     Int
-  selectedOptionsJson Json?
-  variantSummary      String?
-  orderRequest        OrderRequest @relation(fields: [orderRequestId], references: [id], onDelete: Cascade)
-  product             Product      @relation(fields: [productId], references: [id], onDelete: Restrict)
-}
-
-model NewsletterSubscription {
-  id           String           @id @default(cuid())
-  email        String           @unique
-  source       String?
-  status       NewsletterStatus @default(SUBSCRIBED)
-  subscribedAt DateTime         @default(now())
-}
-
-model ProgramReservation {
-  id               String          @id @default(cuid())
-  programId        String
-  programSessionId String?
-  customerId       String?
-  name             String
-  email            String
-  phone            String?
-  participantCount Int             @default(1)
-  notes            String?
-  status           LeadStatus      @default(NEW)
-  createdAt        DateTime        @default(now())
-  program          Program         @relation(fields: [programId], references: [id], onDelete: Restrict)
-  programSession   ProgramSession? @relation(fields: [programSessionId], references: [id], onDelete: SetNull)
-  customer         Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
-}
-
-model RetreatInquiry {
-  id         String     @id @default(cuid())
-  retreatId  String
-  customerId String?
-  name       String
-  email      String
-  phone      String?
-  partySize  Int        @default(1)
-  notes      String?
-  status     LeadStatus @default(NEW)
-  createdAt  DateTime   @default(now())
-  retreat    Retreat    @relation(fields: [retreatId], references: [id], onDelete: Restrict)
-  customer   Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
-}
-
-model WishlistItem {
-  id         String   @id @default(cuid())
-  customerId String
-  productId  String
-  createdAt  DateTime @default(now())
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@unique([customerId, productId])
-}
-
-model ProductNotification {
-  id         String     @id @default(cuid())
-  productId  String
-  customerId String?
-  email      String
-  source     String?
-  status     LeadStatus @default(NEW)
-  notes      String?
-  createdAt  DateTime   @default(now())
-  notifiedAt DateTime?
-  product    Product    @relation(fields: [productId], references: [id], onDelete: Restrict)
-  customer   Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
-
-  // Idempotency: repeated Notify Me clicks for the same product+email upsert,
-  // they don't create duplicate admin inbox rows.
-  @@unique([productId, email])
-  @@index([productId])
-  @@index([email])
-}
-
-model RitualEntry {
-  id             String   @id @default(cuid())
-  customerId     String
-  ritualType     String
-  reflection     String?
-  completedOn    DateTime
-  streakSnapshot Int?
-  createdAt      DateTime @default(now())
-  customer       Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-}
-
-model Story {
-  id          String      @id @default(cuid())
-  perfume1Id  String
-  perfume2Id  String
-  perfume3Id  String
-  artifact1Id String
-  artifact2Id String
-  artifact3Id String
-  launchDate  DateTime
-  videoUrl    String
-  status      StoryStatus @default(INACTIVE)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-
-  perfume1  Product @relation("StoryPerfume1", fields: [perfume1Id], references: [id], onDelete: Restrict)
-  perfume2  Product @relation("StoryPerfume2", fields: [perfume2Id], references: [id], onDelete: Restrict)
-  perfume3  Product @relation("StoryPerfume3", fields: [perfume3Id], references: [id], onDelete: Restrict)
-  artifact1 Product @relation("StoryArtifact1", fields: [artifact1Id], references: [id], onDelete: Restrict)
-  artifact2 Product @relation("StoryArtifact2", fields: [artifact2Id], references: [id], onDelete: Restrict)
-  artifact3 Product @relation("StoryArtifact3", fields: [artifact3Id], references: [id], onDelete: Restrict)
-
-  @@index([status, launchDate])
 }

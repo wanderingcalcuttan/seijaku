@@ -17,6 +17,10 @@ export type ProductView = {
   shortDescription?: string;
   longDescription?: string;
   price: number;
+  heightCm: number;
+  weightGrams: number;
+  lengthCm: number;
+  breadthCm: number;
   priceLabel: string;
   image: string;
   imageAlt?: string;
@@ -76,6 +80,10 @@ export type BackendProduct = {
   material: string;
   useCase: string | null;
   priceAmount: number;
+  heightCm: number;
+  weightGrams: number;
+  lengthCm: number;
+  breadthCm: number;
   currency: string;
   status: BackendProductStatus;
   workflowStatus: "DRAFT" | "PUBLISHED";
@@ -130,6 +138,10 @@ export function normalizeBackendProduct(b: BackendProduct): ProductView | null {
     id: b.id,
     slug: b.slug,
     title: b.title,
+    heightCm: b.heightCm,
+    weightGrams: b.weightGrams,
+    lengthCm: b.lengthCm,
+    breadthCm: b.breadthCm,
     type: b.type as ProductView["type"],
     material: b.material as ProductView["material"],
     useCase: (b.useCase ?? undefined) as ProductView["useCase"],
@@ -227,7 +239,7 @@ export function isUnbuyableProduct(item: ProductView): boolean {
 export function getShopProductUseCase(item: ProductView): ShopUseCase | undefined {
   if (item.useCase) return item.useCase;
   if (item.type === "Perfume") return "skin";
-  if (item.type === "Scarf / Square") return "cloth";
+  if (item.type === "Scarf / Square" || item.type === "Scarf" || item.type === "Square" ) return "cloth";
   if (item.type === "Diffuser") return "diffusion objects";
   return undefined;
 }

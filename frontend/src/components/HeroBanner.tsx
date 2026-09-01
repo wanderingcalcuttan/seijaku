@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { RefObject, useRef } from "react";
 
@@ -95,7 +96,7 @@ export default function HeroBanner({ heroRef, imageSrc, imageAlt }: HeroBannerPr
           </div>
         </div>
 
-        <div className="mt-auto flex justify-center pt-14 sm:pt-16 lg:pt-20">
+        <div className="mt-auto flex flex-col items-center gap-5 pt-14 sm:flex-row sm:justify-center sm:gap-10 lg:gap-12 lg:pt-20">
           <button
             type="button"
             onClick={handleScrollDown}
@@ -105,6 +106,13 @@ export default function HeroBanner({ heroRef, imageSrc, imageAlt }: HeroBannerPr
             <span>Find Your Calm</span>
             <ChevronDown aria-hidden size={16} strokeWidth={1.8} className="translate-y-[1px]" />
           </button>
+
+          <Link
+            href="/shop/lifestyle"
+            className="inline-flex items-center border-b border-[rgba(240,225,205,0.6)] pb-[6px] text-[12px] font-medium uppercase tracking-[0.28em] text-[#f4e7d6] transition-all duration-300 ease-out hover:border-[rgba(240,225,205,0.95)] hover:text-[#fff4e7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2e4cf] focus-visible:ring-offset-4 focus-visible:ring-offset-transparent sm:text-[13px]"
+          >
+            <span>Start with a Ritual Set</span>
+          </Link>
         </div>
       </div>
     </section>

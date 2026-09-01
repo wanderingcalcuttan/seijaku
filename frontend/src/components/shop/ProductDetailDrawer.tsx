@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
 
 import { getShopProductUseCase, hasVariantSelector, type ProductView } from "@/src/lib/product-types";
 
@@ -19,6 +20,7 @@ export default function ProductDetailDrawer({ item, isOpen, onClose }: ProductDe
   const [activeMedia, setActiveMedia] = useState<number | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [enrichedVideoUrl, setEnrichedVideoUrl] = useState<string | null>(null);
+  const [showFullDesc, setShowFullDesc] = useState(false);
   const gallery = item?.gallery ?? (item?.image ? [item.image] : []);
   const activeIndex = activeMedia !== null && gallery[activeMedia] ? activeMedia : 0;
   const activeImage = gallery[activeIndex] ?? item?.image;
@@ -48,6 +50,7 @@ export default function ProductDetailDrawer({ item, isOpen, onClose }: ProductDe
   // Reset variant choices whenever the drawer closes OR the product changes
   // — reopening a drawer should always start from a clean selection.
   useEffect(() => {
+    setShowFullDesc(false);
     if (!isOpen) {
       setSelectedOptions({});
       setActiveMedia(null);
@@ -106,6 +109,26 @@ export default function ProductDetailDrawer({ item, isOpen, onClose }: ProductDe
       setEnrichedVideoUrl(null);
     };
   }, [isOpen, item?.slug]);
+
+  const hasLongDesc = Boolean(item?.longDescription);
+  const hasShortDesc = Boolean(item?.shortDescription);
+  const isDescriptionTruncated = hasLongDesc && !hasShortDesc && (item?.longDescription?.length ?? 0) > 200;
+  const canToggleDescription = hasLongDesc && (hasShortDesc || isDescriptionTruncated);
+
+  let displayedDescription = "Detailed product notes will appear here as the catalog evolves.";
+  if (item) {
+    if (showFullDesc) {
+      displayedDescription = item.longDescription ?? item.shortDescription ?? displayedDescription;
+    } else {
+      if (item.shortDescription) {
+        displayedDescription = item.shortDescription;
+      } else if (isDescriptionTruncated && item.longDescription) {
+        displayedDescription = `${item.longDescription.slice(0, 200).trim()}...`;
+      } else {
+        displayedDescription = item.longDescription ?? displayedDescription;
+      }
+    }
+  }
 
   if (!item) {
     return null;
@@ -180,9 +203,18 @@ export default function ProductDetailDrawer({ item, isOpen, onClose }: ProductDe
             </div>
 
             <div>
-              <p className="text-[15px] leading-[1.85] text-[#5f5850]">
-                {item.longDescription ?? item.shortDescription ?? "Detailed product notes will appear here as the catalog evolves."}
-              </p>
+              <div className="text-[15px] leading-[1.85] text-[#5f5850] [&_p]:mt-3 [&_p]:first:mt-0 [&_h3]:mt-6 [&_h3]:font-serif [&_h3]:text-[18px] [&_h3]:leading-[1.3] [&_h3]:text-[#1c1c1c] [&_h3]:first:mt-0 [&_ul]:mt-3 [&_ul]:pl-5 [&_ul]:list-disc [&_ul]:marker:text-[#8f7a65] [&_ol]:mt-3 [&_ol]:pl-5 [&_ol]:list-decimal [&_ol]:marker:text-[#8f7a65] [&_li]:mt-1 [&_a]:text-[#2e4a36] [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-[#243c2c] [&_strong]:font-semibold [&_strong]:text-[#1c1c1c] [&_em]:italic">
+                <ReactMarkdown>{displayedDescription}</ReactMarkdown>
+              </div>
+              {canToggleDescription ? (
+                <button
+                  type="button"
+                  onClick={() => setShowFullDesc(!showFullDesc)}
+                  className="mt-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8f7a65] hover:text-[#564c40] transition-colors"
+                >
+                  {showFullDesc ? "See less" : "See more"}
+                </button>
+              ) : null}
 
               {customizationOptions.length > 0 ? (
                 <div className="mt-7 space-y-4">

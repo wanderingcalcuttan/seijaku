@@ -2,6 +2,7 @@ import { AdminRole, AdminStatus, CategoryKind, CollectionKind, MediaKind, Prisma
 import { Router } from "express";
 import multer from "multer";
 import { z } from "zod";
+import sharp from "sharp";
 
 import { signAdminToken, verifyPassword, hashPassword } from "../lib/auth.js";
 import { prisma } from "../lib/prisma.js";
@@ -52,6 +53,42 @@ function throwIfSlugCollision(error: unknown): never {
     throw new HttpError(409, "Slug already taken — pick a different slug.");
   }
   throw error;
+}
+
+async function compressImageBuffer(
+  buffer: Buffer,
+  mimetype: string
+): Promise<{ buffer: Buffer; mimetype: string; width?: number; height?: number }> {
+  try {
+    const img = sharp(buffer);
+    let compressedBuffer = buffer;
+    if (mimetype === "image/jpeg" || mimetype === "image/jpg") {
+      compressedBuffer = await img.jpeg({ quality: 82, mozjpeg: true }).toBuffer();
+    } else if (mimetype === "image/png") {
+      compressedBuffer = await img.png({ quality: 80, compressionLevel: 9, palette: true }).toBuffer();
+    } else if (mimetype === "image/webp") {
+      compressedBuffer = await img.webp({ quality: 80 }).toBuffer();
+    } else if (mimetype === "image/gif") {
+      try {
+        compressedBuffer = await img.gif({ reuse: true }).toBuffer();
+      } catch {
+        compressedBuffer = buffer;
+      }
+    }
+
+    const finalImg = sharp(compressedBuffer);
+    const finalMetadata = await finalImg.metadata();
+
+    return {
+      buffer: compressedBuffer,
+      mimetype,
+      width: finalMetadata.width ?? undefined,
+      height: finalMetadata.height ?? undefined,
+    };
+  } catch (error) {
+    console.error("[compressImageBuffer] failed to compress image:", error);
+    return { buffer, mimetype };
+  }
 }
 
 const upload = multer({
@@ -123,7 +160,7 @@ const productInputSchema = z.object({
   shortDescription: optionalString,
   longDescription: optionalString,
   type: z.string().min(1),
-  material: z.string().min(1),
+  material: optionalString,
   useCase: optionalString,
   priceAmount: z.number().int().nonnegative(),
   currency: z.string().default("INR"),
@@ -592,9 +629,36 @@ adminRouter.post(
 
 adminRouter.get(
   "/media",
-  asyncHandler(async (_req, res) => {
-    const items = await prisma.mediaAsset.findMany({ orderBy: { createdAt: "desc" } });
-    res.json({ items: items.map(serializeMediaAsset) });
+  asyncHandler(async (req, res) => {
+    const pageParam = typeof req.query.page === "string" ? parseInt(req.query.page, 10) : undefined;
+    const limitParam = typeof req.query.limit === "string" ? parseInt(req.query.limit, 10) : undefined;
+
+    if (pageParam !== undefined && limitParam !== undefined && !isNaN(pageParam) && !isNaN(limitParam)) {
+      const page = Math.max(1, pageParam);
+      const limit = Math.max(1, limitParam);
+      const skip = (page - 1) * limit;
+
+      const [items, totalCount] = await prisma.$transaction([
+        prisma.mediaAsset.findMany({
+          orderBy: { createdAt: "desc" },
+          skip,
+          take: limit,
+        }),
+        prisma.mediaAsset.count(),
+      ]);
+
+      const totalPages = Math.ceil(totalCount / limit);
+
+      res.json({
+        items: items.map(serializeMediaAsset),
+        totalCount,
+        totalPages,
+        currentPage: page,
+      });
+    } else {
+      const items = await prisma.mediaAsset.findMany({ orderBy: { createdAt: "desc" } });
+      res.json({ items: items.map(serializeMediaAsset) });
+    }
   })
 );
 
@@ -625,9 +689,23 @@ adminRouter.post(
     }
 
     const kind = req.body.kind && z.nativeEnum(MediaKind).safeParse(req.body.kind).success ? req.body.kind : "IMAGE";
+
+    let fileBuffer = req.file.buffer;
+    let fileMimetype = req.file.mimetype;
+    let width: number | undefined;
+    let height: number | undefined;
+
+    if (fileMimetype.startsWith("image/")) {
+      const compressionResult = await compressImageBuffer(fileBuffer, fileMimetype);
+      fileBuffer = compressionResult.buffer;
+      fileMimetype = compressionResult.mimetype;
+      width = compressionResult.width;
+      height = compressionResult.height;
+    }
+
     const uploadResult = await storeUpload({
-      buffer: req.file.buffer,
-      contentType: req.file.mimetype,
+      buffer: fileBuffer,
+      contentType: fileMimetype,
       originalName: req.file.originalname,
     });
 
@@ -636,8 +714,8 @@ adminRouter.post(
         url: uploadResult.url,
         altText: typeof req.body.altText === "string" ? req.body.altText : null,
         kind,
-        width: uploadResult.width,
-        height: uploadResult.height,
+        width: width ?? uploadResult.width ?? null,
+        height: height ?? uploadResult.height ?? null,
       },
     });
 
@@ -855,7 +933,7 @@ adminRouter.post(
           shortDescription: payload.shortDescription,
           longDescription: payload.longDescription,
           type: payload.type,
-          material: payload.material,
+          material: payload.material ?? null,
           useCase: payload.useCase,
           priceAmount: payload.priceAmount,
           currency: payload.currency,

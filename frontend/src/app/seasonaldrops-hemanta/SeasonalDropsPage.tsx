@@ -474,7 +474,7 @@ export default function SeasonalDropsPage({ productsBySlug, bridge }: SeasonalDr
           </p>
 
           <div className="mapping-grid">
-            {characterImages.map((entry) => (
+            {characterScentMapping.map((entry) => (
               <article key={entry.name} className={`mapping-tile mapping-${entry.area}`}>
                 <div className="mapping-media">
                   <img

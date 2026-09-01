@@ -7,13 +7,16 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   getShopMaterials,
   getShopTypes,
+  getShopPrices,
   matchesShopMaterialFilter,
   matchesShopTypeFilter,
+  matchesShopPriceFilter,
   sortOptions,
   type ShopMaterialFilterOption,
   type ShopSortOption,
   type ShopTypeFilterOption,
   type ShopUseCase,
+  type ShopPriceFilterOption,
 } from "@/src/lib/shop-taxonomy";
 import {
   collectUseCases,
@@ -85,6 +88,7 @@ export default function ShopAllPageClient({ products }: ShopAllPageClientProps) 
   const [selectedType, setSelectedType] = useState<ShopTypeFilterOption | "All">("All");
   const [selectedMaterial, setSelectedMaterial] = useState<ShopMaterialFilterOption | "All">("All");
   const [selectedUseCase, setSelectedUseCase] = useState<ShopUseCase | "All">("All");
+  const [selectedPrice, setSelectedPrice] = useState<ShopPriceFilterOption | "All">("All");
   const [sortBy, setSortBy] = useState<ShopSortOption>("Recommended");
   const [visibleCount, setVisibleCount] = useState(INITIAL_BATCH_SIZE);
   const [isRailCollapsed, setIsRailCollapsed] = useState(false);
@@ -127,12 +131,13 @@ export default function ShopAllPageClient({ products }: ShopAllPageClientProps) 
       const byType = matchesShopTypeFilter(item, selectedType);
       const byMaterial = matchesShopMaterialFilter(item, selectedMaterial);
       const byUseCase = selectedUseCase === "All" || itemUseCase === selectedUseCase;
+      const byPrice = matchesShopPriceFilter(item, selectedPrice);
 
-      return bySearch && byType && byMaterial && byUseCase;
+      return bySearch && byType && byMaterial && byUseCase && byPrice;
     });
 
     return sortProducts(refined, sortBy);
-  }, [products, searchValue, selectedMaterial, selectedType, selectedUseCase, sortBy]);
+  }, [products, searchValue, selectedMaterial, selectedType, selectedUseCase, selectedPrice, sortBy]);
 
   // `getShopTypes()` / `getShopMaterials()` return static curated filter-chip
   // taxonomies (not derived from the product set) — safe to keep using the
@@ -164,8 +169,12 @@ export default function ShopAllPageClient({ products }: ShopAllPageClientProps) 
       chips.push({ id: "useCase", label: selectedUseCase });
     }
 
+    if (selectedPrice !== "All") {
+      chips.push({ id: "price", label: selectedPrice });
+    }
+
     return chips;
-  }, [searchValue, selectedMaterial, selectedType, selectedUseCase]);
+  }, [searchValue, selectedMaterial, selectedType, selectedUseCase, selectedPrice]);
 
   const hasActiveFilters = activeChips.length > 0 || sortBy !== "Recommended";
 
@@ -174,6 +183,7 @@ export default function ShopAllPageClient({ products }: ShopAllPageClientProps) 
     setSelectedType("All");
     setSelectedMaterial("All");
     setSelectedUseCase("All");
+    setSelectedPrice("All");
     setSortBy("Recommended");
     setVisibleCount(INITIAL_BATCH_SIZE);
   };
@@ -193,6 +203,10 @@ export default function ShopAllPageClient({ products }: ShopAllPageClientProps) 
 
     if (chipId === "useCase") {
       setSelectedUseCase("All");
+    }
+
+    if (chipId === "price") {
+      setSelectedPrice("All");
     }
 
     setVisibleCount(INITIAL_BATCH_SIZE);
@@ -228,6 +242,11 @@ export default function ShopAllPageClient({ products }: ShopAllPageClientProps) 
       setSelectedUseCase(value);
       setVisibleCount(INITIAL_BATCH_SIZE);
     },
+    selectedPrice,
+    onPriceChange: (value: ShopPriceFilterOption | "All") => {
+      setSelectedPrice(value);
+      setVisibleCount(INITIAL_BATCH_SIZE);
+    },
     sortBy,
     onSortChange: (value: ShopSortOption) => {
       setSortBy(value);
@@ -236,6 +255,7 @@ export default function ShopAllPageClient({ products }: ShopAllPageClientProps) 
     types,
     materials,
     useCases,
+    prices: getShopPrices(),
     sortOptions,
     onReset: resetFilters,
     hasActiveFilters,
@@ -248,8 +268,8 @@ export default function ShopAllPageClient({ products }: ShopAllPageClientProps) 
   return (
     <>
       <main className="min-h-screen bg-[#f3efe7] pt-[72px] text-[#3a3a3a] sm:pt-[76px]">
-        <section className="section-primary pb-6 pt-18 sm:pb-7 sm:pt-22">
-          <div className="page-container max-w-[1240px]">
+        {/* <section className="section-primary pb-6 pt-18 sm:pb-7 sm:pt-22"> */}
+          <div className="page-container max-w-[1240px] pb-6 pt-18 sm:pb-7 sm:pt-22">
             <div className="max-w-[760px]">
               <p className="text-[9px] uppercase tracking-[0.32em] text-[#9a785d]">Collection</p>
               <h1 className="mt-4 text-[clamp(34px,4.2vw,50px)] leading-[1.04] tracking-[-0.03em] text-[#1d1a17]">Shop All</h1>
@@ -258,7 +278,7 @@ export default function ShopAllPageClient({ products }: ShopAllPageClientProps) 
               </p>
             </div>
           </div>
-        </section>
+        {/* </section> */}
 
         <section className="pb-20 sm:pb-24">
           <div className="page-container max-w-[1240px]">

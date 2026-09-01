@@ -261,6 +261,83 @@ export async function createShiprocketOrder(
   };
 }
 
+// ─── Shipping rate calculation ───────────────────────────────────────────
+
+export type ShippingRateInput = {
+  pincode: string;
+  weightKg: number;
+  lengthCm: number;
+  breadthCm: number;
+  heightCm: number;
+};
+
+export type ShippingRateResult = {
+  rate: number;
+  estimatedDeliveryDays: string;
+};
+
+type ShiprocketRateResponse = {
+  status?: number;
+  data?: {
+    available_courier_companies?: Array<{
+      courier_name?: string;
+      rate?: number;
+      etd?: string;
+      estimated_delivery_days?: string;
+    }>;
+  };
+  message?: string;
+};
+
+// Calculate shipping rates using Shiprocket API. Returns the cheapest rate
+// and its estimated delivery days. Used by the frontend checkout to display
+// estimated shipping cost and delivery timeline.
+export async function calculateShippingRate(
+  input: ShippingRateInput,
+): Promise<ShippingRateResult> {
+  const params = new URLSearchParams({
+    pickup_postcode: "700094",
+    delivery_postcode: input.pincode,
+    weight: String(input.weightKg),
+    length: String(input.lengthCm),
+    breadth: String(input.breadthCm),
+    height: String(input.heightCm),
+    cod: "0",
+  });
+
+  const data = await shiprocketFetch<ShiprocketRateResponse>(
+    `/courier/serviceability/?${params.toString()}`,
+    {
+      method: "GET",
+    },
+  );
+  
+  if (!data.data?.available_courier_companies || data.data.available_courier_companies.length === 0) {
+    console.warn("[shiprocket] no rates available for pincode", input.pincode);
+    // Return default shipping cost and delivery estimate if no rates found
+    return {
+      rate: 100,
+      estimatedDeliveryDays: "5-7",
+    };
+  }
+
+  // Find the courier with the cheapest rate
+  let cheapestCourier = data.data.available_courier_companies[0];
+  for (const courier of data.data.available_courier_companies) {
+    if ((courier.rate ?? 0) > 0 && (courier.rate ?? Infinity) < (cheapestCourier.rate ?? Infinity)) {
+      cheapestCourier = courier;
+    }
+  }
+
+  const rate = cheapestCourier.rate ?? 100;
+  const estimatedDeliveryDays = cheapestCourier.estimated_delivery_days ?? "5-7";
+  
+  return {
+    rate: rate > 0 ? rate : 100,
+    estimatedDeliveryDays,
+  };
+}
+
 // ─── Admin helpers ───────────────────────────────────────────────────────
 
 export type PickupLocation = {
